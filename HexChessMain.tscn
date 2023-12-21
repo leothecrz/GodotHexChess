@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://cocf75jow8kqv"]
+
+[ext_resource type="PackedScene" uid="uid://8egy1g11ynam" path="res://HexBoardGUI.tscn" id="1_1bvqw"]
+[ext_resource type="Script" path="res://HexChessGame.gd" id="2_yqail"]
+[ext_resource type="Script" path="res://Test.gd" id="3_qroyc"]
+
+[node name="Root" type="Node"]
+
+[node name="GUI" parent="." instance=ExtResource("1_1bvqw")]
+
+[node name="GameData" type="Node" parent="GUI"]
+script = ExtResource("2_yqail")
+
+[node name="Node2D" type="Node2D" parent="GUI"]
+script = ExtResource("3_qroyc")
+
+[connection signal="StartNewGame" from="GUI" to="GUI/GameData" method="_GUI_onNewGameStarted"]
