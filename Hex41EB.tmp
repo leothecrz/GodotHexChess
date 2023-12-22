@@ -1,9 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=6 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Central.gd" id="1_mu2fi"]
-[ext_resource type="Texture2D" uid="uid://88v5jwhhko4j" path="res://Images/Chess Colors.png" id="1_o5h2m"]
-[ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_yabgg"]
-[ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_lyson"]
+[ext_resource type="Texture2D" uid="uid://88v5jwhhko4j" path="res://Chess Colors.png" id="1_o5h2m"]
+[ext_resource type="Script" path="res://HexBoardGUI.gd" id="1_yabgg"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jedmp"]
 texture = ExtResource("1_o5h2m")
@@ -22,7 +21,7 @@ texture_region_size = Vector2i(51, 55)
 tile_shape = 3
 tile_layout = 1
 tile_offset_axis = 1
-tile_size = Vector2i(60, 52)
+tile_size = Vector2i(59, 51)
 sources/1 = SubResource("TileSetAtlasSource_jedmp")
 
 [node name="Control" type="Control"]
@@ -63,10 +62,10 @@ offset_bottom = 324.0
 color = Color(1, 1, 1, 0.156863)
 
 [node name="BoardTiles" type="TileMap" parent="ColorRect/Central"]
-position = Vector2(-30, 0)
+position = Vector2(16, -24)
 tile_set = SubResource("TileSet_7e04f")
 format = 2
-layer_0/tile_data = PackedInt32Array(-131077, 1, 196608, -65541, 1, 131072, -5, 1, 65536, 65531, 1, 196608, 131067, 1, 131072, 196603, 1, 65536, -196612, 1, 131072, -131076, 1, 65536, -65540, 1, 196608, -4, 1, 131072, 65532, 1, 65536, 131068, 1, 196608, 196604, 1, 131072, -196611, 1, 65536, -131075, 1, 196608, -65539, 1, 131072, -3, 1, 65536, 65533, 1, 196608, 131069, 1, 131072, 196605, 1, 65536, 262141, 1, 196608, -262146, 1, 196608, -196610, 1, 131072, -131074, 1, 65536, -65538, 1, 196608, -2, 1, 131072, 65534, 1, 65536, 131070, 1, 196608, 196606, 1, 131072, 262142, 1, 65536, -262145, 1, 131072, -196609, 1, 65536, -131073, 1, 196608, -65537, 1, 131072, -1, 1, 65536, 65535, 1, 196608, 131071, 1, 131072, 196607, 1, 65536, 262143, 1, 196608, 327679, 1, 131072, -327680, 1, 196608, -262144, 1, 131072, -196608, 1, 65536, -131072, 1, 196608, -65536, 1, 131072, 0, 1, 65536, 65536, 1, 196608, 131072, 1, 131072, 196608, 1, 65536, 262144, 1, 196608, -262143, 1, 65536, -196607, 1, 196608, -131071, 1, 131072, -65535, 1, 65536, 1, 1, 196608, 65537, 1, 131072, 131073, 1, 65536, 196609, 1, 196608, 262145, 1, 131072, -262142, 1, 131072, -196606, 1, 65536, -131070, 1, 196608, -65534, 1, 131072, 2, 1, 65536, 65538, 1, 196608, 131074, 1, 131072, 196610, 1, 65536, -196605, 1, 196608, -131069, 1, 131072, -65533, 1, 65536, 3, 1, 196608, 65539, 1, 131072, 131075, 1, 65536, 196611, 1, 196608, -196604, 1, 65536, -131068, 1, 196608, -65532, 1, 131072, 4, 1, 65536, 65540, 1, 196608, 131076, 1, 131072, -393216, 1, 65536, -327679, 1, 131072, -327678, 1, 196608, -262141, 1, 65536, -262140, 1, 131072, -196603, 1, 196608, -131067, 1, 131072, -65531, 1, 65536, 5, 1, 196608, 65541, 1, 131072, 131077, 1, 65536)
+layer_0/tile_data = PackedInt32Array(-131078, 1, 196608, -65542, 1, 131072, -6, 1, 65536, 65530, 1, 196608, 131066, 1, 131072, -131077, 1, 131072, -65541, 1, 65536, -5, 1, 196608, 65531, 1, 131072, 131067, 1, 65536, 196603, 1, 196608, -196612, 1, 65536, -131076, 1, 196608, -65540, 1, 131072, -4, 1, 65536, 65532, 1, 196608, 131068, 1, 131072, 196604, 1, 65536, -196611, 1, 196608, -131075, 1, 131072, -65539, 1, 65536, -3, 1, 196608, 65533, 1, 131072, 131069, 1, 65536, 196605, 1, 196608, 262141, 1, 131072, -262146, 1, 131072, -196610, 1, 65536, -131074, 1, 196608, -65538, 1, 131072, -2, 1, 65536, 65534, 1, 196608, 131070, 1, 131072, 196606, 1, 65536, 262142, 1, 196608, -262145, 1, 65536, -196609, 1, 196608, -131073, 1, 131072, -65537, 1, 65536, -1, 1, 196608, 65535, 1, 131072, 131071, 1, 65536, 196607, 1, 196608, 262143, 1, 131072, 327679, 1, 65536, -327680, 1, 131072, -262144, 1, 65536, -196608, 1, 196608, -131072, 1, 131072, -65536, 1, 65536, 0, 1, 196608, 65536, 1, 131072, 131072, 1, 65536, 196608, 1, 196608, -262143, 1, 196608, -196607, 1, 131072, -131071, 1, 65536, -65535, 1, 196608, 1, 1, 131072, 65537, 1, 65536, 131073, 1, 196608, 196609, 1, 131072, -262142, 1, 65536, -196606, 1, 196608, -131070, 1, 131072, -65534, 1, 65536, 2, 1, 196608, 65538, 1, 131072, 131074, 1, 65536, -196605, 1, 131072, -131069, 1, 65536, -65533, 1, 196608, 3, 1, 131072, 65539, 1, 65536, 131075, 1, 196608, -196604, 1, 196608, -131068, 1, 131072, -65532, 1, 65536, 4, 1, 196608, 65540, 1, 131072, 196602, 1, 65536, 262139, 1, 131072, 262140, 1, 196608, 327677, 1, 65536, 327678, 1, 131072, 393215, 1, 196608, 262144, 1, 131072, 262145, 1, 65536, 196610, 1, 196608, 196611, 1, 131072, 131076, 1, 65536)
 
 [node name="DebugColumn" type="Control" parent="."]
 anchors_preset = 0
@@ -122,7 +121,7 @@ offset_bottom = 322.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="NewGameButton" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="Button" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -135,10 +134,9 @@ offset_right = 46.5
 offset_bottom = 40.0
 grow_horizontal = 2
 grow_vertical = 2
-tooltip_text = "Start a new game."
 text = "New Game"
 
-[node name="ResignButton" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="Button2" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -151,10 +149,9 @@ offset_right = 29.5
 offset_bottom = 90.0001
 grow_horizontal = 2
 grow_vertical = 2
-tooltip_text = "Resign from the game."
 text = "Resign"
 
-[node name="SideSelect" type="OptionButton" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="OptionButton" type="OptionButton" parent="PlayerColumn/ColumnBack/GameButtons"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -171,9 +168,6 @@ popup/item_0/id = 0
 popup/item_1/text = "Black"
 popup/item_1/id = 1
 
-[node name="GameData" type="Node" parent="."]
-script = ExtResource("4_lyson")
-
-[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
-[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]
-[connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/SideSelect" to="." method="_selectSide_OnItemSelect"]
+[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Button" to="." method="_newGame_OnButtonPress"]
+[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Button2" to="." method="_resign_OnButtonPress"]
+[connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/OptionButton" to="." method="_selectSide_OnItemSelect"]

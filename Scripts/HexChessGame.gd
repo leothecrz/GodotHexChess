@@ -1,5 +1,4 @@
-extends Node2D
-
+extends Node
 
 ###Const
 const HEX_BOARD_RADIUS = 5;
@@ -25,7 +24,6 @@ var EnPassantCords:Vector2i = Vector2i(-5,-5);
 var isWhiteTurn:bool = true;
 
 var boardASFen:String = "";
-
 ###
 
 
@@ -303,7 +301,7 @@ func isWhitePawnStar(cords:Vector2i) ->bool:
 
 
 ## Calculate Pawn Moves
-func findMovesForPawn(PawnArray:Array, isWhiteTrn:bool, board:Dictionary, blockingPieces:Dictionary)-> Dictionary:
+func findMovesForPawn(PawnArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary)-> Dictionary:
 	var pawnMoves:Dictionary = { 'Promote':[], 'EnPassant':[],'Capture':[], 'Moves':[] };
 	
 	for i in range(PawnArray.size()):
@@ -339,15 +337,15 @@ func findMovesForPawn(PawnArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 			pawnMoves['Capture'][i].append(Vector2i(pawn.x+1, rightCaptureR));
 	
 		## Not Efficient FIX LATER
-		if(  blockingPieces.has(pawn) ):
-			var newLegalmoves = blockingPieces[pawn];
+		if(  blockingpieces.has(pawn) ):
+			var newLegalmoves = blockingpieces[pawn];
 			for moveType in pawnMoves.keys():
 				pawnMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, pawnMoves[moveType][i]);
 	return pawnMoves;
 
 
 ## Calculate Knight Moves
-func findMovesForKnight(KnightArray:Array, isWhiteTrn:bool, board:Dictionary, blockingPieces:Dictionary) -> Dictionary:
+func findMovesForKnight(KnightArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary) -> Dictionary:
 	var knightMoves:Dictionary = { 'Capture':[], 'Moves':[] };
 	
 	var directionVectors = { 
@@ -375,15 +373,15 @@ func findMovesForKnight(KnightArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 						knightMoves['Capture'][i].append(Vector2(checkingQ,checkingR));
 						
 		## Not Efficient FIX LATER
-		if(  blockingPieces.has(knight) ):
-			var newLegalmoves = blockingPieces[knight];
+		if(  blockingpieces.has(knight) ):
+			var newLegalmoves = blockingpieces[knight];
 			for moveType in knightMoves.keys():
 				knightMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, knightMoves[moveType][i]);
 	return knightMoves;
 
 
 ## Calculate Rook Moves
-func findMovesForRook(RookArray:Array, isWhiteTrn:bool, board:Dictionary, blockingPieces:Dictionary) -> Dictionary:
+func findMovesForRook(RookArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary) -> Dictionary:
 	
 	var rookMoves:Dictionary = { 'Capture':[], 'Moves':[] };
 	var directionVectors = { 
@@ -420,8 +418,8 @@ func findMovesForRook(RookArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 				##END WHILE	
 				
 		## Not Efficient FIX LATER
-		if(  blockingPieces.has(rook) ):
-			var newLegalmoves = blockingPieces[rook];
+		if(  blockingpieces.has(rook) ):
+			var newLegalmoves = blockingpieces[rook];
 			for moveType in rookMoves.keys():
 				rookMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, rookMoves[moveType][i]);
 		
@@ -429,7 +427,7 @@ func findMovesForRook(RookArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 
 
 ## Calculate Bishop Moves
-func findMovesForBishop(BishopArray:Array, isWhiteTrn:bool, board:Dictionary, blockingPieces:Dictionary) -> Dictionary:
+func findMovesForBishop(BishopArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary) -> Dictionary:
 	var bishopMoves:Dictionary = { 'Capture':[], 'Moves':[] };
 	var directionVectors = { 
 	 'lfoward':Vector2i(-2,1),
@@ -465,8 +463,8 @@ func findMovesForBishop(BishopArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 				##END WHILE	
 	
 		## Not Efficient FIX LATER
-		if(  blockingPieces.has(bishop) ):
-			var newLegalmoves = blockingPieces[bishop];
+		if(  blockingpieces.has(bishop) ):
+			var newLegalmoves = blockingpieces[bishop];
 			for moveType in bishopMoves.keys():
 				bishopMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, bishopMoves[moveType][i]);
 		
@@ -474,11 +472,11 @@ func findMovesForBishop(BishopArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 
 
 ## Calculate Queen Moves
-func findMovesForQueen(QueenArray:Array, isWhiteTrn:bool, board:Dictionary, blockingPieces:Dictionary) -> Dictionary:
+func findMovesForQueen(QueenArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary) -> Dictionary:
 	var queenMoves:Dictionary = { 'Capture':[], 'Moves':[] };
 	
-	var rookMoves = findMovesForRook(QueenArray, isWhiteTrn, board, blockingPieces);
-	var bishopMoves = findMovesForBishop(QueenArray, isWhiteTrn, board, blockingPieces);
+	var rookMoves = findMovesForRook(QueenArray, isWhiteTrn, board, blockingpieces);
+	var bishopMoves = findMovesForBishop(QueenArray, isWhiteTrn, board, blockingpieces);
 	
 	for i in range(QueenArray.size()):
 		var queen = QueenArray[i];
@@ -489,8 +487,8 @@ func findMovesForQueen(QueenArray:Array, isWhiteTrn:bool, board:Dictionary, bloc
 		queenMoves['Moves'][i].append( rookMoves['Moves'][i] + bishopMoves['Moves'][i] )
 		
 		## Not Efficient FIX LATER
-		if(  blockingPieces.has(queen) ):
-			var newLegalmoves = blockingPieces[queen];
+		if(  blockingpieces.has(queen) ):
+			var newLegalmoves = blockingpieces[queen];
 			for moveType in queenMoves.keys():
 				queenMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, queenMoves[moveType][i]);
 		
@@ -498,7 +496,7 @@ func findMovesForQueen(QueenArray:Array, isWhiteTrn:bool, board:Dictionary, bloc
 
 
 ## Calculate King Moves
-func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blockingPieces:Dictionary) -> Dictionary:
+func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary) -> Dictionary:
 	var kingMoves:Dictionary = { 'Capture':[], 'Moves':[] };
 	
 	var directionVectors = { 
@@ -533,8 +531,8 @@ func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 					kingMoves['Capture'][i].append(Vector2i(checkingQ, checkingR));
 		
 		## Not Efficient FIX LATER
-		if(  blockingPieces.has(king) ):
-			var newLegalmoves = blockingPieces[king];
+		if(  blockingpieces.has(king) ):
+			var newLegalmoves = blockingpieces[king];
 			for moveType in kingMoves.keys():
 				kingMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, kingMoves[moveType][i]);
 		
@@ -542,7 +540,7 @@ func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 
 
 ## Find the legal moves for a single player
-func findLegalMovesFor(board:Dictionary, cords:Dictionary, isWhiteTrn:bool, blockingPieces:Dictionary) -> Dictionary:
+func findLegalMovesFor(board:Dictionary, cords:Dictionary, isWhiteTrn:bool, blockingpieces:Dictionary) -> Dictionary:
 	
 	var pieces:Dictionary = cords['white'] if isWhiteTrn else cords['black'];
 	
@@ -556,22 +554,22 @@ func findLegalMovesFor(board:Dictionary, cords:Dictionary, isWhiteTrn:bool, bloc
 		
 		match pieceType:
 			"P":
-				legalMoves[pieceType] = findMovesForPawn(singleTypePieces, isWhiteTrn, board, blockingPieces);
+				legalMoves[pieceType] = findMovesForPawn(singleTypePieces, isWhiteTrn, board, blockingpieces);
 				
 			"N":
-				legalMoves[pieceType] = findMovesForKnight(singleTypePieces, isWhiteTrn, board, blockingPieces);
+				legalMoves[pieceType] = findMovesForKnight(singleTypePieces, isWhiteTrn, board, blockingpieces);
 				
 			"R":
-				legalMoves[pieceType] = findMovesForRook(singleTypePieces, isWhiteTrn, board, blockingPieces);
+				legalMoves[pieceType] = findMovesForRook(singleTypePieces, isWhiteTrn, board, blockingpieces);
 				
 			"B":
-				legalMoves[pieceType] = findMovesForBishop(singleTypePieces, isWhiteTrn, board, blockingPieces);
+				legalMoves[pieceType] = findMovesForBishop(singleTypePieces, isWhiteTrn, board, blockingpieces);
 				
 			"Q":
-				legalMoves[pieceType] = findMovesForQueen(singleTypePieces, isWhiteTrn, board, blockingPieces);
+				legalMoves[pieceType] = findMovesForQueen(singleTypePieces, isWhiteTrn, board, blockingpieces);
 				
 			"K":
-				legalMoves[pieceType] = findMovesForKing(singleTypePieces, isWhiteTrn, board, blockingPieces);
+				legalMoves[pieceType] = findMovesForKing(singleTypePieces, isWhiteTrn, board, blockingpieces);
 	#print("\n")
 	return legalMoves;
 
@@ -589,6 +587,7 @@ func countMoves(movesList:Dictionary) -> int:
 	
 	return count;
 
+
 ## Check if
 func checkIfCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 	for pieceType:String in enemyMoves.keys():
@@ -597,6 +596,7 @@ func checkIfCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 				if(move == Cords):
 					return true;
 	return false;
+
 
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
@@ -617,7 +617,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 	}];
 	
 	var isWhiteTrn = !isPieceBlack(board[Cords.x][Cords.y]);
-	var blockingPieces = {};
+	var blockingpieces = {};
 	
 	for i in range(Directions.size()):
 		var dirSet:Dictionary = Directions[i];
@@ -641,7 +641,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 						var val = getPieceType(board[checkingQ][checkingR]);
 						if( (val == "R") if (i == 0) else (val == "B")):
 							if(dirBlockingPiece):
-								blockingPieces[dirBlockingPiece] = legalMoves; 
+								blockingpieces[dirBlockingPiece] = legalMoves; 
 								break; ## Is a blocking piece
 							else:
 								break; ## In Check.
@@ -652,14 +652,16 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 				checkingQ += activeVector.x;
 				checkingR += activeVector.y;
 	
-	return blockingPieces;
+	return blockingpieces;
+
 
 ## 
-func makeMove(piece:String, type:String, pieceIndex:int, moveIndex:int):
+func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int):
 	pass;
 
+
 ##
-func startDefaultGame(whiteGoesFirst:bool):
+func startDefaultGame(whiteGoesFirst:bool) -> Array:
 	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
 	#print(HexBoard.keys())
 	#for key in HexBoard.keys():
@@ -670,8 +672,7 @@ func startDefaultGame(whiteGoesFirst:bool):
 	isWhiteTurn = whiteGoesFirst;
 	turnNumber = 1;
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, {});
-	return;
-
+	return [activePieces, currentLegalMoves];
 
 ##
 ## GODOT Fucntions 
@@ -684,11 +685,7 @@ func _ready():
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func _process(_delta):
 	pass
 
 
-func _GUI_onNewGameStarted(isWhite):
-	startDefaultGame(isWhite);
-	print("Signal Received");
-	return;
