@@ -300,7 +300,7 @@ func isWhitePawnStar(cords:Vector2i) ->bool:
 	return false;
 
 
-## Calculate Pawn Moves
+## Calculate Pawn Moves (TODO: Unfinished Promote)
 func findMovesForPawn(PawnArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary)-> Dictionary:
 	var pawnMoves:Dictionary = { 'Promote':[], 'EnPassant':[],'Capture':[], 'Moves':[] };
 	

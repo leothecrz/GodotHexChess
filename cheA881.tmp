@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://jaoakuonoimi"]
+
+[ext_resource type="Script" path="res://Scripts/ChessPiece.gd" id="2_pbsfe"]
+
+[node name="ChessPiece" type="Node2D"]
+script = ExtResource("2_pbsfe")
+
+[node name="ChessSprite" type="Sprite2D" parent="."]

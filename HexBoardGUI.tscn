@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=8 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Central.gd" id="1_mu2fi"]
 [ext_resource type="Texture2D" uid="uid://88v5jwhhko4j" path="res://Images/Chess Colors.png" id="1_o5h2m"]
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_yabgg"]
 [ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_lyson"]
+[ext_resource type="Script" path="res://ChessPiecesController.gd" id="5_rjfmy"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jedmp"]
 texture = ExtResource("1_o5h2m")
@@ -173,6 +174,9 @@ popup/item_1/id = 1
 
 [node name="GameData" type="Node" parent="."]
 script = ExtResource("4_lyson")
+
+[node name="ChessPieces" type="Node" parent="."]
+script = ExtResource("5_rjfmy")
 
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]

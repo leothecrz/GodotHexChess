@@ -4,6 +4,7 @@ extends Control
 var selected:int;
 @onready var BoardControler = $ColorRect/Central;
 @onready var GameDataNode = $GameData;
+@onready var ChessPiecesNode = $ChessPieces;
 
 var activePieces:Dictionary;
 var currentLegalsMoves:Dictionary;
@@ -20,7 +21,6 @@ func _selectSide_OnItemSelect(index:int):
 	selected = index;
 	pass
 
-
 ##
 func axial_to_pixel(axial: Vector2i) -> Vector2:
 	var x = 1.41 * float(axial.x);
@@ -34,19 +34,18 @@ func spawnPieces():
 	
 	for side in activePieces.keys():
 		for pieceType in activePieces[side].keys():
-			
 			for piece in activePieces[side][pieceType]:
 				
 				var activeScene = preload("res://chess_piece.tscn").instantiate();
-				activeScene.initState = [side, pieceType];
-				
-				activeScene.transform.origin = pos + (offset * axial_to_pixel(piece));
+				activeScene.initState = [side, pieceType, $ChessPieces];
+				var cord = piece if boardRotatedForWhite else (piece * -1);
+				activeScene.transform.origin = pos + (offset * axial_to_pixel(cord));
 				activeScene.scale.x = 0.15;
 				activeScene.scale.y = 0.15;
 				
-				add_child(activeScene);
-				print(piece);
-				
+				ChessPiecesNode.add_child(activeScene);
+				activeScene.clickedOnChessPiece.connect(ChessPiecesNode._handleChessPieceClick);
+				#print(piece);
 	pass
 
 ##
@@ -74,6 +73,13 @@ func _newGame_OnButtonPress():
 
 ##
 func _resign_OnButtonPress():
+	
+	activePieces.clear();
+	currentLegalsMoves.clear();
+	
+	for node in ChessPiecesNode.get_children():
+		ChessPiecesNode.remove_child(node);
+	
 	pass
 
 
