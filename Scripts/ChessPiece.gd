@@ -2,38 +2,49 @@ extends Node2D
 
 @onready var spriteNode = $ChessSprite;
 
-### Signals
-signal clickedOnChessPiece(cords);
-###
+#### Signals
 
-### State
-var chessTexture : AtlasTexture = preload("res://Textures/chessPiece.tres");
+signal pieceSelected(data:Array);
+signal pieceDeselected(data:Array);
+
+####
+
+#### State
+
+var chessTexture:AtlasTexture = preload("res://Textures/chessPiece.tres");
 var initState:Array;
 
 # Click and drag
-var offset = 0;
-var status = "";
-var textureSize = Vector2();
-var mousePos = Vector2();
-###
+enum STATES 
+{
+	DRAGGING,
+	CLICKED,
+	UNSET
+}
+var status:STATES = STATES.UNSET;
+var textureSize:Vector2 = Vector2();
+var mousePos:Vector2 = Vector2();
+var offset:Vector2 = Vector2();
+
+####
+
+
+
+#### CREATED
 
 func setupSelf() -> void:
 	var x;
 	var y = 0;
 	if(initState[0] == 'black'):
-		#print("Black ", initState[1]);
 		y += 320;
-		pass
-	else:
-		#print("White ", initState[1]);
 		pass
 	
 	match initState[1]:
 		"K":
-			x = 320 * 0;
+			x =  0;
 			pass;
 		"Q":
-			x = 320 * 1;
+			x = 320;
 			pass;
 		"B":
 			x = 320 * 2;
@@ -53,54 +64,57 @@ func setupSelf() -> void:
 	newChessTexture.atlas = chessTexture.atlas;
 	newChessTexture.region = initialRegion;
 	spriteNode.texture = newChessTexture;
-	pass
+	return;
 
+####
 
-### GODOT Functions
+#### GODOT Functions
 
-func _input(event):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if (status != "dragging") and event.is_pressed():
-			var evenPos =  event.global_position;
-			var myPos = global_position;
-			
-			var rect = Rect2(myPos.x - textureSize.x / 2,
-			 myPos.y - textureSize.y / 2,
+# Called when an input event is detected.
+func _input(event) -> void:
+	
+	if (event is InputEventMouseButton) and (event.button_index == MOUSE_BUTTON_LEFT):
+		
+		if (status != STATES.DRAGGING) and (event.is_pressed()):
+			var eventPosition =  event.global_position;
+			var currentPiecePosition = global_position;
+			var pieceHitbox = Rect2(currentPiecePosition.x - textureSize.x / 2,
+			 currentPiecePosition.y - textureSize.y / 2,
 			 textureSize.x,
 			 textureSize.y);
 			
-			if rect.has_point(evenPos):
-				print(rect);
-				emit_signal("clickedOnChessPiece", self);
-				status = "clicked";
-				offset = myPos - evenPos;
+			if pieceHitbox.has_point(eventPosition):
+				var pieceCords = initState[2];
+				emit_signal("pieceSelected", initState);
 				
-		elif status == "dragging" and not event.is_pressed():
-			status = "released"
+				status = STATES.CLICKED;
+				offset = currentPiecePosition - eventPosition;
+				
+		elif status == STATES.DRAGGING and not event.is_pressed():
+			emit_signal("pieceDeselected", initState);
+			status = STATES.UNSET;
 			
-	if status == "clicked" and event is InputEventMouseMotion:
-		status = "dragging"
+	if status == STATES.CLICKED and event is InputEventMouseMotion:
+		status = STATES.DRAGGING;
 	
 	mousePos = event.global_position;
-	pass
-	
+	return;
+
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
-	
+func _ready() ->void:
 	if(initState):
 		setupSelf();
 		textureSize = spriteNode.get_texture().get_size() * scale;
 		return;
 	else:
 		push_error("Piece Was Given No State");
-	pass # Replace with function body.
+	return;
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta):
-	
-	if status == "dragging":
+func _process(_delta) -> void:
+	if status == STATES.DRAGGING:
 		global_position = mousePos + offset
-	
-	
-	pass
+	return;
+
+####

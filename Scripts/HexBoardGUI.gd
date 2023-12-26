@@ -1,98 +1,176 @@
 extends Control
 
-### State
+#### State
 var selected:int;
+
+
+@onready var offset = 32;
+
 @onready var BoardControler = $ColorRect/Central;
-@onready var GameDataNode = $GameData;
-@onready var ChessPiecesNode = $ChessPieces;
+@onready var GameDataNode = $GameState;
+@onready var ChessPiecesNode = $PiecesContainer;
+@onready var MoveGUI = $MoveGUI;
 
 var activePieces:Dictionary;
 var currentLegalsMoves:Dictionary;
 var boardRotatedForWhite:bool;
-###
+####
 
-###Signals
-	
-###
+####Signals
 
-### Scene Events
-##
-func _selectSide_OnItemSelect(index:int):
-	selected = index;
-	pass
+####
 
-##
+#### Scene Events
+
+## Convert Axial Cordinates To Viewport Cords
 func axial_to_pixel(axial: Vector2i) -> Vector2:
-	var x = 1.41 * float(axial.x);
-	var y = (sqrt(3) * (float(axial.y) + float(axial.x) / 2)) * 0.94;
+	const xScale = 1.41;
+	const yScale = 0.94;
+	
+	var x = xScale * float(axial.x);
+	var y = (sqrt(3) * (float(axial.y) + float(axial.x) / 2)) * yScale;
+	
 	return Vector2(x, y);
 
-##
-func spawnPieces():
-	var pos = Vector2(1152/2, 648/2);
-	var offset = 32;
+## Spawn all the pieces in 'activePieces' at there positions.
+func spawnPieces() -> void:
+	
+	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 	
 	for side in activePieces.keys():
 		for pieceType in activePieces[side].keys():
 			for piece in activePieces[side][pieceType]:
 				
-				var activeScene = preload("res://chess_piece.tscn").instantiate();
-				activeScene.initState = [side, pieceType, $ChessPieces];
 				var cord = piece if boardRotatedForWhite else (piece * -1);
-				activeScene.transform.origin = pos + (offset * axial_to_pixel(cord));
+				var activeScene = preload("res://Scenes/chess_piece.tscn").instantiate();
+				activeScene.initState = [side, pieceType, piece];
+				activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
 				activeScene.scale.x = 0.15;
 				activeScene.scale.y = 0.15;
 				
 				ChessPiecesNode.add_child(activeScene);
-				activeScene.clickedOnChessPiece.connect(ChessPiecesNode._handleChessPieceClick);
-				#print(piece);
+				activeScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
+				activeScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
+				
+	return;
+
+func  _chessPiece_OnPieceDeselected(piece:Array) -> void:
+	print("Piece: ",piece)
+	
+	for node in MoveGUI.get_children():
+		MoveGUI.remove_child(node);
+		node.queue_free();
 	pass
 
-##
-func _newGame_OnButtonPress():
+func handleMovesSpawn(moves, color):
+	
+	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
+	
+	for move in moves:
+		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
+		var cord = move if boardRotatedForWhite else (move * -1);
+		print(cord);
+		activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
+		activeScene.rotation_degrees = 90;
+		activeScene.scale.x = 0.065;
+		activeScene.scale.y = 0.065;
+		
+		MoveGUI.add_child(activeScene);
+		activeScene.SpriteNode.modulate = color;
+		
+	pass;
+
+func spawnChessMoves(moves:Dictionary) -> void:
+	for key in moves.keys():
+		match key:
+			"Promote":
+				handleMovesSpawn(moves[key], Color(0,255,255,255));
+				pass
+			"EnPassant":
+				handleMovesSpawn(moves[key], Color(255,255,0,255));
+				pass
+			"Capture":
+				handleMovesSpawn(moves[key], Color(255,0,0,255));
+				pass
+			"Moves":
+				handleMovesSpawn(moves[key], Color(0,255,0,255));
+				pass
+	return;
+
+func  _chessPiece_OnPieceSelected(piece:Array) -> void:
+	
+	var side = piece[0];
+	var pieceType = piece[1];
+	var pieceCords = piece[2];
+	
+	var pieceArray:Array =  activePieces[side][pieceType];
+	var pos = pieceArray.find(pieceCords);
+	
+	print(currentLegalsMoves);
+	
+	var typeMoves = currentLegalsMoves[pieceType];
+	
+	var thisPiecesMoves = {};
+	for key in typeMoves.keys():
+		thisPiecesMoves[key] = typeMoves[key][pos];
+	
+	print("LegalMoves: ", thisPiecesMoves);
+	spawnChessMoves(thisPiecesMoves);
+	
+	pass
+
+## New Game Button Pressed.
+func _newGame_OnButtonPress() -> void:
 	
 	if(activePieces):
-		return;
+		return; # Ignore if pieces already set.
 	
-	var boardState = [];
-	print( "New Game Signal Received" );
+	#print( "New Game Signal Received" );
 	if(GameDataNode):	
 		var isWhite = (selected == 0);
-		boardState = GameDataNode.startDefaultGame(isWhite);
+		var boardState = GameDataNode.startDefaultGame(isWhite);
 		BoardControler.checkIfFlipBoard(isWhite);
 		boardRotatedForWhite = isWhite;
 		
 		activePieces = boardState[0];
 		currentLegalsMoves = boardState[1];
 		spawnPieces();
-		
 	else:
 		push_error("ChildNodeNotFound");
-	
 	return;
 
-##
-func _resign_OnButtonPress():
-	
+## Resign Button Pressed.
+func _resign_OnButtonPress() -> void:
 	activePieces.clear();
 	currentLegalsMoves.clear();
-	
 	for node in ChessPiecesNode.get_children():
 		ChessPiecesNode.remove_child(node);
-	
+		node.queue_free();
+	return;
+
+## Set item select value.
+func _selectSide_OnItemSelect(index:int) -> void:
+	selected = index;
+	return;
+
+func onResize() ->void:
+	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
+	for node in ChessPiecesNode.get_children():
+		node.transform.origin = centerPos + (offset * axial_to_pixel(node.initState[2]));
 	pass
 
+####
 
-###
-## GODOT DEFAULTS
+#### GODOT DEFAULTS
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	selected = 0;
+	get_tree().get_root().size_changed.connect(onResize) 
 	pass # Replace with function body.
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
 	pass
 
-
+####

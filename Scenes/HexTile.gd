@@ -1,8 +1,6 @@
-extends Node
+extends Node2D
 
-func _handleChessPieceClick(cords):
-	print(cords);
-	pass
+@onready var SpriteNode = $Sprite2D;
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

@@ -11,12 +11,8 @@ config_version=5
 [application]
 
 config/name="Hex Chess"
-run/main_scene="res://HexBoardGUI.tscn"
+run/main_scene="res://Scenes/HexBoardGUI.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
-
-[display]
-
-window/size/resizable=false
 
 [rendering]
 

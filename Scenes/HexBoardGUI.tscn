@@ -1,13 +1,13 @@
 [gd_scene load_steps=8 format=3 uid="uid://8egy1g11ynam"]
 
-[ext_resource type="Script" path="res://Central.gd" id="1_mu2fi"]
-[ext_resource type="Texture2D" uid="uid://88v5jwhhko4j" path="res://Images/Chess Colors.png" id="1_o5h2m"]
-[ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_yabgg"]
-[ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_lyson"]
-[ext_resource type="Script" path="res://ChessPiecesController.gd" id="5_rjfmy"]
+[ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
+[ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
+[ext_resource type="Texture2D" uid="uid://88v5jwhhko4j" path="res://Images/Chess Colors.png" id="3_i8co5"]
+[ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_oqfl2"]
+[ext_resource type="Script" path="res://Scripts/ContainerPieceController.gd" id="5_qfo5s"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jedmp"]
-texture = ExtResource("1_o5h2m")
+texture = ExtResource("3_i8co5")
 margins = Vector2i(33, 23)
 texture_region_size = Vector2i(51, 55)
 0:0/next_alternative_id = 4
@@ -33,7 +33,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_yabgg")
+script = ExtResource("1_dl4cn")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 layout_mode = 1
@@ -53,7 +53,7 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_mu2fi")
+script = ExtResource("2_tcmm4")
 
 [node name="BoardBack" type="ColorRect" parent="ColorRect/Central"]
 layout_mode = 0
@@ -172,11 +172,13 @@ popup/item_0/id = 0
 popup/item_1/text = "Black"
 popup/item_1/id = 1
 
-[node name="GameData" type="Node" parent="."]
-script = ExtResource("4_lyson")
+[node name="GameState" type="Node" parent="."]
+script = ExtResource("4_oqfl2")
 
-[node name="ChessPieces" type="Node" parent="."]
-script = ExtResource("5_rjfmy")
+[node name="MoveGUI" type="Node" parent="."]
+
+[node name="PiecesContainer" type="Node" parent="."]
+script = ExtResource("5_qfo5s")
 
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]

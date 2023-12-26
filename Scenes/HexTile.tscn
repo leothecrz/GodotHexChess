@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://cyn02tn0ccbul"]
+
+[ext_resource type="Script" path="res://Scenes/HexTile.gd" id="1_3ns5h"]
+[ext_resource type="Texture2D" uid="uid://cipx21qse2nws" path="res://Images/hexagon-svgrepo-com.svg" id="1_67bqj"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_3ns5h")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_67bqj")

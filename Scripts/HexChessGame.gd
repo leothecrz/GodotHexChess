@@ -265,7 +265,7 @@ func findPieces(board:Dictionary) -> Dictionary:
 func swapPlayerTurn():
 	isWhiteTurn = !isWhiteTurn;
 	turnNumber += 1;
-
+	return;
 
 ## Given the int value of a chess piece and the current turn determine if friendly.
 func isPieceFriendly(val,isWhiteTrn):
@@ -360,7 +360,7 @@ func findMovesForKnight(KnightArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 		knightMoves['Moves'].append([]);
 		var invertAt2Counter = 0;
 		for m in [-1,1,-1,1]:
-			invertAt2Counter += 1;
+			
 			for dir in directionVectors.keys():
 				var activeVector:Vector2i = directionVectors[dir];
 				var checkingQ:int = knight.x if (invertAt2Counter < 2) else knight.y + (activeVector.x * m);
@@ -371,7 +371,7 @@ func findMovesForKnight(KnightArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 						knightMoves['Moves'][i].append(Vector2(checkingQ,checkingR));
 					elif (!isPieceFriendly(board[checkingQ][checkingR], isWhiteTrn)):
 						knightMoves['Capture'][i].append(Vector2(checkingQ,checkingR));
-						
+			invertAt2Counter += 1;		
 		## Not Efficient FIX LATER
 		if(  blockingpieces.has(knight) ):
 			var newLegalmoves = blockingpieces[knight];
@@ -483,8 +483,8 @@ func findMovesForQueen(QueenArray:Array, isWhiteTrn:bool, board:Dictionary, bloc
 		queenMoves['Capture'].append([]);
 		queenMoves['Moves'].append([]);
 		
-		queenMoves['Capture'][i].append( rookMoves['Capture'][i] + bishopMoves['Capture'][i] )
-		queenMoves['Moves'][i].append( rookMoves['Moves'][i] + bishopMoves['Moves'][i] )
+		queenMoves['Capture'][i] = ( rookMoves['Capture'][i] + bishopMoves['Capture'][i] )
+		queenMoves['Moves'][i] = ( rookMoves['Moves'][i] + bishopMoves['Moves'][i] )
 		
 		## Not Efficient FIX LATER
 		if(  blockingpieces.has(queen) ):
@@ -654,25 +654,19 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 	
 	return blockingpieces;
 
-
-## 
-func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int):
-	pass;
-
-
-##
+## Start a default game.
 func startDefaultGame(whiteGoesFirst:bool) -> Array:
-	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
-	#print(HexBoard.keys())
-	#for key in HexBoard.keys():
-	#	print(HexBoard[key].keys());
+	HexBoard = fillBoardwithFEN(BLACK_CHECK);
 	printBoard(HexBoard);
-	
 	activePieces = findPieces(HexBoard);
 	isWhiteTurn = whiteGoesFirst;
 	turnNumber = 1;
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, {});
 	return [activePieces, currentLegalMoves];
+
+## TODO : Finish
+func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int):
+	pass;
 
 ##
 ## GODOT Fucntions 
