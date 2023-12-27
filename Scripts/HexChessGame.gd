@@ -11,6 +11,15 @@ const VARIATION_TWO_FEN = '6/rp3PR/bp4PN/np5PB/bp6PQ/kp7PK/qp6PB/pb5PN/np4BP/rp3
 const EMPTY_BOARD = '6/7/8/9/10/11/10/9/8/7/6 w - 1'
 const BLACK_CHECK = '1P4/1k4K/8/9/10/11/10/9/8/7/6 w - 1'
 const BLOCKING_TEST = '6/7/8/9/10/kr7NK/10/9/8/7/6 w - 1'
+
+const PAWN_TEST = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1'
+const KNIGHT_TEST = '6/7/8/9/10/5N5/10/9/8/7/6 w - 1'
+const BISHOP_TEST = '6/7/8/9/10/5B5/10/9/8/7/6 w - 1'
+const ROOK_TEST = '6/7/8/9/10/5R5/10/9/8/7/6 w - 1'
+const QUEEN_TEST = '6/7/8/9/10/5Q5/10/9/8/7/6 w - 1'
+const KING_TEST = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1'
+
+
 ###
 
 ###State
@@ -363,8 +372,8 @@ func findMovesForKnight(KnightArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 			
 			for dir in directionVectors.keys():
 				var activeVector:Vector2i = directionVectors[dir];
-				var checkingQ:int = knight.x if (invertAt2Counter < 2) else knight.y + (activeVector.x * m);
-				var checkingR:int = knight.y if (invertAt2Counter < 2) else knight.x + (activeVector.y * m);	
+				var checkingQ:int = knight.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
+				var checkingR:int = knight.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
 				
 				if (board.has(checkingQ) && board[checkingQ].has(checkingR)):
 					if (board[checkingQ][checkingR] == 0) :
@@ -656,7 +665,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 
 ## Start a default game.
 func startDefaultGame(whiteGoesFirst:bool) -> Array:
-	HexBoard = fillBoardwithFEN(BLACK_CHECK);
+	HexBoard = fillBoardwithFEN(QUEEN_TEST);
 	printBoard(HexBoard);
 	activePieces = findPieces(HexBoard);
 	isWhiteTurn = whiteGoesFirst;
