@@ -106,7 +106,7 @@ func  _chessPiece_OnPieceSelected(piece:Array) -> void:
 	var pieceArray:Array =  activePieces[side][pieceType];
 	var pos = pieceArray.find(pieceCords);
 	
-	print(currentLegalsMoves);
+	#print(currentLegalsMoves);
 	
 	var typeMoves = currentLegalsMoves[pieceType];
 	

@@ -33,8 +33,16 @@ var EnPassantCords:Vector2i = Vector2i(-5,-5);
 var isWhiteTurn:bool = true;
 
 var boardASFen:String = "";
+
+var blackCaptures:Array = [];
+var whiteCaptures:Array = [];
 ###
 
+func getMoves() -> Dictionary:
+	return currentLegalMoves;
+	
+func getActivePieces() -> Dictionary:
+	return activePieces;
 
 ## Find Intersection Of Two Arrays
 func intersectOfTwoArrays(ARR:Array, ARR1:Array):
@@ -70,7 +78,7 @@ func printBoard(board: Dictionary):
 ## Get int representation of piece.
 func getPieceInt(piece : String, isBlack: bool) -> int:
 	var id:int = 0;
-	match piece:
+	match piece.to_lower():
 		"p":
 			id = 1;
 		"n":
@@ -665,16 +673,55 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 
 ## Start a default game.
 func startDefaultGame(whiteGoesFirst:bool) -> Array:
-	HexBoard = fillBoardwithFEN(QUEEN_TEST);
-	printBoard(HexBoard);
-	activePieces = findPieces(HexBoard);
 	isWhiteTurn = whiteGoesFirst;
 	turnNumber = 1;
+	
+	blackCaptures = [];
+	whiteCaptures = [];
+	
+	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
+	printBoard(HexBoard);
+	activePieces = findPieces(HexBoard);
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, {});
 	return [activePieces, currentLegalMoves];
 
 ## TODO : Finish
 func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int):
+	
+	var pieceVal = getPieceInt(_piece, !isWhiteTurn);
+	var cords = activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex];
+	var moveToCords = currentLegalMoves[_piece][_type][_pieceIndex][_moveIndex];
+	
+	HexBoard[cords.x][cords.y] = 0;
+	
+	var captured;
+	if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+		captured = getPieceType(HexBoard[moveToCords.x][moveToCords.y]);
+	
+	match _type:
+		'EnPassant':
+			## TODO: SHOULD SAVE WHO IS ENPASSANT 
+			EnPassantCords = currentLegalMoves[_piece][_type]['Moves'][_moveIndex];
+			pass
+			
+		'Capture':
+			if isWhiteTurn:
+				whiteCaptures.append(captured);
+			pass
+			
+		'Promote':
+			## TODO:
+			pass
+	
+		'Moves':
+			pass
+	
+	HexBoard[moveToCords.x][moveToCords.y] = pieceVal;
+	printBoard(HexBoard);
+	
+	blockingPieces = checkForBlockingPiecesFrom(activePieces['black' if isWhiteTurn else 'white']['K'][0], HexBoard);
+	isWhiteTurn = !isWhiteTurn;
+	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
 	pass;
 
 ##
