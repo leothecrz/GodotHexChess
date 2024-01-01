@@ -11,6 +11,9 @@ var selected:int;
 var activePieces:Dictionary;
 var currentLegalsMoves:Dictionary;
 var boardRotatedForWhite:bool;
+
+var viewportState;
+
 ####
 ####Signals
 signal gameSwitchedSides(newSideTurn);
@@ -187,17 +190,13 @@ func _selectSide_OnItemSelect(index:int) -> void:
 
 #
 func onResize() ->void:
-	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-	
-	for node in ChessPiecesNode.get_children():
-		node.transform.origin = centerPos + (offset * axial_to_pixel(node.initState[2]));
-	
 	return;
 ####
 #### GODOT DEFAULTS
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	selected = 0;
+	viewportState = get_viewport_rect();
 	get_tree().get_root().size_changed.connect(onResize) 
 	return;
 
