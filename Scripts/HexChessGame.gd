@@ -676,14 +676,23 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> A
 	
 	var pieceVal = getPieceInt(_piece, !isWhiteTurn);
 	var cords = activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex];
-	var moveToCords = currentLegalMoves[_piece][_type][_pieceIndex][_moveIndex];
+	var moveToCords:Vector2i = currentLegalMoves[_piece][_type][_pieceIndex][_moveIndex];
 	
 	HexBoard[cords.x][cords.y] = 0;
-	
-	var captured;
+	var captured:String = "";
+	var capturedIndex:int = -1;
 	if(HexBoard[moveToCords.x][moveToCords.y] != 0):
 		captured = getPieceType(HexBoard[moveToCords.x][moveToCords.y]);
-	
+		
+		var i:int = 0;
+		for r in activePieces['black' if isWhiteTurn else 'white'][captured]:
+			if(moveToCords == r):
+				capturedIndex = i;
+				break;
+			i = i+1;
+		
+		activePieces['black' if isWhiteTurn else 'white'][captured].remove_at(i);
+		
 	match _type:
 		'EnPassant':
 			## TODO: SHOULD SAVE WHO IS ENPASSANT 
@@ -704,6 +713,7 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> A
 			pass
 	
 	HexBoard[moveToCords.x][moveToCords.y] = pieceVal;
+	
 	printBoard(HexBoard);
 	
 	activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex] = moveToCords;
@@ -712,7 +722,7 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> A
 	isWhiteTurn = !isWhiteTurn;
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
 	
-	return [activePieces, currentLegalMoves];
+	return [activePieces, currentLegalMoves, captured, capturedIndex];
 
 #### GODOT Fucntions 
 # Called when the node enters the scene tree for the first time.

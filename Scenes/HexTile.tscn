@@ -14,4 +14,5 @@ scale = Vector2(0.95, 0.95)
 monitoring = false
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D"]
-polygon = PackedVector2Array(360, -199, 360, 199, 0, 399, -360, 199, -360, -199, 0, -399)
+modulate = Color(1, 1, 1, 0)
+polygon = PackedVector2Array(360, -200, 360, 200, 0, 400, -360, 200, -360, -200, 0, -400)

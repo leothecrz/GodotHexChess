@@ -34,8 +34,9 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 func spawnPieces() -> void:
 	
 	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-	
+	var i:int = 0;
 	for side in activePieces.keys():
+		var j:int = 0;
 		for pieceType in activePieces[side].keys():
 			for piece in activePieces[side][pieceType]:
 				
@@ -48,14 +49,16 @@ func spawnPieces() -> void:
 				activeScene.scale.x = 0.16;
 				activeScene.scale.y = 0.16;
 				
-				ChessPiecesNode.add_child(activeScene);
+				#ChessPiecesNode.add_child(activeScene);
+				ChessPiecesNode.get_child(i).get_child(j).add_child(activeScene);
 				activeScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
 				activeScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
 				
 				gameSwitchedSides.connect(activeScene._on_Control_GameSwitchedSides);
 				pieceSelectedLockOthers.connect(activeScene._on_Control_LockPiece);
 				pieceUnselectedUnlockOthers.connect(activeScene._on_Control_UnlockPiece);
-				
+			j = j+1;
+		i = i+1;
 	return;
 
 #
@@ -63,6 +66,24 @@ func handleMakeMove(piece, data):
 	var newState = GameDataNode.makeMove(piece, data[0], data[1], data[2]);
 	activePieces = newState[0];
 	currentLegalsMoves = newState[1];
+	
+	if(newState[2] != "" and newState[3] != -1):
+		print(newState[2], newState[3]);
+		
+		var i:int = 0;
+		if(GameDataNode.isWhiteTurn):
+			i += 1;
+		
+		var j:int = 0;
+		match newState[2]:
+			"P": j = 0;
+			"N": j = 1;
+			"R": j = 2;
+			"B": j = 3;
+			"Q": j = 4;
+			"K": j = 5;
+		ChessPiecesNode.get_child(i).get_child(j).get_child(newState[3]).queue_free();
+	
 	if(GameDataNode.isWhiteTurn):
 		emit_signal("gameSwitchedSides", "white");
 	else:
@@ -71,6 +92,7 @@ func handleMakeMove(piece, data):
 
 #
 func  _chessPiece_OnPieceDeselected(piece:Array, data:Array) -> void:
+	
 	print("Piece: ",piece);
 	print("Hex Data: ", data);
 	
@@ -91,10 +113,10 @@ func handleMovesSpawn(moves:Array, color:Color, key, index):
 	
 	for i in range(moves.size()):
 		var move = moves[i]
-		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
-		var cord = move if boardRotatedForWhite else (move * -1);
 		
-		print(cord);
+		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
+		
+		var cord = move if boardRotatedForWhite else (move * -1);
 		
 		activeScene.initializationInformation = [key, index, i, move];
 		activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
@@ -103,7 +125,7 @@ func handleMovesSpawn(moves:Array, color:Color, key, index):
 		activeScene.scale.y = 0.065;
 		
 		MoveGUI.add_child(activeScene);
-		activeScene.SpriteNode.modulate = color;
+		activeScene.SpriteNode.set_modulate(color);
 		
 	pass;
 

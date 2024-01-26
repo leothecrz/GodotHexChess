@@ -181,6 +181,34 @@ script = ExtResource("4_oqfl2")
 
 [node name="PiecesContainer" type="Node" parent="."]
 
+[node name="Black" type="Node" parent="PiecesContainer"]
+
+[node name="Pawns" type="Node" parent="PiecesContainer/Black"]
+
+[node name="Knights" type="Node" parent="PiecesContainer/Black"]
+
+[node name="Rooks" type="Node" parent="PiecesContainer/Black"]
+
+[node name="Bishops" type="Node" parent="PiecesContainer/Black"]
+
+[node name="Queens" type="Node" parent="PiecesContainer/Black"]
+
+[node name="King" type="Node" parent="PiecesContainer/Black"]
+
+[node name="White" type="Node" parent="PiecesContainer"]
+
+[node name="Pawns" type="Node" parent="PiecesContainer/White"]
+
+[node name="Knights" type="Node" parent="PiecesContainer/White"]
+
+[node name="Rooks" type="Node" parent="PiecesContainer/White"]
+
+[node name="Bishops" type="Node" parent="PiecesContainer/White"]
+
+[node name="Queens" type="Node" parent="PiecesContainer/White"]
+
+[node name="King" type="Node" parent="PiecesContainer/White"]
+
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]
 [connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/SideSelect" to="." method="_selectSide_OnItemSelect"]

@@ -47,6 +47,7 @@ func setupSelf() -> void:
 	var y = 0;
 	if(initState[0] == 'black'):
 		y += 320;
+	
 	match initState[1]:
 		"K":
 			x =  0;
@@ -60,11 +61,15 @@ func setupSelf() -> void:
 			x = 320 * 4;
 		"P":
 			x = 320 * 5;
+	
 	var initialRegion:Rect2 = Rect2(x,y,320,320);
 	var newChessTexture: AtlasTexture = AtlasTexture.new();
+	
 	newChessTexture.atlas = chessTexture.atlas;
 	newChessTexture.region = initialRegion;
+	
 	spriteNode.texture = newChessTexture;
+	
 	return;
 
 # Called When Scene is initilized with 'initdata'
@@ -140,14 +145,13 @@ func _input(event) -> void:
 
 # Called when the Layer 1 collision hextile area leaves
 func _on_area_2d_area_exited(area:Area2D):
-	print("LEFT");
 	if(area.get_parent() == hexTile):
 		setHextile(null);
 	return;
 
 # Called when Layer 1 collides with hextile area
 func _on_area_2d_area_entered(area:Area2D):
-	print("Entered");
+	
 	setHextile(area.get_parent());
 	return;
 
