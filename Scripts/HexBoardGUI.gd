@@ -1,29 +1,28 @@
 extends Control
 
 #### State
-@onready var offset = 32;
+@onready var offset = 35;
 @onready var BoardControler = $ColorRect/Central;
 @onready var GameDataNode = $GameState;
 @onready var ChessPiecesNode = $PiecesContainer;
 @onready var MoveGUI = $MoveGUI;
 
-var selected:int;
+var selectedSide:int;
 var activePieces:Dictionary;
 var currentLegalsMoves:Dictionary;
 var boardRotatedForWhite:bool;
-
-var viewportState;
-
 ####
+
 ####Signals
 signal gameSwitchedSides(newSideTurn);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 ####
+
 #### Scene Events
 # Convert Axial Cordinates To Viewport Cords
 func axial_to_pixel(axial: Vector2i) -> Vector2:
-	const xScale = 1.41;
+	const xScale = 1.4;
 	const yScale = 0.94;
 	
 	var x = xScale * float(axial.x);
@@ -43,9 +42,11 @@ func spawnPieces() -> void:
 				var cord = piece if boardRotatedForWhite else (piece * -1);
 				var activeScene = preload("res://Scenes/chess_piece.tscn").instantiate();
 				activeScene.initState = [side, pieceType, piece];
+				
 				activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
-				activeScene.scale.x = 0.15;
-				activeScene.scale.y = 0.15;
+				
+				activeScene.scale.x = 0.16;
+				activeScene.scale.y = 0.16;
 				
 				ChessPiecesNode.add_child(activeScene);
 				activeScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
@@ -154,7 +155,7 @@ func _newGame_OnButtonPress() -> void:
 	
 	#print( "New Game Signal Received" );
 	if(GameDataNode):	
-		var isWhite = (selected == 0);
+		var isWhite = (selectedSide == 0);
 		var boardState = GameDataNode.startDefaultGame(isWhite);
 		BoardControler.checkIfFlipBoard(isWhite);
 		boardRotatedForWhite = isWhite;
@@ -185,19 +186,22 @@ func _resign_OnButtonPress() -> void:
 
 # Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
-	selected = index;
+	selectedSide = index;
 	return;
 
-#
+#TODO: Implement Resize
 func onResize() ->void:
 	return;
 ####
+
 #### GODOT DEFAULTS
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	selected = 0;
-	viewportState = get_viewport_rect();
+	
+	selectedSide = 0;
+	
 	get_tree().get_root().size_changed.connect(onResize) 
+	
 	return;
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

@@ -4,10 +4,12 @@ extends Node2D
 @onready var spriteNode = $ChessSprite;
 @onready var collisionNode = $Area2D;
 ####
+
 #### Signals
 signal pieceSelected(data:Array);
 signal pieceDeselected(data:Array);
 ####
+
 #### State
 var locked = true;
 var anotherSelected = false;
@@ -27,6 +29,7 @@ var offset:Vector2 = Vector2();
 var preDragPosition:Vector2;
 var hexTile:Node = null;
 ####
+
 #### CREATED
 # Move to cords
 func moveTo(cords:Vector2):
@@ -70,6 +73,7 @@ func __ready() -> void:
 	textureSize = spriteNode.get_texture().get_size() * scale;
 	return;
 ####
+
 #### GODOT Functions
 # Called when the node enters the scene tree for the first time.
 func _ready() ->void:

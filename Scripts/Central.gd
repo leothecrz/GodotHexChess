@@ -30,7 +30,7 @@ func rotate_tilemap():
 func _ready():
 	boardRotatedToWhite = true;
 	tileMap.scale.y = -1;
-	tileMap.position.x = -30;
+	#tileMap.position.x = -30;
 	tileMap.position.y = 0;
 	pass # Replace with function body.
 
