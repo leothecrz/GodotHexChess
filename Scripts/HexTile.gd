@@ -5,9 +5,21 @@ extends Node2D
 
 #### STATE
 var initializationInformation:Array;
+var defColor:Color;
 ####
 
 #### USER CREATED
+
+func unHighlight() -> void:
+	SpriteNode.set_modulate(defColor);
+	return;
+
+func highlight() -> void:
+	if(!defColor):
+		defColor = SpriteNode.modulate;
+	SpriteNode.set_modulate(CONSTANTS.HexHighlightColor);
+	return;
+
 func __ready() -> void:
 	
 	return;

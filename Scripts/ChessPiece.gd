@@ -146,6 +146,7 @@ func _input(event) -> void:
 # Called when the Layer 1 collision hextile area leaves
 func _on_area_2d_area_exited(area:Area2D):
 	if(area.get_parent() == hexTile):
+		hexTile.unHighlight();
 		setHextile(null);
 	return;
 
@@ -153,6 +154,7 @@ func _on_area_2d_area_exited(area:Area2D):
 func _on_area_2d_area_entered(area:Area2D):
 	
 	setHextile(area.get_parent());
+	hexTile.highlight();
 	return;
 
 # Called when a move is submitted and active pieces need to be swapped.

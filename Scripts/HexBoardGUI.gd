@@ -46,8 +46,8 @@ func spawnPieces() -> void:
 				
 				activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
 				
-				activeScene.scale.x = 0.16;
-				activeScene.scale.y = 0.16;
+				activeScene.scale.x = 0.18;
+				activeScene.scale.y = 0.18;
 				
 				#ChessPiecesNode.add_child(activeScene);
 				ChessPiecesNode.get_child(i).get_child(j).add_child(activeScene);
@@ -62,35 +62,38 @@ func spawnPieces() -> void:
 	return;
 
 #
-func handleMakeMove(piece, data):
+func handleMoveCapture() -> void:
+	print(GameDataNode.getCaptureType(), GameDataNode.getCaptureIndex());
+	var i:int = 0;
+	if(GameDataNode.getIsWhiteTurn()):
+		i += 1;
+	var j:int = 0;
+	match GameDataNode.getCaptureType():
+		"P": j = 0;
+		"N": j = 1;
+		"R": j = 2;
+		"B": j = 3;
+		"Q": j = 4;
+		"K": j = 5;
+	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode.getCaptureIndex()).queue_free();
+	return;
+
+#
+func handleMakeMove(piece, data) -> void:
+	
 	GameDataNode.makeMove(piece, data[0], data[1], data[2]);
 	activePieces = GameDataNode.getActivePieces()
 	currentLegalsMoves = GameDataNode.getMoves()
 	
-	if(GameDataNode.captureValid):
-		print(GameDataNode.captureType, GameDataNode.captureIndex);
-		
-		var i:int = 0;
-		if(GameDataNode.isWhiteTurn):
-			i += 1;
-		
-		var j:int = 0;
-		match GameDataNode.captureType:
-			"P": j = 0;
-			"N": j = 1;
-			"R": j = 2;
-			"B": j = 3;
-			"Q": j = 4;
-			"K": j = 5;
-		
-		ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode.captureIndex).queue_free();
+	if(GameDataNode.getCaptureValid()):
+		handleMoveCapture();
 	
-	if(GameDataNode.isWhiteTurn):
+	
+	if(GameDataNode.getIsWhiteTurn()):
 		emit_signal("gameSwitchedSides", "white");
 	else:
 		emit_signal("gameSwitchedSides", "black");
-	
-	
+		
 	return;
 
 #
@@ -108,10 +111,11 @@ func handleMovesSpawn(moves:Array, color:Color, key, index):
 		activeScene.initializationInformation = [key, index, i, move];
 		activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
 		activeScene.rotation_degrees = 90;
-		activeScene.scale.x = 0.065;
-		activeScene.scale.y = 0.065;
+		activeScene.scale.x = 0.015;
+		activeScene.scale.y = 0.015;
 		
 		MoveGUI.add_child(activeScene);
+		
 		activeScene.SpriteNode.set_modulate(color);
 		
 	pass;
@@ -177,10 +181,11 @@ func _newGame_OnButtonPress() -> void:
 	if(activePieces):
 		return; # Ignore if pieces already set.
 	if(!GameDataNode):	
-		push_error("GUI HAS NO GAME DATA");
+		push_error("GUI HAS NO GAME DATA - ON READY FAIL");
 		return;
 
 	var isWhite = (selectedSide == 0);
+	
 	GameDataNode.startDefaultGame(isWhite);
 	BoardControler.checkIfFlipBoard(isWhite);
 	boardRotatedForWhite = isWhite;
@@ -189,7 +194,7 @@ func _newGame_OnButtonPress() -> void:
 	currentLegalsMoves = GameDataNode.getMoves();
 	spawnPieces();
 
-	if(GameDataNode.isWhiteTurn): emit_signal("gameSwitchedSides", "white");
+	if(GameDataNode.getIsWhiteTurn()): emit_signal("gameSwitchedSides", "white");
 	else: emit_signal("gameSwitchedSides", "black");
 
 	return;
@@ -200,8 +205,8 @@ func _resign_OnButtonPress() -> void:
 	currentLegalsMoves.clear();
 	
 	for node in ChessPiecesNode.get_children():
-		ChessPiecesNode.remove_child(node);
-		node.queue_free();
+		for innerNode in node.get_children():
+			innerNode.queue_free();
 	
 	return;
 
@@ -218,10 +223,9 @@ func onResize() ->void:
 #### GODOT DEFAULTS
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	
 	selectedSide = 0;
 	
-	get_tree().get_root().size_changed.connect(onResize) 
+	get_tree().get_root().size_changed.connect(onResize);
 	
 	return;
 

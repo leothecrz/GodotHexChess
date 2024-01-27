@@ -36,6 +36,26 @@ func getMoves() -> Dictionary:
 func getActivePieces() -> Dictionary:
 	return activePieces;
 
+#
+func getGameInCheck() -> bool:
+	return GameInCheck;
+
+#
+func getCaptureValid() -> bool:
+	return captureValid;
+
+#
+func getIsWhiteTurn() -> bool:
+	return isWhiteTurn;
+
+#
+func getCaptureType() -> String:
+	return captureType;
+
+#
+func getCaptureIndex() -> int:
+	return captureIndex;
+
 ## Find Intersection Of Two Arrays
 func intersectOfTwoArrays(ARR:Array, ARR1:Array):
 	var intersection = [];
@@ -692,11 +712,19 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 	activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex] = moveToCords;
 	HexBoard[moveToCords.x][moveToCords.y] = pieceVal;
 	printBoard(HexBoard);
-	
-	swapPlayerTurn();
-	#checkIfCordsUnderAttack(activePieces['white' if isWhiteTurn else 'black']['K'][0], )
+
 	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0], HexBoard);
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
+
+	if(checkIfCordsUnderAttack(activePieces['black' if isWhiteTurn else 'white']['K'][0], currentLegalMoves)):
+		print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
+		GameInCheck = true;
+
+	swapPlayerTurn();
+
+	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0], HexBoard);
+	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
+	
 	return;
 	
 ## Start a game.
