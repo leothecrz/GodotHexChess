@@ -63,47 +63,34 @@ func spawnPieces() -> void:
 
 #
 func handleMakeMove(piece, data):
-	var newState = GameDataNode.makeMove(piece, data[0], data[1], data[2]);
-	activePieces = newState[0];
-	currentLegalsMoves = newState[1];
+	GameDataNode.makeMove(piece, data[0], data[1], data[2]);
+	activePieces = GameDataNode.getActivePieces()
+	currentLegalsMoves = GameDataNode.getMoves()
 	
-	if(newState[2] != "" and newState[3] != -1):
-		print(newState[2], newState[3]);
+	if(GameDataNode.captureValid):
+		print(GameDataNode.captureType, GameDataNode.captureIndex);
 		
 		var i:int = 0;
 		if(GameDataNode.isWhiteTurn):
 			i += 1;
 		
 		var j:int = 0;
-		match newState[2]:
+		match GameDataNode.captureType:
 			"P": j = 0;
 			"N": j = 1;
 			"R": j = 2;
 			"B": j = 3;
 			"Q": j = 4;
 			"K": j = 5;
-		ChessPiecesNode.get_child(i).get_child(j).get_child(newState[3]).queue_free();
+		
+		ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode.captureIndex).queue_free();
 	
 	if(GameDataNode.isWhiteTurn):
 		emit_signal("gameSwitchedSides", "white");
 	else:
 		emit_signal("gameSwitchedSides", "black");
-	return;
-
-#
-func  _chessPiece_OnPieceDeselected(piece:Array, data:Array) -> void:
 	
-	print("Piece: ",piece);
-	print("Hex Data: ", data);
 	
-	if (data.size() > 0):
-		handleMakeMove(piece[1], data);
-
-	for node in MoveGUI.get_children():
-		MoveGUI.remove_child(node);
-		node.queue_free();
-	
-	emit_signal("pieceUnselectedUnlockOthers");	
 	return;
 
 #
@@ -148,6 +135,22 @@ func spawnChessMoves(moves:Dictionary, index) -> void:
 	return;
 
 #
+func  _chessPiece_OnPieceDeselected(piece:Array, data:Array) -> void:
+	
+	print("Piece: ",piece);
+	print("Hex Data: ", data);
+	
+	if (data.size() > 0):
+		handleMakeMove(piece[1], data);
+
+	for node in MoveGUI.get_children():
+		MoveGUI.remove_child(node);
+		node.queue_free();
+	
+	emit_signal("pieceUnselectedUnlockOthers");	
+	return;
+
+#
 func  _chessPiece_OnPieceSelected(piece:Array) -> void:
 	
 	var side = piece[0];
@@ -171,28 +174,24 @@ func  _chessPiece_OnPieceSelected(piece:Array) -> void:
 
 # New Game Button Pressed.
 func _newGame_OnButtonPress() -> void:
-	
 	if(activePieces):
 		return; # Ignore if pieces already set.
-	
-	#print( "New Game Signal Received" );
-	if(GameDataNode):	
-		var isWhite = (selectedSide == 0);
-		var boardState = GameDataNode.startDefaultGame(isWhite);
-		BoardControler.checkIfFlipBoard(isWhite);
-		boardRotatedForWhite = isWhite;
-		
-		activePieces = boardState[0];
-		currentLegalsMoves = boardState[1];
-		spawnPieces();
-		
-		if(GameDataNode.isWhiteTurn):
-			emit_signal("gameSwitchedSides", "white");
-		else:
-			emit_signal("gameSwitchedSides", "black");
-		
-	else:
-		push_error("ChildNodeNotFound");
+	if(!GameDataNode):	
+		push_error("GUI HAS NO GAME DATA");
+		return;
+
+	var isWhite = (selectedSide == 0);
+	GameDataNode.startDefaultGame(isWhite);
+	BoardControler.checkIfFlipBoard(isWhite);
+	boardRotatedForWhite = isWhite;
+
+	activePieces = GameDataNode.getActivePieces();
+	currentLegalsMoves = GameDataNode.getMoves();
+	spawnPieces();
+
+	if(GameDataNode.isWhiteTurn): emit_signal("gameSwitchedSides", "white");
+	else: emit_signal("gameSwitchedSides", "black");
+
 	return;
 
 # Resign Button Pressed.

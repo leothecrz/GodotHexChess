@@ -1,44 +1,33 @@
 extends Node
-
-#### Const
-	#Defaults
-const HEX_BOARD_RADIUS = 5;
-const DEFAULT_FEN_STRING = "6/p5P/rp4PR/n1p3P1N/q2p2P2Q/bbb1p1P1BBB/k2p2P2K/n1p3P1N/rp4PR/p5P/6 w - 1" ;
-	#Variations
-const VARIATION_ONE_FEN = 'p4P/rp3PR/bp4PN/np5PB/bp6PQ/kp7PK/qp6PB/pb5PN/np4BP/rp3PR/p4P w - 1';
-const VARIATION_TWO_FEN = '6/rp3PR/bp4PN/np5PB/bp6PQ/kp7PK/qp6PB/pb5PN/np4BP/rp3PR/6 w - 1';
-	#State Tests
-const EMPTY_BOARD = '6/7/8/9/10/11/10/9/8/7/6 w - 1';
-const BLACK_CHECK = '1P4/1k4K/8/9/10/11/10/9/8/7/6 w - 1';
-const BLOCKING_TEST = '6/7/8/9/10/kr7NK/10/9/8/7/6 w - 1';
-	#Piece Tests
-const PAWN_TEST = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
-const KNIGHT_TEST = '6/7/8/9/10/5N5/10/9/8/7/6 w - 1';
-const BISHOP_TEST = '6/7/8/9/10/5B5/10/9/8/7/6 w - 1';
-const ROOK_TEST = '6/7/8/9/10/5R5/10/9/8/7/6 w - 1';
-const QUEEN_TEST = '6/7/8/9/10/5Q5/10/9/8/7/6 w - 1';
-const KING_TEST = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1';
-####
 #### State
 var HexBoard:Dictionary = {}
-var activePieces:Dictionary = {};
-var currentLegalMoves:Dictionary = {};
-var blockingPieces:Dictionary = {};
 
-var turnNumber:int = 1;
-var EnPassantCords:Vector2i = Vector2i(-5,-5);
+var blockingPieces:Dictionary = {};
+var activePieces:Dictionary = {};
+
+var currentLegalMoves:Dictionary = {};
+
 var isWhiteTurn:bool = true;
+var turnNumber:int = 1;
+
+var EnPassantCords:Vector2i = Vector2i(-5,-5);
+var EnPassantCordsValid:bool = false;
+
+var captureType:String = "";
+var captureIndex = -1;
+var captureValid = false;
 
 var boardASFen:String = "";
 
 var blackCaptures:Array = [];
 var whiteCaptures:Array = [];
 
-var CheckMated:bool = false
 var GameInCheck:bool = false;
-var moveHistory:Dictionary = {};
 
+var moveHistory:Dictionary = {};
 ####
+
+### Functions
 #
 func getMoves() -> Dictionary:
 	return currentLegalMoves;
@@ -154,7 +143,7 @@ func addPieceToBoardAt( q:int, r:int, val:String, board:Dictionary) -> void:
 
 ## Fill The Board by translating a fen string
 func fillBoardwithFEN(fenString: String) -> Dictionary:
-	const hexRadius = 5;
+	const hexRadius = CONSTANTS.HEX_BOARD_RADIUS;
 	var Board = createBoard(hexRadius);
 	
 	var fenSections:PackedStringArray = fenString.split(" ");
@@ -657,53 +646,41 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 	
 	return blockingpieces;
 
-## Start a default game.
-func startDefaultGame(whiteGoesFirst:bool) -> Array:
-	isWhiteTurn = whiteGoesFirst;
-	turnNumber = 1;
-	
-	blackCaptures = [];
-	whiteCaptures = [];
-	
-	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
-	printBoard(HexBoard);
-	activePieces = findPieces(HexBoard);
-	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, {});
-	return [activePieces, currentLegalMoves];
-
 ## TODO : Finish
-func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> Array:
+func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> void:
+	
+	if(captureValid): captureValid = false;
+	if(EnPassantCordsValid): EnPassantCordsValid = false;
 	
 	var pieceVal = getPieceInt(_piece, !isWhiteTurn);
 	var cords = activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex];
 	var moveToCords:Vector2i = currentLegalMoves[_piece][_type][_pieceIndex][_moveIndex];
-	
 	HexBoard[cords.x][cords.y] = 0;
-	var captured:String = "";
-	var capturedIndex:int = -1;
-	if(HexBoard[moveToCords.x][moveToCords.y] != 0):
-		captured = getPieceType(HexBoard[moveToCords.x][moveToCords.y]);
-		
-		var i:int = 0;
-		for r in activePieces['black' if isWhiteTurn else 'white'][captured]:
-			if(moveToCords == r):
-				capturedIndex = i;
-				break;
-			i = i+1;
-		
-		activePieces['black' if isWhiteTurn else 'white'][captured].remove_at(i);
 		
 	match _type:
 		'EnPassant':
 			## TODO: SHOULD SAVE WHO IS ENPASSANT 
 			EnPassantCords = currentLegalMoves[_piece]['Moves'][_pieceIndex][_moveIndex];
+			EnPassantCordsValid = true;
 			pass
 			
 		'Capture':
+			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+				captureType = getPieceType(HexBoard[moveToCords.x][moveToCords.y]);
+				captureValid = true;
+				var i:int = 0;
+				for r in activePieces['black' if isWhiteTurn else 'white'][captureType]:
+					if(moveToCords == r):
+						captureIndex = i;
+						break;
+					i = i+1;
+				
+				activePieces['black' if isWhiteTurn else 'white'][captureType].remove_at(i);
+			
 			if isWhiteTurn:
-				whiteCaptures.append(captured);
+				whiteCaptures.append(captureType);
 			else:
-				blackCaptures.append(captured);
+				blackCaptures.append(captureType);
 			
 		'Promote':
 			## TODO:
@@ -712,22 +689,34 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> A
 		'Moves':
 			pass
 	
+	activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex] = moveToCords;
 	HexBoard[moveToCords.x][moveToCords.y] = pieceVal;
-	
 	printBoard(HexBoard);
 	
-	activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex] = moveToCords;
-	
-	blockingPieces = checkForBlockingPiecesFrom(activePieces['black' if isWhiteTurn else 'white']['K'][0], HexBoard);
-	isWhiteTurn = !isWhiteTurn;
+	swapPlayerTurn();
+	#checkIfCordsUnderAttack(activePieces['white' if isWhiteTurn else 'black']['K'][0], )
+	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0], HexBoard);
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
+	return;
 	
-	return [activePieces, currentLegalMoves, captured, capturedIndex];
+## Start a game.
+func startDefaultGame(whiteGoesFirst:bool) -> void:
+	isWhiteTurn = whiteGoesFirst;
+	turnNumber = 1;
+	
+	blackCaptures = [];
+	whiteCaptures = [];
+	
+	HexBoard = fillBoardwithFEN(CONSTANTS.DEFAULT_FEN_STRING);
+	printBoard(HexBoard);
+	activePieces = findPieces(HexBoard);
+	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, {});
+	
+	return;
 
-#### GODOT Fucntions 
+#### GODOT Functions 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	#startDefaultGame(true);
 	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
