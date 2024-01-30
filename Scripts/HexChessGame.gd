@@ -1,58 +1,57 @@
 extends Node
-#### State
-var HexBoard:Dictionary = {}
 
+#### State
+	# Board
+var HexBoard:Dictionary = {}
+	# Pieces
 var blockingPieces:Dictionary = {};
 var activePieces:Dictionary = {};
-
+	# Moves
 var currentLegalMoves:Dictionary = {};
-
+	# Game Turn
 var isWhiteTurn:bool = true;
 var turnNumber:int = 1;
-
+	# EnPassant
 var EnPassantCords:Vector2i = Vector2i(-5,-5);
 var EnPassantCordsValid:bool = false;
-
+var EnPassantPawnIndex:int = -1
+var EnPassantPawnIsWhite = false; 
+	# Capture
 var captureType:String = "";
 var captureIndex = -1;
 var captureValid = false;
 
-var boardASFen:String = "";
-
 var blackCaptures:Array = [];
 var whiteCaptures:Array = [];
-
+	# Check
 var GameInCheck:bool = false;
-
+var GameInCheckFrom:Vector2i = Vector2i(-5, -5);
+var GameInCheckMoves:Array = [];
+	# Fen And History
+var boardASFen:String = "";
 var moveHistory:Dictionary = {};
 ####
 
-### Functions
-#
+# Functions
+## Moves Getter
 func getMoves() -> Dictionary:
 	return currentLegalMoves;
-
-#
+## ActivePieces Getter
 func getActivePieces() -> Dictionary:
 	return activePieces;
-
-#
+## InCheck Getter
 func getGameInCheck() -> bool:
 	return GameInCheck;
-
-#
+## CaptureValid Getter
 func getCaptureValid() -> bool:
 	return captureValid;
-
-#
+## IsWhite Getter
 func getIsWhiteTurn() -> bool:
 	return isWhiteTurn;
-
-#
+## CaptureType Getter
 func getCaptureType() -> String:
 	return captureType;
-
-#
+## CaptureIndex Getter
 func getCaptureIndex() -> int:
 	return captureIndex;
 
@@ -558,12 +557,10 @@ func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 func findLegalMovesFor(board:Dictionary, cords:Dictionary, isWhiteTrn:bool, blockingpieces:Dictionary) -> Dictionary:
 	
 	var pieces:Dictionary = cords['white'] if isWhiteTrn else cords['black'];
-	
 	var legalMoves:Dictionary = {};
-	
+
 	for pieceType in pieces.keys():
 		var singleTypePieces:Array = pieces[pieceType];
-		#print(singleTypePieces);
 		if singleTypePieces.size() == 0:
 			continue;
 		
@@ -585,7 +582,6 @@ func findLegalMovesFor(board:Dictionary, cords:Dictionary, isWhiteTrn:bool, bloc
 				
 			"K":
 				legalMoves[pieceType] = findMovesForKing(singleTypePieces, isWhiteTrn, board, blockingpieces);
-	#print("\n")
 	return legalMoves;
 
 ## Count the amount of moves found
@@ -651,7 +647,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 							dirBlockingPiece = Vector2i(checkingQ,checkingR); ## First Piece Found
 					else: ##Unfriendly
 						var val = getPieceType(board[checkingQ][checkingR]);
-						if( (val == "R") if (i == 0) else (val == "B")):
+						if( ((val == "R") or (val == "K")) if (i == 0) else (val == "B")):
 							if(dirBlockingPiece):
 								blockingpieces[dirBlockingPiece] = legalMoves; 
 								break; ## Is a blocking piece
@@ -666,15 +662,44 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 	
 	return blockingpieces;
 
+#
+func fillRookCheckMoves(queenCords, moveToCords):
+	var deltaQ = queenCords.x - moveToCords.x;
+	var deltaR = queenCords.y - moveToCords.y;
+	var direction:Vector2i = Vector2i(0,0);
+
+	if(deltaQ > 0):
+		direction.x = 1;
+	elif (deltaQ < 0):
+		direction.x = -1;				
+	if(deltaR > 0):
+		direction.y = 1;
+	elif (deltaR < 0):
+		direction.y = -1;
+
+	while( true ):
+		
+		GameInCheckMoves.append(moveToCords);
+		moveToCords.x += direction.x;
+		moveToCords.y += direction.y;
+
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+				break;
+		else: break;
+	return;
+
 ## TODO : Finish
 func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> void:
 	
+	if(GameInCheck) : GameInCheck = false;
 	if(captureValid): captureValid = false;
 	if(EnPassantCordsValid): EnPassantCordsValid = false;
 	
 	var pieceVal = getPieceInt(_piece, !isWhiteTurn);
 	var cords = activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex];
 	var moveToCords:Vector2i = currentLegalMoves[_piece][_type][_pieceIndex][_moveIndex];
+
 	HexBoard[cords.x][cords.y] = 0;
 		
 	match _type:
@@ -703,7 +728,7 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 				blackCaptures.append(captureType);
 			
 		'Promote':
-			## TODO:
+			# TODO: Implement PAWN promotion. Default to queen allow for choice?.
 			pass
 	
 		'Moves':
@@ -714,19 +739,47 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 	printBoard(HexBoard);
 
 	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0], HexBoard);
-	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
 
-	if(checkIfCordsUnderAttack(activePieces['black' if isWhiteTurn else 'white']['K'][0], currentLegalMoves)):
+	var piece:Dictionary = { 'white' if isWhiteTurn else 'black' : { _piece : [Vector2i(moveToCords.x,moveToCords.y)] } };
+	currentLegalMoves = findLegalMovesFor(HexBoard, piece, isWhiteTurn, blockingPieces); 	
+	
+	var queenCords:Vector2i = activePieces['black' if isWhiteTurn else 'white']['K'][0];
+
+	if(checkIfCordsUnderAttack( queenCords, currentLegalMoves)):
 		print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
+		GameInCheckFrom = Vector2i(moveToCords.x, moveToCords.y);
+		GameInCheckMoves.clear();
+		
+		match _piece:
+			"K":
+				pass; # No Blocking Moves
+			"P", "N":
+				GameInCheckMoves.append(moveToCords);
+			"R":
+				fillRookCheckMoves(queenCords, moveToCords);
+				pass;
+			"B":
+
+				
+
+				pass;
+			"Q":
+				fillRookCheckMoves(queenCords, moveToCords);
+				pass;
+		
+	
 		GameInCheck = true;
+		print("Game In Check Moves: ", GameInCheckMoves);
 
 	swapPlayerTurn();
 
 	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0], HexBoard);
+	print(blockingPieces);
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
 	
+	## ADD CHECKMATE CHECK HERE IF LEGALMOVES COUNT == 0 AND IN CHECK;
 	return;
-	
+
 ## Start a game.
 func startDefaultGame(whiteGoesFirst:bool) -> void:
 	isWhiteTurn = whiteGoesFirst;

@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=10 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
 [ext_resource type="Texture2D" uid="uid://88v5jwhhko4j" path="res://Images/Chess Colors.png" id="3_i8co5"]
 [ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_oqfl2"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
+[ext_resource type="Script" path="res://Scenes/LeftPanel.gd" id="5_ermre"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jedmp"]
 texture = ExtResource("3_i8co5")
@@ -88,7 +89,7 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -40.0
-offset_bottom = 40.0
+offset_right = -40.0
 grow_horizontal = 0
 
 [node name="ColumnBack" type="ColorRect" parent="PlayerColumn"]
@@ -174,6 +175,67 @@ popup/item_0/id = 0
 popup/item_1/text = "Black"
 popup/item_1/id = 1
 
+[node name="LeftPanel" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 0
+script = ExtResource("5_ermre")
+
+[node name="ColumnBack" type="ColorRect" parent="LeftPanel"]
+layout_mode = 0
+offset_right = 230.0
+offset_bottom = 644.0
+color = Color(1, 1, 1, 0.0588235)
+
+[node name="InCheck" type="Control" parent="LeftPanel/ColumnBack"]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 230.0
+offset_bottom = 322.0
+
+[node name="CheckLabel" type="RichTextLabel" parent="LeftPanel/ColumnBack/InCheck"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "
+
+[center]
+[font_size=40]
+You Are
+In Check
+[/font_size] 
+[/center]"
+
+[node name="MoveHistory" type="Control" parent="LeftPanel/ColumnBack"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -322.0
+offset_right = 230.0
+grow_vertical = 0
+
+[node name="History" type="RichTextLabel" parent="LeftPanel/ColumnBack/MoveHistory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "
+
+[center]
+[font_size=40]
+History
+(WIP)
+[/font_size] 
+[/center]"
+
 [node name="GameState" type="Node" parent="."]
 script = ExtResource("4_oqfl2")
 
@@ -208,6 +270,11 @@ script = ExtResource("4_oqfl2")
 [node name="Queens" type="Node" parent="PiecesContainer/White"]
 
 [node name="King" type="Node" parent="PiecesContainer/White"]
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
 
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]

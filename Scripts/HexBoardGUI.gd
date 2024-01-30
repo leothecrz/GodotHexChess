@@ -2,10 +2,12 @@ extends Control
 
 #### State
 @onready var offset = 35;
+@onready var MoveGUI = $MoveGUI;
+
 @onready var BoardControler = $ColorRect/Central;
 @onready var GameDataNode = $GameState;
 @onready var ChessPiecesNode = $PiecesContainer;
-@onready var MoveGUI = $MoveGUI;
+@onready var LeftPanel = $LeftPanel;
 
 var selectedSide:int;
 var activePieces:Dictionary;
@@ -85,9 +87,15 @@ func handleMakeMove(piece, data) -> void:
 	activePieces = GameDataNode.getActivePieces()
 	currentLegalsMoves = GameDataNode.getMoves()
 	
+	if(GameDataNode.getGameInCheck()):
+		if( not LeftPanel.getLabelState() ):
+			LeftPanel.swapLabelState();
+	else:
+		if ( LeftPanel.getLabelState() ):
+			LeftPanel.swapLabelState();
+
 	if(GameDataNode.getCaptureValid()):
 		handleMoveCapture();
-	
 	
 	if(GameDataNode.getIsWhiteTurn()):
 		emit_signal("gameSwitchedSides", "white");
