@@ -663,7 +663,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 	return blockingpieces;
 
 #
-func fillRookCheckMoves(queenCords, moveToCords):
+func fillRookCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
 	var deltaQ = queenCords.x - moveToCords.x;
 	var deltaR = queenCords.y - moveToCords.y;
 	var direction:Vector2i = Vector2i(0,0);
@@ -688,6 +688,43 @@ func fillRookCheckMoves(queenCords, moveToCords):
 				break;
 		else: break;
 	return;
+
+#
+func fillBishopCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
+	var deltaQ = queenCords.x - moveToCords.x;
+	var deltaR = queenCords.y - moveToCords.y;
+	var direction:Vector2i = Vector2i(0,0);
+
+	if(deltaQ > 0):
+		if(deltaR < 0):
+			if(abs(deltaQ) < abs(deltaR)):
+				direction = Vector2i(1,-2);
+			else:
+				direction = Vector2i(2,-1);
+		elif (deltaR > 0):
+			direction = Vector2i(1,1);
+
+	elif (deltaQ < 0):
+		if(deltaR > 0):
+			if(abs(deltaQ) < abs(deltaR)):
+				direction = Vector2i(-1,2);
+			else:
+				direction = Vector2i(-2,1);
+		elif (deltaR < 0):
+			direction = Vector2i(-1,-1);
+		
+	while( true ):
+
+		GameInCheckMoves.append(moveToCords);
+		moveToCords.x += direction.x;
+		moveToCords.y += direction.y;
+
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+				break;
+		else: break;
+	return;
+
 
 ## TODO : Finish
 func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> void:
@@ -757,17 +794,12 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 				GameInCheckMoves.append(moveToCords);
 			"R":
 				fillRookCheckMoves(queenCords, moveToCords);
-				pass;
 			"B":
-
-				
-
-				pass;
+				fillBishopCheckMoves(queenCords, moveToCords);
 			"Q":
 				fillRookCheckMoves(queenCords, moveToCords);
-				pass;
+				fillBishopCheckMoves(queenCords, moveToCords);
 		
-	
 		GameInCheck = true;
 		print("Game In Check Moves: ", GameInCheckMoves);
 
