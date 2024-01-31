@@ -121,6 +121,7 @@ func handleMovesSpawn(moves:Array, color:Color, key, index):
 		activeScene.rotation_degrees = 90;
 		activeScene.scale.x = 0.015;
 		activeScene.scale.y = 0.015;
+		activeScene.z_index = 1;
 		
 		MoveGUI.add_child(activeScene);
 		
@@ -212,9 +213,10 @@ func _resign_OnButtonPress() -> void:
 	activePieces.clear();
 	currentLegalsMoves.clear();
 	
-	for node in ChessPiecesNode.get_children():
-		for innerNode in node.get_children():
-			innerNode.queue_free();
+	for colorNodes in ChessPiecesNode.get_children():
+		for pieceNodes in colorNodes.get_children():
+			for piece in pieceNodes.get_children():
+				piece.queue_free();
 	
 	return;
 

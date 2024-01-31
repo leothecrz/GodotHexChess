@@ -27,6 +27,7 @@ var whiteCaptures:Array = [];
 var GameInCheck:bool = false;
 var GameInCheckFrom:Vector2i = Vector2i(-5, -5);
 var GameInCheckMoves:Array = [];
+var GameOver = false;
 	# Fen And History
 var boardASFen:String = "";
 var moveHistory:Dictionary = {};
@@ -360,6 +361,13 @@ func findMovesForPawn(PawnArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 			var newLegalmoves = blockingpieces[pawn];
 			for moveType in pawnMoves.keys():
 				pawnMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, pawnMoves[moveType][i]);
+		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in pawnMoves.keys():
+				pawnMoves[moveType][i] = intersectOfTwoArrays(GameInCheckMoves, pawnMoves[moveType][i]);
+
+		
 	return pawnMoves;
 
 ## Calculate Knight Moves
@@ -396,6 +404,12 @@ func findMovesForKnight(KnightArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 			var newLegalmoves = blockingpieces[knight];
 			for moveType in knightMoves.keys():
 				knightMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, knightMoves[moveType][i]);
+
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in knightMoves.keys():
+				knightMoves[moveType][i] = intersectOfTwoArrays(GameInCheckMoves, knightMoves[moveType][i]);
+	
 	return knightMoves;
 
 ## Calculate Rook Moves
@@ -441,6 +455,11 @@ func findMovesForRook(RookArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 			for moveType in rookMoves.keys():
 				rookMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, rookMoves[moveType][i]);
 		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in rookMoves.keys():
+				rookMoves[moveType][i] = intersectOfTwoArrays(GameInCheckMoves, rookMoves[moveType][i]);
+		
 	return rookMoves;
 
 ## Calculate Bishop Moves
@@ -485,6 +504,11 @@ func findMovesForBishop(BishopArray:Array, isWhiteTrn:bool, board:Dictionary, bl
 			for moveType in bishopMoves.keys():
 				bishopMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, bishopMoves[moveType][i]);
 		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in bishopMoves.keys():
+				bishopMoves[moveType][i] = intersectOfTwoArrays(GameInCheckMoves, bishopMoves[moveType][i]);
+
 	return bishopMoves;
 
 ## Calculate Queen Moves
@@ -508,6 +532,11 @@ func findMovesForQueen(QueenArray:Array, isWhiteTrn:bool, board:Dictionary, bloc
 			for moveType in queenMoves.keys():
 				queenMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, queenMoves[moveType][i]);
 		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in queenMoves.keys():
+				queenMoves[moveType][i] = intersectOfTwoArrays(GameInCheckMoves, queenMoves[moveType][i]);
+
 	return queenMoves;
 
 ## Calculate King Moves
@@ -551,6 +580,10 @@ func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 			for moveType in kingMoves.keys():
 				kingMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, kingMoves[moveType][i]);
 		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+				kingMoves['Capture'][i] = intersectOfTwoArrays(GameInCheckMoves, kingMoves['Capture'][i]);
+
 	return kingMoves;
 
 ## Find the legal moves for a single player
@@ -652,7 +685,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i) -> Dictionary:
 							
 					else: ##Unfriendly
 						var val = getPieceType(HexBoard[checkingQ][checkingR]);
-						if( ((val == "R") or (val == "K")) if (i == 0) else (val == "B")):
+						if( (val == "Q") or ((val == "R") if (i == 0) else (val == "B")) ):
 							if(dirBlockingPiece):
 								blockingpieces[dirBlockingPiece] = legalMoves; 
 								break; ## Is a blocking piece
@@ -733,6 +766,8 @@ func fillBishopCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
 ## TODO : Finish
 func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> void:
 	
+	if(GameOver): return;
+
 	if(GameInCheck) : GameInCheck = false;
 	if(captureValid): captureValid = false;
 	if(EnPassantCordsValid): EnPassantCordsValid = false;
@@ -810,14 +845,22 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 	swapPlayerTurn();
 
 	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0]);
-	print(blockingPieces);
+	print("Blocking Pieces: ", blockingPieces);
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
-	
+
+	if(countMoves(currentLegalMoves) <= 0):
+		if(GameInCheck):
+			print("CheckMate")
+		else:
+			print("Stale Mate")
+		GameOver = true;
+
 	## ADD CHECKMATE CHECK HERE IF LEGALMOVES COUNT == 0 AND IN CHECK;
 	return;
 
 ## Start a game.
 func startDefaultGame(whiteGoesFirst:bool) -> void:
+	
 	isWhiteTurn = whiteGoesFirst;
 	turnNumber = 1;
 	
@@ -826,6 +869,8 @@ func startDefaultGame(whiteGoesFirst:bool) -> void:
 	
 	HexBoard = fillBoardwithFEN(CONSTANTS.DEFAULT_FEN_STRING);
 	printBoard(HexBoard);
+	
+	GameOver = false;
 	activePieces = findPieces(HexBoard);
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, {});
 	
