@@ -561,8 +561,7 @@ func findLegalMovesFor(board:Dictionary, cords:Dictionary, isWhiteTrn:bool, bloc
 
 	for pieceType in pieces.keys():
 		var singleTypePieces:Array = pieces[pieceType];
-		if singleTypePieces.size() == 0:
-			continue;
+		if singleTypePieces.size() == 0: continue;
 		
 		match pieceType:
 			"P":
@@ -582,6 +581,7 @@ func findLegalMovesFor(board:Dictionary, cords:Dictionary, isWhiteTrn:bool, bloc
 				
 			"K":
 				legalMoves[pieceType] = findMovesForKing(singleTypePieces, isWhiteTrn, board, blockingpieces);
+
 	return legalMoves;
 
 ## Count the amount of moves found
@@ -607,7 +607,7 @@ func checkIfCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 	return false;
 
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
-func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
+func checkForBlockingPiecesFrom(Cords:Vector2i) -> Dictionary:
 	var Directions = [{ ##Rook
 	 'foward':Vector2i(0,-1),
 	 'lFoward':Vector2i(-1,0,),
@@ -624,29 +624,34 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 	 'right':Vector2i(1,-2)
 	}];
 	
-	var isWhiteTrn = !isPieceBlack(board[Cords.x][Cords.y]);
+	var isWhiteTrn = !isPieceBlack(HexBoard[Cords.x][Cords.y]);
 	var blockingpieces = {};
 	
 	for i in range(Directions.size()):
+		
 		var dirSet:Dictionary = Directions[i];
+
 		for dir in dirSet.keys():
 			var dirBlockingPiece:Vector2i;
 			var activeVector:Vector2i = dirSet[dir];
+
 			var checkingQ:int = Cords.x + activeVector.x;
 			var checkingR:int = Cords.y + activeVector.y;	
+
 			var legalMoves:Array = [];
-			while (board.has(checkingQ) && board[checkingQ].has(checkingR) ):
+
+			while ( HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 				
-				
-				if (board[checkingQ][checkingR] != 0):
+				if (HexBoard[checkingQ][checkingR] != 0):
 					
-					if (isPieceFriendly( board[checkingQ][checkingR], isWhiteTrn)):
+					if (isPieceFriendly( HexBoard[checkingQ][checkingR], isWhiteTrn)):
 						if(dirBlockingPiece):
 							break; ## Two friendly pieces in a row. No Danger 
 						else:
 							dirBlockingPiece = Vector2i(checkingQ,checkingR); ## First Piece Found
+							
 					else: ##Unfriendly
-						var val = getPieceType(board[checkingQ][checkingR]);
+						var val = getPieceType(HexBoard[checkingQ][checkingR]);
 						if( ((val == "R") or (val == "K")) if (i == 0) else (val == "B")):
 							if(dirBlockingPiece):
 								blockingpieces[dirBlockingPiece] = legalMoves; 
@@ -662,7 +667,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i, board:Dictionary) -> Dictionary:
 	
 	return blockingpieces;
 
-#
+# 
 func fillRookCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
 	var deltaQ = queenCords.x - moveToCords.x;
 	var deltaR = queenCords.y - moveToCords.y;
@@ -725,7 +730,6 @@ func fillBishopCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
 		else: break;
 	return;
 
-
 ## TODO : Finish
 func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> void:
 	
@@ -775,7 +779,7 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 	HexBoard[moveToCords.x][moveToCords.y] = pieceVal;
 	printBoard(HexBoard);
 
-	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0], HexBoard);
+	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0]);
 
 	var piece:Dictionary = { 'white' if isWhiteTurn else 'black' : { _piece : [Vector2i(moveToCords.x,moveToCords.y)] } };
 	currentLegalMoves = findLegalMovesFor(HexBoard, piece, isWhiteTurn, blockingPieces); 	
@@ -805,7 +809,7 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 
 	swapPlayerTurn();
 
-	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0], HexBoard);
+	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0]);
 	print(blockingPieces);
 	currentLegalMoves = findLegalMovesFor(HexBoard, activePieces, isWhiteTurn, blockingPieces);
 	
