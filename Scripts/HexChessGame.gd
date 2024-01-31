@@ -540,7 +540,7 @@ func findMovesForQueen(QueenArray:Array, isWhiteTrn:bool, board:Dictionary, bloc
 	return queenMoves;
 
 ## Calculate King Moves
-func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blockingpieces:Dictionary) -> Dictionary:
+func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, _blockingpieces:Dictionary) -> Dictionary:
 	var kingMoves:Dictionary = { 'Capture':[], 'Moves':[] };
 	
 	var directionVectors = { 
@@ -572,13 +572,7 @@ func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, blocki
 				if( board[checkingQ][checkingR] == 0):
 					kingMoves['Moves'][i].append(Vector2i(checkingQ, checkingR));
 				elif( !isPieceFriendly(board[checkingQ][checkingR], isWhiteTrn) ) :
-					kingMoves['Capture'][i].append(Vector2i(checkingQ, checkingR));
-		
-		## Not Efficient FIX LATER
-		if(  blockingpieces.has(king) ):
-			var newLegalmoves = blockingpieces[king];
-			for moveType in kingMoves.keys():
-				kingMoves[moveType][i] = intersectOfTwoArrays(newLegalmoves, kingMoves[moveType][i]);
+					kingMoves['Capture'][i].append(Vector2i(checkingQ, checkingR));	
 		
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
