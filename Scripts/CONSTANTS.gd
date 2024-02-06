@@ -21,4 +21,7 @@ const ROOK_TEST = '6/7/8/9/10/5R5/10/9/8/7/6 w - 1';
 const QUEEN_TEST = '6/7/8/9/10/5Q5/10/9/8/7/6 w - 1';
 const KING_TEST = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1';
 
+#Check Mate Test:
+const CHECK_IN_ONE = '6/7/8/9/k9/2QK7/10/9/8/7/6 w - 1';
+
 const HexHighlightColor:Color = Color(1,1,1,1);

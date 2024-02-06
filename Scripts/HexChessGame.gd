@@ -14,8 +14,8 @@ var turnNumber:int = 1;
 	# EnPassant
 var EnPassantCords:Vector2i = Vector2i(-5,-5);
 var EnPassantCordsValid:bool = false;
-var EnPassantPawnIndex:int = -1
-var EnPassantPawnIsWhite = false; 
+var EnPassantPawnIndex:int = -1 	#ID
+var EnPassantPawnIsWhite = false; 	#ID
 	# Capture
 var captureType:String = "";
 var captureIndex = -1;
@@ -30,7 +30,7 @@ var GameInCheckMoves:Array = [];
 var GameOver = false;
 	# Fen And History
 var boardASFen:String = "";
-var moveHistory:Dictionary = {};
+var moveHistory:Array = [];
 ####
 
 # Functions
@@ -61,6 +61,14 @@ func intersectOfTwoArrays(ARR:Array, ARR1:Array):
 	var intersection = [];
 	for item in ARR:
 		if (ARR1.has(item)):
+			intersection.append(item);
+	return intersection;
+
+#
+func differenceOfTwoArrays(ARR:Array, ARR1:Array):
+	var intersection = [];
+	for item in ARR:
+		if ( not ARR1.has(item)):
 			intersection.append(item);
 	return intersection;
 
@@ -576,7 +584,10 @@ func findMovesForKing(KingArray:Array, isWhiteTrn:bool, board:Dictionary, _block
 		
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
-				kingMoves['Capture'][i] = intersectOfTwoArrays(GameInCheckMoves, kingMoves['Capture'][i]);
+			kingMoves['Capture'][i] = intersectOfTwoArrays(GameInCheckMoves, kingMoves['Capture'][i]);
+			for moveType in kingMoves.keys():
+				if(moveType == 'Capture'): continue;
+				kingMoves[moveType][i] = differenceOfTwoArrays(kingMoves[moveType][i], GameInCheckMoves);
 
 	return kingMoves;
 
@@ -617,10 +628,8 @@ func countMoves(movesList:Dictionary) -> int:
 	
 	for piece:String in movesList.keys():
 		for moveType:String in movesList[piece].keys():
-			#print("MoveType: ", moveType, " : ", movesList[piece][moveType]);
 			for pieceArray:Array in movesList[piece][moveType]:
 				count += pieceArray.size();
-				#print(pieceArray);
 	
 	return count;
 
@@ -760,18 +769,27 @@ func fillBishopCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
 ## TODO : Finish
 func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> void:
 	
-	if(GameOver): return;
-
-	if(GameInCheck) : GameInCheck = false;
-	if(captureValid): captureValid = false;
-	if(EnPassantCordsValid): EnPassantCordsValid = false;
+	if(GameOver): 
+		print("Cant make moves after the game is over");
+		return;
 	
+	#RESET FLAGS
+	if(GameInCheck): 
+		GameInCheck = false;
+	if(captureValid): 
+		captureValid = false;
+	if(EnPassantCordsValid): 
+		EnPassantCordsValid = false;
+	
+
+	#Get Made Move Values
+	var selfColor:String = 'white' if isWhiteTurn else 'black';
 	var pieceVal = getPieceInt(_piece, !isWhiteTurn);
-	var cords = activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex];
+	var cords = activePieces[selfColor][_piece][_pieceIndex];
 	var moveToCords:Vector2i = currentLegalMoves[_piece][_type][_pieceIndex][_moveIndex];
 
+	#Move
 	HexBoard[cords.x][cords.y] = 0;
-		
 	match _type:
 		'EnPassant':
 			## TODO: SHOULD SAVE WHO IS ENPASSANT 
@@ -784,36 +802,33 @@ func makeMove(_piece:String, _type:String, _pieceIndex:int, _moveIndex:int) -> v
 				captureType = getPieceType(HexBoard[moveToCords.x][moveToCords.y]);
 				captureValid = true;
 				var i:int = 0;
-				for r in activePieces['black' if isWhiteTurn else 'white'][captureType]:
-					if(moveToCords == r):
+				for pieceCords in activePieces['black' if isWhiteTurn else 'white'][captureType]:
+					if(moveToCords == pieceCords):
 						captureIndex = i;
 						break;
 					i = i+1;
 				
 				activePieces['black' if isWhiteTurn else 'white'][captureType].remove_at(i);
 			
-			if isWhiteTurn:
-				whiteCaptures.append(captureType);
-			else:
-				blackCaptures.append(captureType);
+			#Add To Captures
+			if(isWhiteTurn): whiteCaptures.append(captureType);
+			else: blackCaptures.append(captureType);
 			
 		'Promote':
-			# TODO: Implement PAWN promotion. Default to queen allow for choice?.
+			# TODO: Implement PAWN promotion. Default to queen or allow for choice?.
 			pass
 	
-		'Moves':
-			pass
-	
-	activePieces['white' if isWhiteTurn else 'black'][_piece][_pieceIndex] = moveToCords;
+		'Moves' : pass
 	HexBoard[moveToCords.x][moveToCords.y] = pieceVal;
+	activePieces[selfColor][_piece][_pieceIndex] = moveToCords;
 	printBoard(HexBoard);
 
-	blockingPieces = checkForBlockingPiecesFrom(activePieces['white' if isWhiteTurn else 'black']['K'][0]);
 
-	var piece:Dictionary = { 'white' if isWhiteTurn else 'black' : { _piece : [Vector2i(moveToCords.x,moveToCords.y)] } };
-	currentLegalMoves = findLegalMovesFor(HexBoard, piece, isWhiteTurn, blockingPieces); 	
-	
+	var legalMovesPieceArray:Dictionary = { selfColor : { _piece : [Vector2i(moveToCords.x,moveToCords.y)] } };
 	var queenCords:Vector2i = activePieces['black' if isWhiteTurn else 'white']['K'][0];
+
+	blockingPieces = checkForBlockingPiecesFrom(activePieces[selfColor]['K'][0]);
+	currentLegalMoves = findLegalMovesFor(HexBoard, legalMovesPieceArray, isWhiteTurn, blockingPieces); 	
 
 	if(checkIfCordsUnderAttack( queenCords, currentLegalMoves)):
 		print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
