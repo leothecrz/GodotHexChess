@@ -47,6 +47,8 @@ var GameIsOver = false;
 var blackCaptures:Array = [];
 var whiteCaptures:Array = [];
 
+var captureType:String = "";
+var captureIndex = -1;
 var captureValid:bool = false;
 	# EnPassant
 var EnPassantCords:Vector2i = Vector2i(-5,-5);
@@ -652,6 +654,14 @@ func findLegalMovesFor(activepieces:Array) -> void:
 
 	return;
 
+## Check if
+func checkIfCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
+	for piece:Vector2i in enemyMoves.keys():
+		for move in enemyMoves[piece]['Capture']:
+			if(move == Cords):
+				return true;
+	return false;
+
 ## 
 func updateAttackBoard(q:int, r:int, mod:int) -> void:
 	if(isWhiteTurn):
@@ -688,29 +698,193 @@ func resetFlags() -> void:
 	if(EnPassantCordsValid): EnPassantCordsValid = false;
 	return;
 
+## 
+func removeAttacksFrom(cords:Vector2i) -> void:
+	
+	if(not legalMoves.has(cords)):
+		return;
+
+	for moveType in legalMoves[cords].keys():
+		for move in legalMoves[cords][moveType]:
+			updateAttackBoard(move.x,move.y,-1);
+	
+	return;
+
 ##
-func handleMove(cords:Vector2i, moveType:String, moveIndex:int) -> void:
+func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECES) -> void:
 
 	var pieceVal:int = HexBoard[cords.x][cords.y] 
-	var pieceType:String = getPieceType(pieceVal);
+	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
 	
+	var pieceType:String = getPieceType(pieceVal);
 	var moveTo = legalMoves[cords][moveType][moveIndex];
 
 	HexBoard[cords.x][cords.y] = 0;
 	match moveType:
-
 		'Promote':
+			#TODO
 			pass;
 		'Enpassant':
+			EnPassantCords = legalMoves[cords]['Move'][0];
+			EnPassantTarget = moveTo;
+			EnPassantCordsValid = true;
 			pass;
 		'Capture':
+			captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
+			captureValid = true;
+
+			var i:int = 0;
+			for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
+				if(moveTo == pieceCords):
+					captureIndex = i;
+					break;
+				i = i+1;
+			activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType].remove_at(i);
+
+			#Add To Captures
+			if(isWhiteTurn): whiteCaptures.append(captureType);
+			else: blackCaptures.append(captureType);
+
 			pass;
 		'Moves':
 			pass;
+	HexBoard[moveTo.x][moveTo.y] = pieceVal;
 
+	# Update Piece List
+	for i in range(activePieces[selfColor][pieceType].size()):
+		if (activePieces[selfColor][pieceType][i] == cords):
+			activePieces[selfColor][pieceType][i] = moveTo;
+			i = activePieces[selfColor][pieceType].size();
+
+	printBoard(HexBoard);
+
+	removeAttacksFrom(cords);
+	checkState(moveTo);
 
 	return;
 
+# 
+func fillRookCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
+	var deltaQ = queenCords.x - moveToCords.x;
+	var deltaR = queenCords.y - moveToCords.y;
+	var direction:Vector2i = Vector2i(0,0);
+
+	if(deltaQ > 0):
+		direction.x = 1;
+	elif (deltaQ < 0):
+		direction.x = -1;				
+	if(deltaR > 0):
+		direction.y = 1;
+	elif (deltaR < 0):
+		direction.y = -1;
+
+	while( true ):
+		
+		GameInCheckMoves.append(moveToCords);
+		moveToCords.x += direction.x;
+		moveToCords.y += direction.y;
+
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+				break;
+		else: break;
+	return;
+
+#
+func fillBishopCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
+	var deltaQ = queenCords.x - moveToCords.x;
+	var deltaR = queenCords.y - moveToCords.y;
+	var direction:Vector2i = Vector2i(0,0);
+
+	if(deltaQ > 0):
+		if(deltaR < 0):
+			if(abs(deltaQ) < abs(deltaR)):
+				direction = Vector2i(1,-2);
+			else:
+				direction = Vector2i(2,-1);
+		elif (deltaR > 0):
+			direction = Vector2i(1,1);
+
+	elif (deltaQ < 0):
+		if(deltaR > 0):
+			if(abs(deltaQ) < abs(deltaR)):
+				direction = Vector2i(-1,2);
+			else:
+				direction = Vector2i(-2,1);
+		elif (deltaR < 0):
+			direction = Vector2i(-1,-1);
+		
+	while( true ):
+
+		GameInCheckMoves.append(moveToCords);
+		moveToCords.x += direction.x;
+		moveToCords.y += direction.y;
+
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+				break;
+		else: break;
+	return;
+
+## Count the amount of moves found
+func countMoves(movesList:Dictionary) -> int:
+	var count:int = 0;
+	
+	for piece:Vector2i in movesList.keys():
+		for moveType:String in movesList[piece]:
+			for move:Vector2i in movesList[piece][moveType]:
+				count += 1;
+	
+	return count;
+
+##
+func checkState(cords:Vector2i):
+
+	var pieceType:String = getPieceType(HexBoard[cords.x][cords.y]);
+	var movedPiece = [{ pieceType : [Vector2i(cords)] }];
+	if(isWhiteTurn):
+		movedPiece.insert(0, {});
+	var queenCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]['K'][0];
+
+	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]['K'][0]);
+	
+	findLegalMovesFor(movedPiece);
+	
+	if(checkIfCordsUnderAttack(queenCords, legalMoves)):
+		print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
+		GameInCheckFrom = Vector2i(cords.x, cords.y);
+		GameInCheckMoves.clear();
+		
+		match pieceType:
+			"K":
+				pass; # No Blocking Moves
+			"P", "N":
+				GameInCheckMoves.append(cords);
+			"R":
+				fillRookCheckMoves(queenCords, cords);
+			"B":
+				fillBishopCheckMoves(queenCords, cords);
+			"Q":
+				fillRookCheckMoves(queenCords, cords);
+				fillBishopCheckMoves(queenCords, cords);
+		
+		GameInCheck = true;
+		print("Game In Check Moves: ", GameInCheckMoves);
+
+	swapPlayerTurn();
+
+	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]['K'][0]);
+	print("Blocking Pieces: ", blockingPieces);
+	findLegalMovesFor(activePieces);
+
+	if(countMoves(legalMoves) <= 0):
+		if(GameInCheck):
+			print("CheckMate")
+		else:
+			print("Stale Mate")
+		GameIsOver = true;
+
+	return;
 
 ### 
 ###
@@ -763,9 +937,7 @@ func printBoard(board: Dictionary):
 
 ## Default Game
 func initDefault() -> void:
-	#Debug
-	print("\n -- Chess Engine -- ");
-
+	
 	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
@@ -798,19 +970,21 @@ func initDefault() -> void:
 
 	# print(encodeEnPassantFEN(0,-5));
 	# print(decodeEnPassantFEN("F11"));
+	# print(countMoves(legalMoves));
 
+	return;
 
 ## 
-func makeMove(cords:Vector2i, moveType:String, moveIndex:int) -> void:
+func makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
 	
 	if(GameIsOver):
 		return;
+
 	if(not legalMoves.has(cords)):
 		return;
+
 	resetFlags();
-
-	handleMove(cords, moveType, moveIndex);
-
+	handleMove(cords, moveType, moveIndex, promoteTo);
 
 	return;
 
@@ -820,6 +994,7 @@ func makeMove(cords:Vector2i, moveType:String, moveIndex:int) -> void:
 func _ready():
 
 	initDefault();
+	makeMove(Vector2i(0,1), "Moves", 0, PIECES.ZERO);
 
 	pass
 ###
