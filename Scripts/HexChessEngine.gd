@@ -1,5 +1,11 @@
 extends Node
 
+##TODO:
+# 1 - Starting from a fen string requires that attack boards be created before anybody can go.
+# 2 - Pawn Promotion
+# 3 - Pawn EnPassant Capture
+# 4 - 
+
 ### Constants
 enum PIECES{ ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
 enum SIDES{ BLACK, WHITE };
@@ -22,6 +28,8 @@ const QUEEN_TEST = '6/7/8/9/10/5Q5/10/9/8/7/6 w - 1';
 const KING_TEST = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1';
 	#CheckMate Test:
 const CHECK_IN_ONE = '6/7/8/9/k9/2QK7/10/9/8/7/6 w - 1';
+const CHECK_IN_TWO = '2B3/7/8/9/10/R10/10/9/8/2p4/2k1K1 w - 1';
+const ATTACKING_BOARD_TEST = 'p5/7/8/9/10/k9K/10/9/8/7/5P w - 1';
 ###
 ###
 ### State
@@ -390,12 +398,22 @@ func findMovesForPawn(PawnArray:Array)-> void:
 		if( HexBoard.has(pawn.x-1) && HexBoard[pawn.x-1].has(leftCaptureR)):
 			if (HexBoard[pawn.x-1][leftCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x-1][leftCaptureR], isWhiteTurn) ):
 				legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
+			else:
+				if(EnPassantCordsValid):
+					if(EnPassantCords.x == pawn.x-1 && EnPassantCords.y == leftCaptureR):
+						legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
+						pass;
 			updateAttackBoard(pawn.x-1, leftCaptureR, 1);
 
 		##Right Capture
 		if( HexBoard.has(pawn.x+1) && HexBoard[pawn.x+1].has(rightCaptureR)):
 			if (HexBoard[pawn.x+1][rightCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x+1][rightCaptureR], isWhiteTurn) ):
 				legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
+			else:
+				if(EnPassantCordsValid):
+					if(EnPassantCords.x == pawn.x+1 && EnPassantCords.y == rightCaptureR):
+						legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
+						pass;
 			updateAttackBoard(pawn.x+1, rightCaptureR, 1);
 
 		## Not Efficient FIX LATER
@@ -665,6 +683,7 @@ func checkIfCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 
 ## 
 func updateAttackBoard(q:int, r:int, mod:int) -> void:
+	#print("UPDATE: %d,%d by %d" % [q,r,mod]);
 	if(isWhiteTurn):
 		WhiteAttackBoard[q][r] += mod;
 	else:
@@ -714,8 +733,18 @@ func removeAttacksFrom(cords:Vector2i, id:String) -> void:
 		return;
 	
 	if(id == "P"):
-		for move in legalMoves[cords]['Capture']:
-			updateAttackBoard(move.x,move.y,-1);
+		##FIX
+		var fowardR = cords.y - 1 if isWhiteTurn else cords.y + 1;
+		var leftCaptureR = cords.y if isWhiteTurn else cords.y + 1; 
+		var rightCaptureR = cords.y-1 if isWhiteTurn else cords.y;
+		
+		##Left Capture
+		if( HexBoard.has(cords.x-1) && HexBoard[cords.x-1].has(leftCaptureR)):
+			updateAttackBoard(cords.x-1, leftCaptureR, -1);
+		##Right Capture
+		if( HexBoard.has(cords.x+1) && HexBoard[cords.x+1].has(rightCaptureR)):
+			updateAttackBoard(cords.x+1, rightCaptureR, -1);
+			
 	else:
 		for moveType in legalMoves[cords].keys():
 			for move in legalMoves[cords][moveType]:
@@ -736,13 +765,15 @@ func removeCapturedFromATBoard(pieceType:String, cords:Vector2i):
 	legalMoves.clear();
 	findLegalMovesFor(movedPiece);
 
-	if(pieceType == "P"):
-		for move in legalMoves[cords]['Capture']:
-			updateOpAttackBoard(move.x,move.y,-1);
-	else:
-		for moveType in legalMoves[cords].keys():
-			for move in legalMoves[cords][moveType]:
-				updateOpAttackBoard(move.x,move.y,-1);
+	#if(pieceType == "P"):
+		### FIX
+		#for move in legalMoves[cords]['Capture']:
+			#updateAttackBoard(move.x,move.y,-1);
+	#else:
+		#for moveType in legalMoves[cords].keys():
+			#for move in legalMoves[cords][moveType]:
+				#updateAttackBoard(move.x,move.y,-1);
+	removeAttacksFrom(cords, pieceType);
 	
 	isWhiteTurn = !isWhiteTurn;
 
@@ -774,6 +805,11 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 		'Capture':
 			captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
 			captureValid = true;
+	
+			## ENPASSANT FIX
+			if(pieceType == "P"):
+				if(HexBoard[moveTo.x][moveTo.y] == 0):
+					pass;
 
 			var i:int = 0;
 			for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
@@ -805,7 +841,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 			activePieces[selfColor][pieceType][i] = moveTo;
 			i = activePieces[selfColor][pieceType].size();
 
-	printBoard(HexBoard);
+	#printBoard(HexBoard);
 
 	removeAttacksFrom(cords, getPieceType(pieceVal));
 	checkState(moveTo);
@@ -903,9 +939,6 @@ func checkState(cords:Vector2i):
 	var queenCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]['K'][0];
 
 	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]['K'][0]);
-	
-	# printBoard(WhiteAttackBoard);
-	# printBoard(BlackAttackBoard);
 	legalMoves.clear();
 	findLegalMovesFor(movedPiece);
 	
@@ -943,7 +976,7 @@ func checkState(cords:Vector2i):
 	findLegalMovesFor(activePieces);
 
 	var moveCount = countMoves(legalMoves);
-	print(moveCount);
+	print("Move Count: ", moveCount);
 	if( moveCount <= 0):
 		if(GameInCheck):
 			print("CheckMate")
@@ -1029,7 +1062,7 @@ func printBoard(board: Dictionary):
 ## Default Game
 func _initDefault() -> void:
 	
-	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
+	HexBoard = fillBoardwithFEN(CHECK_IN_TWO);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	# print("CLEAN");
@@ -1085,10 +1118,6 @@ func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES)
 
 	resetFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
-
-	printBoard(WhiteAttackBoard);
-	printBoard(BlackAttackBoard);
-
 
 	#print(activePieces, "\n");
 	#for key in legalMoves.keys():
