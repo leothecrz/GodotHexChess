@@ -289,6 +289,7 @@ func checkForBlockingPiecesFrom(Cords:Vector2i) -> Dictionary:
 						var val = getPieceType(HexBoard[checkingQ][checkingR]);
 						if( (val == "Q") or ((val == "R") if (i == 0) else (val == "B")) ):
 							if(dirBlockingPiece):
+								LegalMoves.append(Vector2i(checkingQ,checkingR));
 								blockingpieces[dirBlockingPiece] = LegalMoves; 
 								break; ## Is a blocking piece
 							else:
@@ -386,19 +387,15 @@ func findMovesForPawn(PawnArray:Array)-> void:
 				legalMoves[pawn]['EnPassant'].append(Vector2i(pawn.x, doubleF));
 
 		##Left Capture
-		if( HexBoard.has(pawn.x-1) && 
-			HexBoard[pawn.x-1].has(leftCaptureR) &&
-				HexBoard[pawn.x-1][leftCaptureR] != 0 &&
-					!isPieceFriendly(HexBoard[pawn.x-1][leftCaptureR], isWhiteTurn) ):
-			legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
+		if( HexBoard.has(pawn.x-1) && HexBoard[pawn.x-1].has(leftCaptureR)):
+			if (HexBoard[pawn.x-1][leftCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x-1][leftCaptureR], isWhiteTurn) ):
+				legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
 			updateAttackBoard(pawn.x-1, leftCaptureR, 1);
 
 		##Right Capture
-		if( HexBoard.has(pawn.x+1) && 
-			HexBoard[pawn.x+1].has(rightCaptureR) &&
-				HexBoard[pawn.x+1][rightCaptureR] != 0 &&
-					!isPieceFriendly(HexBoard[pawn.x+1][rightCaptureR], isWhiteTurn) ):
-			legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
+		if( HexBoard.has(pawn.x+1) && HexBoard[pawn.x+1].has(rightCaptureR)):
+			if (HexBoard[pawn.x+1][rightCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x+1][rightCaptureR], isWhiteTurn) ):
+				legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
 			updateAttackBoard(pawn.x+1, rightCaptureR, 1);
 
 		## Not Efficient FIX LATER
@@ -494,6 +491,7 @@ func findMovesForRook(RookArray:Array) -> void:
 					updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				else:
+					updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				
 				checkingQ += activeVector.x;
@@ -546,6 +544,7 @@ func findMovesForBishop(BishopArray:Array) -> void:
 					updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				else:
+					updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				
 				checkingQ += activeVector.x;
@@ -625,6 +624,8 @@ func findMovesForKing(KingArray:Array) -> void:
 
 				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
 					legalMoves[king]['Capture'].append(Vector2i(checkingQ, checkingR));
+				
+				updateAttackBoard(checkingQ, checkingR, 1);
 		
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
@@ -670,6 +671,14 @@ func updateAttackBoard(q:int, r:int, mod:int) -> void:
 		BlackAttackBoard[q][r] += mod;
 	return;
 
+## 
+func updateOpAttackBoard(q:int, r:int, mod:int) -> void:
+	if(!isWhiteTurn):
+		WhiteAttackBoard[q][r] += mod;
+	else:
+		BlackAttackBoard[q][r] += mod;
+	return;
+
 ##
 func encodeEnPassantFEN(q:int, r:int) -> String:
 	var rStr:int = 6 - r;
@@ -699,15 +708,44 @@ func resetFlags() -> void:
 	return;
 
 ## 
-func removeAttacksFrom(cords:Vector2i) -> void:
+func removeAttacksFrom(cords:Vector2i, id:String) -> void:
 	
 	if(not legalMoves.has(cords)):
 		return;
-
-	for moveType in legalMoves[cords].keys():
-		for move in legalMoves[cords][moveType]:
-			updateAttackBoard(move.x,move.y,-1);
 	
+	if(id == "P"):
+		for move in legalMoves[cords]['Capture']:
+			updateAttackBoard(move.x,move.y,-1);
+	else:
+		for moveType in legalMoves[cords].keys():
+			for move in legalMoves[cords][moveType]:
+				updateAttackBoard(move.x,move.y,-1);
+	
+	return;
+
+##
+func removeCapturedFromATBoard(pieceType:String, cords:Vector2i):
+
+	var movedPiece = [{ pieceType : [Vector2i(cords)] }];
+
+	isWhiteTurn = !isWhiteTurn;
+
+	if(isWhiteTurn):
+		movedPiece.insert(0, {});
+
+	legalMoves.clear();
+	findLegalMovesFor(movedPiece);
+
+	if(pieceType == "P"):
+		for move in legalMoves[cords]['Capture']:
+			updateOpAttackBoard(move.x,move.y,-1);
+	else:
+		for moveType in legalMoves[cords].keys():
+			for move in legalMoves[cords][moveType]:
+				updateOpAttackBoard(move.x,move.y,-1);
+	
+	isWhiteTurn = !isWhiteTurn;
+
 	return;
 
 ##
@@ -719,16 +757,20 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 	var pieceType:String = getPieceType(pieceVal);
 	var moveTo = legalMoves[cords][moveType][moveIndex];
 
+	var moveHistMod = "";
+
 	HexBoard[cords.x][cords.y] = 0;
 	match moveType:
 		'Promote':
 			#TODO
 			pass;
+
 		'Enpassant':
 			EnPassantCords = legalMoves[cords]['Move'][0];
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
 			pass;
+
 		'Capture':
 			captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
 			captureValid = true;
@@ -745,10 +787,17 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 			if(isWhiteTurn): whiteCaptures.append(captureType);
 			else: blackCaptures.append(captureType);
 
+			removeCapturedFromATBoard(captureType, moveTo);
+
+			moveHistMod = "/%s" % captureType;
+
 			pass;
+
 		'Moves':
 			pass;
 	HexBoard[moveTo.x][moveTo.y] = pieceVal;
+
+	moveHistory.append("%d %s %s %s %s" % [turnNumber, pieceType,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
 
 	# Update Piece List
 	for i in range(activePieces[selfColor][pieceType].size()):
@@ -758,7 +807,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 
 	printBoard(HexBoard);
 
-	removeAttacksFrom(cords);
+	removeAttacksFrom(cords, getPieceType(pieceVal));
 	checkState(moveTo);
 
 	return;
@@ -838,6 +887,13 @@ func countMoves(movesList:Dictionary) -> int:
 	return count;
 
 ##
+func resetBoard(attackBoard:Dictionary) -> void:
+	for key in attackBoard.keys():
+		for innerKey in attackBoard[key].keys():
+			attackBoard[key][innerKey]=0;	
+	return;
+
+##
 func checkState(cords:Vector2i):
 
 	var pieceType:String = getPieceType(HexBoard[cords.x][cords.y]);
@@ -848,6 +904,9 @@ func checkState(cords:Vector2i):
 
 	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]['K'][0]);
 	
+	# printBoard(WhiteAttackBoard);
+	# printBoard(BlackAttackBoard);
+	legalMoves.clear();
 	findLegalMovesFor(movedPiece);
 	
 	if(checkIfCordsUnderAttack(queenCords, legalMoves)):
@@ -873,11 +932,19 @@ func checkState(cords:Vector2i):
 
 	swapPlayerTurn();
 
+	if(isWhiteTurn):
+		resetBoard(WhiteAttackBoard);
+	else:
+		resetBoard(BlackAttackBoard);
+
 	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]['K'][0]);
-	print("Blocking Pieces: ", blockingPieces);
+	#print("Blocking Pieces: ", blockingPieces);
+	legalMoves.clear();
 	findLegalMovesFor(activePieces);
 
-	if(countMoves(legalMoves) <= 0):
+	var moveCount = countMoves(legalMoves);
+	print(moveCount);
+	if( moveCount <= 0):
 		if(GameInCheck):
 			print("CheckMate")
 		else:
@@ -918,6 +985,30 @@ func _getIsWhiteTurn() -> bool:
 func _getIsBlackTurn() -> bool:
 	return !isWhiteTurn;
 
+##
+func _getActivePieces() -> Array:
+	return activePieces;
+
+##	
+func _getMoves() -> Dictionary:
+	return legalMoves;
+
+##
+func _getGameInCheck() -> bool:
+	return GameInCheck;
+
+##
+func _getCaptureValid() -> bool:
+	return captureValid;
+
+## 
+func _getCaptureType() -> String:
+	return captureType;
+
+##
+func _getCaptureIndex() -> int:
+	return captureIndex;
+
 ## Print HexBoard UNFINISHED FORMATING
 func printBoard(board: Dictionary):
 	for key in board.keys():
@@ -936,13 +1027,17 @@ func printBoard(board: Dictionary):
 	return;
 
 ## Default Game
-func initDefault() -> void:
+func _initDefault() -> void:
 	
 	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
+	# print("CLEAN");
+	# printBoard(WhiteAttackBoard);
+	# printBoard(BlackAttackBoard);
 	printBoard(HexBoard);
 
+	legalMoves.clear();
 	blackCaptures.clear();
 	whiteCaptures.clear();
 	captureValid = false;
@@ -962,11 +1057,16 @@ func initDefault() -> void:
 	EnPassantCordsValid = false;
 
 	activePieces = findPieces(HexBoard);
-	print(activePieces, "\n");
+	#print(activePieces, "\n");
 
 	findLegalMovesFor(activePieces);
-	for key in legalMoves.keys():
-		print(key, " : ", legalMoves[key]);
+
+	# print("POST");
+	# printBoard(WhiteAttackBoard);
+	# printBoard(BlackAttackBoard);
+
+	#for key in legalMoves.keys():
+	#	print(key, " : ", legalMoves[key]);
 
 	# print(encodeEnPassantFEN(0,-5));
 	# print(decodeEnPassantFEN("F11"));
@@ -975,7 +1075,7 @@ func initDefault() -> void:
 	return;
 
 ## 
-func makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
+func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
 	
 	if(GameIsOver):
 		return;
@@ -986,15 +1086,31 @@ func makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) 
 	resetFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
 
+	printBoard(WhiteAttackBoard);
+	printBoard(BlackAttackBoard);
+
+
+	#print(activePieces, "\n");
+	#for key in legalMoves.keys():
+	#	print(key, " : ", legalMoves[key]);
+
 	return;
+
+##
+func _resign():
+	GameIsOver = true;
+	if(isWhiteTurn):
+		print("Black WINS BY RESIGN");
+	else:
+		print("White WINS BY RESIGN");
+
+	print(moveHistory);
+
+	return
 
 ###
 ###
 ### GODOT Functions 
 func _ready():
-
-	initDefault();
-	makeMove(Vector2i(0,1), "Moves", 0, PIECES.ZERO);
-
 	pass
 ###

@@ -5,12 +5,12 @@ extends Control
 @onready var MoveGUI = $MoveGUI;
 
 @onready var BoardControler = $ColorRect/Central;
-@onready var GameDataNode = $GameState;
+@onready var GameDataNode = $ChessEngine;
 @onready var ChessPiecesNode = $PiecesContainer;
 @onready var LeftPanel = $LeftPanel;
 
 var selectedSide:int;
-var activePieces:Dictionary;
+var activePieces:Array;
 var currentLegalsMoves:Dictionary;
 var boardRotatedForWhite:bool;
 ####
@@ -36,23 +36,26 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 func spawnPieces() -> void:
 	
 	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-	var i:int = 0;
-	for side in activePieces.keys():
+	
+	#var i:int = 0;
+	for i:int in range(activePieces.size()):
+	#for side in activePieces:
 		var j:int = 0;
-		for pieceType in activePieces[side].keys():
-			for piece in activePieces[side][pieceType]:
+		for pieceType in activePieces[i]:
+			for piece in activePieces[i][pieceType]:
 				
 				var cord = piece if boardRotatedForWhite else (piece * -1);
 				var activeScene = preload("res://Scenes/chess_piece.tscn").instantiate();
-				activeScene.initState = [side, pieceType, piece];
+
+				activeScene.initState = [i, pieceType, piece];
 				
 				activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
-				
+				# TODO: FIX SCALE-ING
 				activeScene.scale.x = 0.18;
 				activeScene.scale.y = 0.18;
 				
-				#ChessPiecesNode.add_child(activeScene);
 				ChessPiecesNode.get_child(i).get_child(j).add_child(activeScene);
+
 				activeScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
 				activeScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
 				
@@ -60,52 +63,54 @@ func spawnPieces() -> void:
 				pieceSelectedLockOthers.connect(activeScene._on_Control_LockPiece);
 				pieceUnselectedUnlockOthers.connect(activeScene._on_Control_UnlockPiece);
 			j = j+1;
-		i = i+1;
+
 	return;
 
 #
 func handleMoveCapture() -> void:
-	print(GameDataNode.getCaptureType(), GameDataNode.getCaptureIndex());
+
+	print("Type: ",GameDataNode._getCaptureType(), ". Index: ", GameDataNode._getCaptureIndex());
 	var i:int = 0;
-	if(GameDataNode.getIsWhiteTurn()):
+	if(GameDataNode._getIsWhiteTurn()):
 		i += 1;
 	var j:int = 0;
-	match GameDataNode.getCaptureType():
+	match GameDataNode._getCaptureType():
 		"P": j = 0;
 		"N": j = 1;
 		"R": j = 2;
 		"B": j = 3;
 		"Q": j = 4;
 		"K": j = 5;
-	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode.getCaptureIndex()).queue_free();
+	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex()).queue_free();
 	return;
 
 #
 func handleMakeMove(piece, data) -> void:
 	
-	GameDataNode.makeMove(piece, data[0], data[1], data[2]);
-	activePieces = GameDataNode.getActivePieces()
-	currentLegalsMoves = GameDataNode.getMoves()
+	GameDataNode._makeMove(data[0], data[1], data[2], data[3]);
 	
-	if(GameDataNode.getGameInCheck()):
+	activePieces = GameDataNode._getActivePieces()
+	currentLegalsMoves = GameDataNode._getMoves()
+	
+	if(GameDataNode._getGameInCheck()):
 		if( not LeftPanel.getLabelState() ):
 			LeftPanel.swapLabelState();
 	else:
 		if ( LeftPanel.getLabelState() ):
 			LeftPanel.swapLabelState();
 
-	if(GameDataNode.getCaptureValid()):
+	if(GameDataNode._getCaptureValid()):
 		handleMoveCapture();
 	
-	if(GameDataNode.getIsWhiteTurn()):
-		emit_signal("gameSwitchedSides", "white");
+	if(GameDataNode._getIsWhiteTurn()):
+		emit_signal("gameSwitchedSides", 1);
 	else:
-		emit_signal("gameSwitchedSides", "black");
+		emit_signal("gameSwitchedSides", 0);
 		
 	return;
 
 #
-func handleMovesSpawn(moves:Array, color:Color, key, index):
+func handleMovesSpawn(moves:Array, color:Color, key, cords):
 	
 	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 	
@@ -116,7 +121,8 @@ func handleMovesSpawn(moves:Array, color:Color, key, index):
 		
 		var cord = move if boardRotatedForWhite else (move * -1);
 		
-		activeScene.initializationInformation = [key, index, i, move];
+		activeScene.heldMove = [cords, key, i, 0, move];
+
 		activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
 		activeScene.rotation_degrees = 90;
 		activeScene.scale.x = 0.015;
@@ -130,20 +136,20 @@ func handleMovesSpawn(moves:Array, color:Color, key, index):
 	pass;
 
 #
-func spawnChessMoves(moves:Dictionary, index) -> void:
+func spawnChessMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
 			"Promote":
-				handleMovesSpawn(moves[key], Color(0,255,255,255), key, index);
+				handleMovesSpawn(moves[key], Color(0,255,255,255), key, cords);
 				pass
 			"EnPassant":
-				handleMovesSpawn(moves[key], Color(255,255,0,255), key, index);
+				handleMovesSpawn(moves[key], Color(255,255,0,255), key, cords);
 				pass
 			"Capture":
-				handleMovesSpawn(moves[key], Color(255,0,0,255), key, index);
+				handleMovesSpawn(moves[key], Color(255,0,0,255), key, cords);
 				pass
 			"Moves":
-				handleMovesSpawn(moves[key], Color(0,255,0,255), key, index);
+				handleMovesSpawn(moves[key], Color(0,255,0,255), key, cords);
 				pass
 	return;
 
@@ -166,21 +172,14 @@ func  _chessPiece_OnPieceDeselected(piece:Array, data:Array) -> void:
 #
 func  _chessPiece_OnPieceSelected(piece:Array) -> void:
 	
-	var side = piece[0];
-	var pieceType = piece[1];
 	var pieceCords = piece[2];
-	
-	var pieceArray:Array =  activePieces[side][pieceType];
-	var pos = pieceArray.find(pieceCords);
-	var typeMoves = currentLegalsMoves[pieceType];
-	
+			
 	var thisPiecesMoves = {};
-	for key in typeMoves.keys():
-		thisPiecesMoves[key] = typeMoves[key][pos];
+	for key in currentLegalsMoves[pieceCords].keys():
+		thisPiecesMoves[key] = currentLegalsMoves[pieceCords][key];
 	
-	print("LegalMoves: ", thisPiecesMoves);
-	spawnChessMoves(thisPiecesMoves, pos);
-	
+	#print("LegalMoves: ", thisPiecesMoves);
+	spawnChessMoves(thisPiecesMoves, pieceCords);
 	emit_signal("pieceSelectedLockOthers");
 	
 	return;
@@ -195,21 +194,24 @@ func _newGame_OnButtonPress() -> void:
 
 	var isWhite = (selectedSide == 0);
 	
-	GameDataNode.startDefaultGame(isWhite);
+	GameDataNode._initDefault();
+	
 	BoardControler.checkIfFlipBoard(isWhite);
 	boardRotatedForWhite = isWhite;
 
-	activePieces = GameDataNode.getActivePieces();
-	currentLegalsMoves = GameDataNode.getMoves();
+	activePieces = GameDataNode._getActivePieces();
+	currentLegalsMoves = GameDataNode._getMoves();
 	spawnPieces();
 
-	if(GameDataNode.getIsWhiteTurn()): emit_signal("gameSwitchedSides", "white");
-	else: emit_signal("gameSwitchedSides", "black");
+	if(GameDataNode._getIsWhiteTurn()): emit_signal("gameSwitchedSides", 1);
+	else: emit_signal("gameSwitchedSides", 0);
 
 	return;
 
 # Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
+	
+	GameDataNode._resign();
 	activePieces.clear();
 	currentLegalsMoves.clear();
 	

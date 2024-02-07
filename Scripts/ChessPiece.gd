@@ -45,7 +45,7 @@ func setHextile(newTile):
 func setupSelf() -> void:
 	var x;
 	var y = 0;
-	if(initState[0] == 'black'):
+	if(initState[0] == 0):
 		y += 320;
 	
 	match initState[1]:
@@ -114,7 +114,6 @@ func _input(event) -> void:
 			 textureSize.y);
 			
 			if pieceHitbox.has_point(eventPosition):
-				var pieceCords = initState[2];
 				status = STATES.CLICKED;
 				emit_signal("pieceSelected", initState);
 				collisionNode.monitoring = true;
@@ -124,13 +123,13 @@ func _input(event) -> void:
 		elif status == STATES.DRAGGING and not event.is_pressed():
 			print(hexTile);
 			if(hexTile):
-				print("GOOD")
+				print("\nSuccess\n")
 				moveTo(hexTile.transform.origin);
-				initState[2] = hexTile.initializationInformation[3];
-				emit_signal("pieceDeselected", initState, hexTile.initializationInformation);
+				initState[2] = hexTile.heldMove[4];
+				emit_signal("pieceDeselected", initState, hexTile.heldMove);
 				
 			else:
-				print("BAD")
+				print("\nCanceled\n")
 				moveTo(preDragPosition);
 				emit_signal("pieceDeselected", initState, []);
 				
