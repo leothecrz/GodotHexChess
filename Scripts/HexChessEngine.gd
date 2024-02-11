@@ -4,7 +4,13 @@ extends Node
 # 1 - Starting from a fen string requires that attack boards be created before anybody can go.
 # 2 - Pawn Promotion
 # 3 - Pawn EnPassant Capture
-# 4 - 
+# 4 - Move Undo
+# # - Captures that expose king to attack should not be allowed - NOT POSSIBLE - NOT A PROBLEM
+# 6 - Add test
+# 7 - Random AI
+# 8 - MinMax AI
+# 9 - Neural Network AI
+# 10 - 
 
 ### Constants
 enum PIECES{ ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
@@ -1062,12 +1068,9 @@ func printBoard(board: Dictionary):
 ## Default Game
 func _initDefault() -> void:
 	
-	HexBoard = fillBoardwithFEN(CHECK_IN_TWO);
+	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
-	# print("CLEAN");
-	# printBoard(WhiteAttackBoard);
-	# printBoard(BlackAttackBoard);
 	printBoard(HexBoard);
 
 	legalMoves.clear();
@@ -1076,7 +1079,6 @@ func _initDefault() -> void:
 	captureValid = false;
 	blockingPieces.clear();
 
-	## Will be moved to fen fill.
 	isWhiteTurn = true;
 	turnNumber = 1;
 	
@@ -1090,21 +1092,7 @@ func _initDefault() -> void:
 	EnPassantCordsValid = false;
 
 	activePieces = findPieces(HexBoard);
-	#print(activePieces, "\n");
-
 	findLegalMovesFor(activePieces);
-
-	# print("POST");
-	# printBoard(WhiteAttackBoard);
-	# printBoard(BlackAttackBoard);
-
-	#for key in legalMoves.keys():
-	#	print(key, " : ", legalMoves[key]);
-
-	# print(encodeEnPassantFEN(0,-5));
-	# print(decodeEnPassantFEN("F11"));
-	# print(countMoves(legalMoves));
-
 	return;
 
 ## 

@@ -1,25 +1,11 @@
-[gd_scene load_steps=11 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=9 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
-[ext_resource type="Texture2D" uid="uid://88v5jwhhko4j" path="res://Images/Chess Colors.png" id="3_i8co5"]
 [ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_oqfl2"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scenes/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/HexChessEngine.gd" id="7_uqrw5"]
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jedmp"]
-texture = ExtResource("3_i8co5")
-margins = Vector2i(33, 23)
-texture_region_size = Vector2i(51, 55)
-0:0/next_alternative_id = 4
-0:0/0 = 0
-0:0/1 = 1
-0:0/1/modulate = Color(0.478431, 0, 0.196078, 1)
-0:0/2 = 2
-0:0/2/modulate = Color(1, 0.392157, 0.388235, 1)
-0:0/3 = 3
-0:0/3/modulate = Color(1, 0.635294, 0.690196, 1)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_poe7d"]
 texture = ExtResource("4_p44o5")
@@ -27,18 +13,17 @@ texture_region_size = Vector2i(65, 57)
 0:0/next_alternative_id = 5
 0:0/0 = 0
 0:0/1 = 1
-0:0/1/modulate = Color(0.266667, 0.247059, 0.501961, 1)
+0:0/1/modulate = Color(0.411765, 0.0862745, 0.0196078, 1)
 0:0/2 = 2
-0:0/2/modulate = Color(0.0313726, 0.0431373, 0.376471, 1)
+0:0/2/modulate = Color(0.741176, 0.00784314, 0.227451, 1)
 0:0/3 = 3
-0:0/3/modulate = Color(0.129412, 0.901961, 1, 1)
+0:0/3/modulate = Color(0.996078, 0.709804, 0.529412, 1)
 
 [sub_resource type="TileSet" id="TileSet_7e04f"]
 tile_shape = 3
 tile_layout = 1
 tile_offset_axis = 1
 tile_size = Vector2i(65, 57)
-sources/1 = SubResource("TileSetAtlasSource_jedmp")
 sources/4 = SubResource("TileSetAtlasSource_poe7d")
 
 [node name="Control" type="Control"]
