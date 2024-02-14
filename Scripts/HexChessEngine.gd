@@ -374,6 +374,32 @@ func isWhitePawnStar(cords:Vector2i) ->bool:
 			
 	return false;
 
+##
+func isWhitePawnPromotion(cords:Vector2i)-> bool:
+	var r:int = 0;
+	for q:int in range(-5,5):
+		
+		if (cords.x == q) && (cords.y == r):
+			return true;
+		
+		if(r > -5):
+			r -= 1;
+		
+	return false;
+
+##
+func isBlackPawnPromotion(cords:Vector2i) -> bool:
+	var r:int = 5;
+	for q:int in range(-5,5):
+		
+		if (cords.x == q) && (cords.y == r):
+			return true;
+		
+		if(q >= 0):
+			r -= 1;
+		
+	return false;
+
 ## Calculate Pawn Moves (TODO: Unfinished Promote)
 func findMovesForPawn(PawnArray:Array)-> void:
 	
@@ -391,8 +417,11 @@ func findMovesForPawn(PawnArray:Array)-> void:
 		
 		##Foward Move
 		if (HexBoard[pawn.x].has(fowardR) && HexBoard[pawn.x][fowardR] == 0):
-			legalMoves[pawn]['Moves'].append(Vector2i(pawn.x, fowardR));
-			boolCanGoFoward = true;
+			if ( isWhitePawnPromotion(Vector2i(pawn.x,fowardR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x,fowardR)) ) :
+				legalMoves[pawn]['Promote'].append(Vector2i(pawn.x, fowardR));
+			else:
+				legalMoves[pawn]['Moves'].append(Vector2i(pawn.x, fowardR));
+				boolCanGoFoward = true;
 		
 		##Double Move From Start
 		if( boolCanGoFoward && ( isWhitePawnStar(pawn) if (isWhiteTurn) else isBlackPawnStart(pawn) ) ):
@@ -403,7 +432,10 @@ func findMovesForPawn(PawnArray:Array)-> void:
 		##Left Capture
 		if( HexBoard.has(pawn.x-1) && HexBoard[pawn.x-1].has(leftCaptureR)):
 			if (HexBoard[pawn.x-1][leftCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x-1][leftCaptureR], isWhiteTurn) ):
-				legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
+				if ( isWhitePawnPromotion(Vector2i(pawn.x-1,leftCaptureR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x-1,leftCaptureR)) ) :
+					legalMoves[pawn]['Promote'].append(Vector2i(pawn.x-1, leftCaptureR));
+				else:
+					legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
 			else:
 				if(EnPassantCordsValid):
 					if(EnPassantCords.x == pawn.x-1 && EnPassantCords.y == leftCaptureR):
@@ -414,11 +446,14 @@ func findMovesForPawn(PawnArray:Array)-> void:
 		##Right Capture
 		if( HexBoard.has(pawn.x+1) && HexBoard[pawn.x+1].has(rightCaptureR)):
 			if (HexBoard[pawn.x+1][rightCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x+1][rightCaptureR], isWhiteTurn) ):
-				legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
+				if ( isWhitePawnPromotion(Vector2i(pawn.x+1,rightCaptureR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x+1,rightCaptureR)) ) :
+					legalMoves[pawn]['Promote'].append(Vector2i(pawn.x+1, rightCaptureR));
+				else:
+					legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
 			else:
 				if(EnPassantCordsValid):
 					if(EnPassantCords.x == pawn.x+1 && EnPassantCords.y == rightCaptureR):
-						legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
+						legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
 						pass;
 			updateAttackBoard(pawn.x+1, rightCaptureR, 1);
 
@@ -802,8 +837,9 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 			#TODO
 			pass;
 
-		'Enpassant':
-			EnPassantCords = legalMoves[cords]['Move'][0];
+		'EnPassant':
+			EnPassantCords = legalMoves[cords]['Moves'][0];
+			print("EPCords: ", EnPassantCords);
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
 			pass;
