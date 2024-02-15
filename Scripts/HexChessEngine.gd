@@ -851,7 +851,15 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 			## ENPASSANT FIX
 			if(pieceType == "P"):
 				if(HexBoard[moveTo.x][moveTo.y] == 0):
-					pass;
+					
+					if(isWhiteTurn):
+						moveTo.y += 1;
+					else:
+						moveTo.y -= 1;
+					
+					print("EFix: ", moveTo);
+					print(EnPassantTarget);
+					captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
 
 			var i:int = 0;
 			for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
@@ -860,6 +868,15 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 					break;
 				i = i+1;
 			activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType].remove_at(i);
+
+			## ENPASSANT FIX
+			if(pieceType == "P"):
+				if(HexBoard[moveTo.x][moveTo.y] == 0):
+					
+					if(isWhiteTurn):
+						moveTo.y -= 1;
+					else:
+						moveTo.y += 1;
 
 			#Add To Captures
 			if(isWhiteTurn): whiteCaptures.append(captureType);
