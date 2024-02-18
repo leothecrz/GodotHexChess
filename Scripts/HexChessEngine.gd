@@ -849,17 +849,11 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 			captureValid = true;
 	
 			## ENPASSANT FIX
-			if(pieceType == "P"):
-				if(HexBoard[moveTo.x][moveTo.y] == 0):
-					
-					if(isWhiteTurn):
-						moveTo.y += 1;
-					else:
-						moveTo.y -= 1;
-					
-					print("EFix: ", moveTo);
-					print(EnPassantTarget);
-					captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
+			var revertEnPassant:bool = false;
+			if(pieceType == "P" && HexBoard[moveTo.x][moveTo.y] == 0):
+				moveTo.y += 1 if isWhiteTurn else -1;
+				captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
+				revertEnPassant = true;
 
 			var i:int = 0;
 			for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
@@ -869,20 +863,17 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 				i = i+1;
 			activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType].remove_at(i);
 
+			removeCapturedFromATBoard(captureType, moveTo);
+
 			## ENPASSANT FIX
-			if(pieceType == "P"):
-				if(HexBoard[moveTo.x][moveTo.y] == 0):
-					
-					if(isWhiteTurn):
-						moveTo.y -= 1;
-					else:
-						moveTo.y += 1;
+			if(revertEnPassant):
+				moveTo.y += -1 if isWhiteTurn else 1;
 
 			#Add To Captures
 			if(isWhiteTurn): whiteCaptures.append(captureType);
 			else: blackCaptures.append(captureType);
 
-			removeCapturedFromATBoard(captureType, moveTo);
+
 
 			moveHistMod = "/%s" % captureType;
 
@@ -892,7 +883,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 			pass;
 	HexBoard[moveTo.x][moveTo.y] = pieceVal;
 
-	moveHistory.append("%d %s %s %s %s" % [turnNumber, pieceType,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
+	moveHistory.append("%s %s %s %s" % [pieceType,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
 
 	# Update Piece List
 	for i in range(activePieces[selfColor][pieceType].size()):
@@ -1068,6 +1059,25 @@ func differenceOfTwoArrays(ARR:Array, ARR1:Array):
 ###
 ###
 ### API INTERACTIONS
+
+##
+func _undoLastMove() -> void:
+	
+	if(moveHistory.size() < 1):
+		print("No move history");
+		return;
+	
+	turnNumber -= 1;
+	var currentMove = moveHistory.pop_back();
+	var splits = currentMove.split(" ");
+	#moveHistory.append("%s %s %s %s" % [pieceType,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
+	var pieceVal = getPieceInt(splits[0], !isWhiteTurn);
+	var newTo = decodeEnPassantFEN(splits[1]);
+	var newFrom = decodeEnPassantFEN(splits[2]);
+	
+	
+	
+	return;
 
 ##
 func _getIsWhiteTurn() -> bool:

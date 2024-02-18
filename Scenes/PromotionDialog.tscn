@@ -1,0 +1,87 @@
+[gd_scene load_steps=2 format=3 uid="uid://dcswr2x8v2pmq"]
+
+[ext_resource type="ButtonGroup" uid="uid://dnhog44arg4nm" path="res://ButtonGroups/PromotionDialog.tres" id="1_16i12"]
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 533.0
+offset_bottom = 300.0
+color = Color(0.329412, 0.329412, 0.329412, 1)
+
+[node name="CancelButton" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 88.5
+offset_top = -70.0
+offset_right = 228.5
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "ACCEPT"
+
+[node name="AcceptButton" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -231.5
+offset_top = -70.0
+offset_right = -91.5
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "CANCEL"
+
+[node name="Control" type="Control" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="KnightButton" type="CheckButton" parent="ColorRect/Control"]
+offset_left = -200.0
+offset_top = 100.0
+offset_right = -156.0
+offset_bottom = 124.0
+button_group = ExtResource("1_16i12")
+
+[node name="RookButton" type="CheckButton" parent="ColorRect/Control"]
+layout_mode = 0
+offset_left = -75.0
+offset_top = 100.0
+offset_right = -31.0
+offset_bottom = 124.0
+button_group = ExtResource("1_16i12")
+
+[node name="BishopButton" type="CheckButton" parent="ColorRect/Control"]
+offset_left = 75.0
+offset_top = 100.0
+offset_right = 119.0
+offset_bottom = 124.0
+button_group = ExtResource("1_16i12")
+
+[node name="QueenButton" type="CheckButton" parent="ColorRect/Control"]
+offset_left = 200.0
+offset_top = 100.0
+offset_right = 244.0
+offset_bottom = 124.0
+button_pressed = true
+button_group = ExtResource("1_16i12")

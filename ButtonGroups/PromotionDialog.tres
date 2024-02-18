@@ -1,0 +1,5 @@
+[gd_resource type="ButtonGroup" format=3 uid="uid://dnhog44arg4nm"]
+
+[resource]
+resource_name = "PromotionSelection"
+allow_unpress = true
