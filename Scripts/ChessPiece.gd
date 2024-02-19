@@ -6,15 +6,21 @@ extends Node2D
 ####
 
 #### Signals
-signal pieceSelected(data:Array);
-signal pieceDeselected(data:Array);
+signal pieceSelected(SIDE:int, TYPE:String, CORDS:Vector2i);
+signal pieceDeselected(SIDE:int, TYPE:String, CORDS:Vector2i, MOVE);
 ####
 
 #### State
 var locked = true;
 var anotherSelected = false;
+
 var chessTexture:AtlasTexture = preload("res://Textures/chessPiece.tres");
-var initState:Array;
+
+var isSetup:bool;
+var side:int;
+var pieceType:String;
+var pieceCords:Vector2i;
+
 	# Click and drag
 enum STATES 
 {
@@ -45,10 +51,10 @@ func setHextile(newTile):
 func setupSelf() -> void:
 	var x;
 	var y = 0;
-	if(initState[0] == 0):
+	if(side == 0):
 		y += 320;
 	
-	match initState[1]:
+	match pieceType:
 		"K":
 			x =  0;
 		"Q":
@@ -82,7 +88,7 @@ func __ready() -> void:
 #### GODOT Functions
 # Called when the node enters the scene tree for the first time.
 func _ready() ->void:
-	if(initState):
+	if(isSetup):
 		__ready();
 	else:
 		queue_free();
@@ -90,7 +96,7 @@ func _ready() ->void:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta) -> void:
-	if status == STATES.DRAGGING:
+	if (status == STATES.DRAGGING):
 		global_position = mousePos + offset;
 	return;
 
@@ -115,7 +121,7 @@ func _input(event) -> void:
 			
 			if pieceHitbox.has_point(eventPosition):
 				status = STATES.CLICKED;
-				emit_signal("pieceSelected", initState);
+				emit_signal("pieceSelected", side, pieceType, pieceCords);
 				collisionNode.monitoring = true;
 				offset = currentPiecePosition - eventPosition;
 				preDragPosition = global_position;
@@ -125,13 +131,14 @@ func _input(event) -> void:
 			if(hexTile):
 				print("\nSuccess\n")
 				moveTo(hexTile.transform.origin);
-				initState[2] = hexTile.heldMove[4];
-				emit_signal("pieceDeselected", initState, hexTile.heldMove);
+				
+				pieceCords = hexTile.hexMove;
+				emit_signal("pieceDeselected", hexTile.hexCords, hexTile.hexKey, hexTile.hexIndex);
 				
 			else:
 				print("\nCanceled\n")
 				moveTo(preDragPosition);
-				emit_signal("pieceDeselected", initState, []);
+				emit_signal("pieceDeselected", Vector2i(), "", -1);
 				
 			status = STATES.UNSET;
 			preDragPosition = Vector2();
@@ -151,14 +158,13 @@ func _on_area_2d_area_exited(area:Area2D):
 
 # Called when Layer 1 collides with hextile area
 func _on_area_2d_area_entered(area:Area2D):
-	
 	setHextile(area.get_parent());
 	hexTile.highlight();
 	return;
 
 # Called when a move is submitted and active pieces need to be swapped.
 func _on_Control_GameSwitchedSides(newSide):
-	var mySide = initState[0];
+	var mySide = side;
 	locked = false if (newSide == mySide) else true;
 	
 	if locked:

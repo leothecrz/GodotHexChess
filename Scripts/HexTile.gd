@@ -4,7 +4,13 @@ extends Node2D
 ###
 ###
 ### STATE
-var heldMove:Array;
+
+var isSetup:bool;
+var hexCords:Vector2i;
+var hexKey:String;
+var hexIndex:int;
+var hexMove:Vector2i;
+
 var defColor:Color;
 ###
 ###
@@ -29,7 +35,7 @@ func __ready() -> void:
 ### GODOT Fucntions
 func _ready():
 	
-	if(heldMove):
+	if(isSetup):
 		__ready();
 	else:
 		queue_free();

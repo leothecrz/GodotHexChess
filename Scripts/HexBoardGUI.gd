@@ -47,9 +47,13 @@ func spawnPieces() -> void:
 				var cord = piece if boardRotatedForWhite else (piece * -1);
 				var activeScene = preload("res://Scenes/chess_piece.tscn").instantiate();
 
-				activeScene.initState = [i, pieceType, piece];
+				activeScene.side = i;
+				activeScene.pieceType = pieceType;
+				activeScene.pieceCords = piece;
+				activeScene.isSetup = true;
 				
 				activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
+				
 				# TODO: FIX SCALE-ING
 				activeScene.scale.x = 0.18;
 				activeScene.scale.y = 0.18;
@@ -84,10 +88,31 @@ func handleMoveCapture() -> void:
 	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex()).queue_free();
 	return;
 
-#
-func handleMakeMove(piece, data) -> void:
-	
-	GameDataNode._makeMove(data[0], data[1], data[2], data[3]);
+##
+func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
+	handleMakeMove(cords, key, index, pTo, true);
+	disconnect("promotionAccepted", promotionInterupt);
+	get_child(get_child_count() - 1).queue_free();
+	return;
+
+##
+#func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECES) -> void:
+func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:int=0, passInterupt=false) -> void:
+
+	if(moveType == 'Promote' and not passInterupt):
+		var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
+
+		dialog.cords = cords;
+		dialog.key = moveType;
+		dialog.index = moveIndex;
+
+		dialog.promotionAccepted.connect(promotionInterupt);
+		dialog.z_index = 1;
+		add_child(dialog);
+		
+		return
+
+	GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	
 	activePieces = GameDataNode._getActivePieces()
 	currentLegalsMoves = GameDataNode._getMoves()
@@ -118,10 +143,13 @@ func handleMovesSpawn(moves:Array, color:Color, key, cords):
 		var move = moves[i]
 		
 		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
-		
 		var cord = move if boardRotatedForWhite else (move * -1);
 		
-		activeScene.heldMove = [cords, key, i, 0, move];
+		activeScene.hexCords = cords;
+		activeScene.hexKey = key;
+		activeScene.hexIndex = i;
+		activeScene.hexMove = move;
+		activeScene.isSetup = true;
 
 		activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
 		activeScene.rotation_degrees = 90;
@@ -154,33 +182,29 @@ func spawnChessMoves(moves:Dictionary, cords) -> void:
 	return;
 
 #
-func  _chessPiece_OnPieceDeselected(piece:Array, data:Array) -> void:
+func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> void:
 	
-	print("Piece: ",piece);
-	print("Hex Data: ", data);
-	
-	if (data.size() > 0):
-		handleMakeMove(piece[1], data);
+	if(index >= 0):
+		handleMakeMove(cords, key, index);
 
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
 		node.queue_free();
 	
-	emit_signal("pieceUnselectedUnlockOthers");	
+	emit_signal("pieceUnselectedUnlockOthers");
+	
 	return;
 
 #
-func  _chessPiece_OnPieceSelected(piece:Array) -> void:
+func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:String, CORDS:Vector2i) -> void:
 	
-	var pieceCords = piece[2];
-			
-	var thisPiecesMoves = {};
-	for key in currentLegalsMoves[pieceCords].keys():
-		thisPiecesMoves[key] = currentLegalsMoves[pieceCords][key];
-	
-	#print("LegalMoves: ", thisPiecesMoves);
-	spawnChessMoves(thisPiecesMoves, pieceCords);
 	emit_signal("pieceSelectedLockOthers");
+	
+	var thisPiecesMoves = {};
+	for key in currentLegalsMoves[CORDS].keys():
+		thisPiecesMoves[key] = currentLegalsMoves[CORDS][key];
+		
+	spawnChessMoves(thisPiecesMoves, CORDS);
 	
 	return;
 

@@ -1,11 +1,10 @@
-[gd_scene load_steps=10 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=9 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
 [ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_oqfl2"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
-[ext_resource type="Script" path="res://Scenes/LeftPanel.gd" id="5_ermre"]
-[ext_resource type="PackedScene" uid="uid://dcswr2x8v2pmq" path="res://Scenes/PromotionDialog.tscn" id="7_0mp6m"]
+[ext_resource type="Script" path="res://Scripts/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/HexChessEngine.gd" id="7_uqrw5"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_poe7d"]
@@ -265,13 +264,6 @@ offset_bottom = 40.0
 
 [node name="ChessEngine" type="Node" parent="."]
 script = ExtResource("7_uqrw5")
-
-[node name="Control" parent="." instance=ExtResource("7_0mp6m")]
-layout_mode = 1
-offset_left = 317.0
-offset_top = 192.0
-offset_right = 317.0
-offset_bottom = 192.0
 
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]
