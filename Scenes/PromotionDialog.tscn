@@ -36,6 +36,7 @@ grow_vertical = 2
 script = ExtResource("1_6v1g2")
 
 [node name="TouchBarrier" type="ColorRect" parent="."]
+layout_mode = 0
 offset_right = 1152.0
 offset_bottom = 648.0
 color = Color(0.329412, 0.329412, 0.329412, 0)

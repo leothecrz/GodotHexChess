@@ -821,7 +821,38 @@ func removeCapturedFromATBoard(pieceType:String, cords:Vector2i):
 	return;
 
 ##
-func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECES) -> void:
+func handleMoveCapture(moveTo, pieceType) -> void:
+	captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
+	captureValid = true;
+
+	## ENPASSANT FIX
+	var revertEnPassant:bool = false;
+	if(pieceType == "P" && HexBoard[moveTo.x][moveTo.y] == 0):
+		moveTo.y += 1 if isWhiteTurn else -1;
+		captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
+		revertEnPassant = true;
+
+	var i:int = 0;
+	for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
+		if(moveTo == pieceCords):
+			captureIndex = i;
+			break;
+		i = i+1;
+	activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType].remove_at(i);
+
+	removeCapturedFromATBoard(captureType, moveTo);
+
+	## ENPASSANT FIX
+	if(revertEnPassant):
+		moveTo.y += -1 if isWhiteTurn else 1;
+
+	#Add To Captures
+	if(isWhiteTurn): whiteCaptures.append(captureType);
+	else: blackCaptures.append(captureType);
+	return;
+
+##
+func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
 
 	var pieceVal:int = HexBoard[cords.x][cords.y] 
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
@@ -834,7 +865,21 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 	HexBoard[cords.x][cords.y] = 0;
 	match moveType:
 		'Promote':
-			#TODO
+									
+			if(moveTo.y != cords.y):
+				handleMoveCapture(moveTo, pieceType);
+				moveHistMod = "/%s" % captureType;
+			
+			for i in range(activePieces[selfColor][pieceType].size()):
+				if (activePieces[selfColor][pieceType][i] == cords):
+					activePieces[selfColor][pieceType].remove_at(i);
+					i = activePieces[selfColor][pieceType].size();
+			
+			moveHistMod = moveHistMod + (" +%s" % pieceType);
+			pieceType = getPieceType(promoteTo);
+			activePieces[selfColor][pieceType].append(moveTo);
+			pieceVal = promoteTo;
+			
 			pass;
 
 		'EnPassant':
@@ -845,36 +890,8 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECE
 			pass;
 
 		'Capture':
-			captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
-			captureValid = true;
-	
-			## ENPASSANT FIX
-			var revertEnPassant:bool = false;
-			if(pieceType == "P" && HexBoard[moveTo.x][moveTo.y] == 0):
-				moveTo.y += 1 if isWhiteTurn else -1;
-				captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
-				revertEnPassant = true;
-
-			var i:int = 0;
-			for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
-				if(moveTo == pieceCords):
-					captureIndex = i;
-					break;
-				i = i+1;
-			activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType].remove_at(i);
-
-			removeCapturedFromATBoard(captureType, moveTo);
-
-			## ENPASSANT FIX
-			if(revertEnPassant):
-				moveTo.y += -1 if isWhiteTurn else 1;
-
-			#Add To Captures
-			if(isWhiteTurn): whiteCaptures.append(captureType);
-			else: blackCaptures.append(captureType);
-
-
-
+			
+			handleMoveCapture(moveTo, pieceType);
 			moveHistMod = "/%s" % captureType;
 
 			pass;

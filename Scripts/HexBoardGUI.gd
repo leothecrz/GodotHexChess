@@ -1,6 +1,7 @@
 extends Control
 
 #### State
+@onready var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @onready var offset = 35;
 @onready var MoveGUI = $MoveGUI;
 
@@ -32,10 +33,33 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 	
 	return Vector2(x, y);
 
+##
+func spawnPiecesSubRoutine(side, typeindex, pieceType, piece, cords) -> void:
+	var activeScene = preload("res://Scenes/chess_piece.tscn").instantiate();
+
+	activeScene.side = side;
+	activeScene.pieceType = pieceType;
+	activeScene.pieceCords = piece;
+	activeScene.isSetup = true;
+	
+	activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cords));
+	
+	# TODO: FIX SCALE-ING
+	activeScene.scale.x = 0.18;
+	activeScene.scale.y = 0.18;
+	
+	ChessPiecesNode.get_child(side).get_child(typeindex).add_child(activeScene);
+
+	activeScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
+	activeScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
+	
+	gameSwitchedSides.connect(activeScene._on_Control_GameSwitchedSides);
+	pieceSelectedLockOthers.connect(activeScene._on_Control_LockPiece);
+	pieceUnselectedUnlockOthers.connect(activeScene._on_Control_UnlockPiece);
+	return;
+
 # Spawn all the pieces in 'activePieces' at there positions.
 func spawnPieces() -> void:
-	
-	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 	
 	#var i:int = 0;
 	for i:int in range(activePieces.size()):
@@ -43,29 +67,9 @@ func spawnPieces() -> void:
 		var j:int = 0;
 		for pieceType in activePieces[i]:
 			for piece in activePieces[i][pieceType]:
-				
 				var cord = piece if boardRotatedForWhite else (piece * -1);
-				var activeScene = preload("res://Scenes/chess_piece.tscn").instantiate();
-
-				activeScene.side = i;
-				activeScene.pieceType = pieceType;
-				activeScene.pieceCords = piece;
-				activeScene.isSetup = true;
+				spawnPiecesSubRoutine(i, j, pieceType, piece, cord);
 				
-				activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
-				
-				# TODO: FIX SCALE-ING
-				activeScene.scale.x = 0.18;
-				activeScene.scale.y = 0.18;
-				
-				ChessPiecesNode.get_child(i).get_child(j).add_child(activeScene);
-
-				activeScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
-				activeScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
-				
-				gameSwitchedSides.connect(activeScene._on_Control_GameSwitchedSides);
-				pieceSelectedLockOthers.connect(activeScene._on_Control_LockPiece);
-				pieceUnselectedUnlockOthers.connect(activeScene._on_Control_UnlockPiece);
 			j = j+1;
 
 	return;
@@ -90,6 +94,21 @@ func handleMoveCapture() -> void:
 
 ##
 func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
+	
+	## SWAP CHESS PIECE FROM PAWN TO PTO
+	var ref:;
+	var i:int = 0;
+	if(GameDataNode._getIsWhiteTurn()):
+		i += 1;
+		
+	for pawnIndex in range( activePieces[i]["P"].size() ):
+		if (activePieces[i]["P"][pawnIndex] == cords):
+			ref = ChessPiecesNode.get_child(i).get_child(0).get_child(pawnIndex);
+			pawnIndex = activePieces[i]["P"].size();
+	
+	spawnPiecesSubRoutine(ref.side, ref.pieceType, 0, ref.pieceCords, ref.pieceCords * 1 if boardRotatedForWhite else -1);
+	ref.queue_free();
+	
 	handleMakeMove(cords, key, index, pTo, true);
 	disconnect("promotionAccepted", promotionInterupt);
 	get_child(get_child_count() - 1).queue_free();
@@ -102,12 +121,12 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 	if(moveType == 'Promote' and not passInterupt):
 		var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
 
+		dialog.z_index = 1; #place on foreground
 		dialog.cords = cords;
 		dialog.key = moveType;
 		dialog.index = moveIndex;
+		dialog.promotionAccepted.connect(promotionInterupt); # signal connect
 
-		dialog.promotionAccepted.connect(promotionInterupt);
-		dialog.z_index = 1;
 		add_child(dialog);
 		
 		return
