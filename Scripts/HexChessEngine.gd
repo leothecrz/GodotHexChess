@@ -854,7 +854,8 @@ func handleMoveCapture(moveTo, pieceType) -> void:
 ##
 func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
 
-	var pieceVal:int = HexBoard[cords.x][cords.y] 
+	var pieceVal:int = HexBoard[cords.x][cords.y]
+	var previousPieceVal = pieceVal;
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
 	
 	var pieceType:String = getPieceType(pieceVal);
@@ -866,14 +867,14 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 	match moveType:
 		'Promote':
 									
-			if(moveTo.y != cords.y):
+			if(moveTo.x != cords.x):
 				handleMoveCapture(moveTo, pieceType);
 				moveHistMod = "/%s" % captureType;
 			
 			for i in range(activePieces[selfColor][pieceType].size()):
 				if (activePieces[selfColor][pieceType][i] == cords):
 					activePieces[selfColor][pieceType].remove_at(i);
-					i = activePieces[selfColor][pieceType].size();
+					break;
 			
 			moveHistMod = moveHistMod + (" +%s" % pieceType);
 			pieceType = getPieceType(promoteTo);
@@ -906,11 +907,11 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 	for i in range(activePieces[selfColor][pieceType].size()):
 		if (activePieces[selfColor][pieceType][i] == cords):
 			activePieces[selfColor][pieceType][i] = moveTo;
-			i = activePieces[selfColor][pieceType].size();
+			break
 
-	#printBoard(HexBoard);
+	printBoard(HexBoard);
 
-	removeAttacksFrom(cords, getPieceType(pieceVal));
+	removeAttacksFrom(cords, getPieceType(previousPieceVal));
 	checkState(moveTo);
 
 	return;

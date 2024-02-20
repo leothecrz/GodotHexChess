@@ -13,7 +13,9 @@ extends Control
 var selectedSide:int;
 var activePieces:Array;
 var currentLegalsMoves:Dictionary;
+
 var boardRotatedForWhite:bool;
+
 ####
 
 ####Signals
@@ -68,6 +70,7 @@ func spawnPieces() -> void:
 		for pieceType in activePieces[i]:
 			for piece in activePieces[i][pieceType]:
 				var cord = piece if boardRotatedForWhite else (piece * -1);
+				print("SP: ", pieceType);
 				spawnPiecesSubRoutine(i, j, pieceType, piece, cord);
 				
 			j = j+1;
@@ -104,12 +107,13 @@ func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
 	for pawnIndex in range( activePieces[i]["P"].size() ):
 		if (activePieces[i]["P"][pawnIndex] == cords):
 			ref = ChessPiecesNode.get_child(i).get_child(0).get_child(pawnIndex);
-			pawnIndex = activePieces[i]["P"].size();
-	
-	spawnPiecesSubRoutine(ref.side, ref.pieceType, 0, ref.pieceCords, ref.pieceCords * 1 if boardRotatedForWhite else -1);
+			break;
+	######### FIX
+	spawnPiecesSubRoutine(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords, ref.pieceCords * 1 if boardRotatedForWhite else -1);
 	ref.queue_free();
 	
 	handleMakeMove(cords, key, index, pTo, true);
+	emit_signal("pieceUnselectedUnlockOthers");
 	disconnect("promotionAccepted", promotionInterupt);
 	get_child(get_child_count() - 1).queue_free();
 	return;
@@ -210,7 +214,8 @@ func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> vo
 		MoveGUI.remove_child(node);
 		node.queue_free();
 	
-	emit_signal("pieceUnselectedUnlockOthers");
+	if(key != "Promote"):
+		emit_signal("pieceUnselectedUnlockOthers");
 	
 	return;
 
