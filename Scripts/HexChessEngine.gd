@@ -1017,15 +1017,16 @@ func resetBoard(attackBoard:Dictionary) -> void:
 func checkState(cords:Vector2i):
 
 	var pieceType:String = getPieceType(HexBoard[cords.x][cords.y]);
+	
 	var movedPiece = [{ pieceType : [Vector2i(cords)] }];
 	if(isWhiteTurn):
 		movedPiece.insert(0, {});
+		
 	var queenCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]['K'][0];
 
 	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]['K'][0]);
 	legalMoves.clear();
 	findLegalMovesFor(movedPiece);
-	
 	if(checkIfCordsUnderAttack(queenCords, legalMoves)):
 		print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
 		GameInCheckFrom = Vector2i(cords.x, cords.y);
@@ -1068,7 +1069,7 @@ func checkState(cords:Vector2i):
 	print("Move Count: ", moveCount);
 	if( moveCount <= 0):
 		if(GameInCheck):
-			print("CheckMate")
+			print("Check Mate")
 		else:
 			print("Stale Mate")
 		GameIsOver = true;
@@ -1113,10 +1114,11 @@ func _undoLastMove() -> void:
 	var pieceVal = getPieceInt(splits[0], !isWhiteTurn);
 	var newTo = decodeEnPassantFEN(splits[1]);
 	var newFrom = decodeEnPassantFEN(splits[2]);
-	
-	
-	
 	return;
+
+##
+func _getGameOverStatus() -> bool:
+	return GameIsOver;
 
 ##
 func _getIsWhiteTurn() -> bool:
@@ -1208,11 +1210,7 @@ func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES)
 
 	resetFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
-
-	#print(activePieces, "\n");
-	#for key in legalMoves.keys():
-	#	print(key, " : ", legalMoves[key]);
-
+	
 	return;
 
 ##

@@ -154,7 +154,12 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 		emit_signal("gameSwitchedSides", 1);
 	else:
 		emit_signal("gameSwitchedSides", 0);
+
+	if(GameDataNode._getGameOverStatus()):
 		
+
+		
+
 	return;
 
 #
