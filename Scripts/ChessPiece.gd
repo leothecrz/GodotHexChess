@@ -11,8 +11,8 @@ signal pieceDeselected(SIDE:int, TYPE:String, CORDS:Vector2i, MOVE);
 ####
 
 #### State
-var locked = true;
-var anotherSelected = false;
+var locked:bool = true;
+var anotherSelected:bool = false;
 
 var chessTexture:AtlasTexture = preload("res://Textures/chessPiece.tres");
 

@@ -1,40 +1,41 @@
 extends Control
-
-## Vars
+###
+###
+### Vars
 @onready var tileMap:TileMap = $BoardTiles;
 ##
 
-##State
+###
+###
+### State
 var boardRotatedToWhite;
-##
 
-##
-func checkIfFlipBoard(isWhite:bool):
-	if(isWhite && !boardRotatedToWhite):
+###
+###
+### USER CREATED
+## Flip the board if POV player does not match selected player.
+func checkIfFlipBoard(isPOVWhite:bool):
+	if(isPOVWhite != boardRotatedToWhite):
 		boardRotatedToWhite = !boardRotatedToWhite;
 		rotate_tilemap();
-		return;
-	if(!isWhite && boardRotatedToWhite):
-		boardRotatedToWhite = !boardRotatedToWhite;
-		rotate_tilemap();
-		return;
-	pass
+	return;
 
 ## Flip The Board (Not Pixel Perfect, Origin Of TileMap Need Fixing)
 func rotate_tilemap():
 	tileMap.scale.y *= -1;
-	pass
+	return;
 
-##GODOT Functions
-# Called when the node enters the scene tree for the first time.
+###
+###
+### GODOT Functions
 func _ready():
 	boardRotatedToWhite = true;
 	tileMap.scale.y = -1;
+	
 	#tileMap.position.x = -30;
-	tileMap.position.y = 0;
-	pass # Replace with function body.
+	#tileMap.position.y = 0;
+	
+	return;
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	pass
+	return;

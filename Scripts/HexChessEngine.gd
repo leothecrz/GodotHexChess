@@ -548,6 +548,14 @@ func findMovesForRook(RookArray:Array) -> void:
 				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
 					legalMoves[rook]['Capture'].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
+					
+					#King Escape Fix
+					if(getPieceType(HexBoard[checkingQ][checkingR]) == "K"):
+						checkingQ = rook.x + activeVector.x;
+						checkingR = rook.y + activeVector.y;	
+						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+							updateAttackBoard(checkingQ, checkingR, 1);
+					
 					break;
 				else:
 					updateAttackBoard(checkingQ, checkingR, 1);
@@ -601,6 +609,14 @@ func findMovesForBishop(BishopArray:Array) -> void:
 				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
 					legalMoves[bishop]['Capture'].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
+					
+					#King Escape Fix
+					if(getPieceType(HexBoard[checkingQ][checkingR]) == "K"):
+						checkingQ = bishop.x + activeVector.x;
+						checkingR = bishop.y + activeVector.y;	
+						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+							updateAttackBoard(checkingQ, checkingR, 1);
+					
 					break;
 				else:
 					updateAttackBoard(checkingQ, checkingR, 1);
@@ -879,7 +895,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			moveHistMod = moveHistMod + (" +%s" % pieceType);
 			pieceType = getPieceType(promoteTo);
 			activePieces[selfColor][pieceType].append(moveTo);
-			pieceVal = promoteTo;
+			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
 			
 			pass;
 
@@ -1025,8 +1041,13 @@ func checkState(cords:Vector2i):
 			"B":
 				fillBishopCheckMoves(queenCords, cords);
 			"Q":
-				fillRookCheckMoves(queenCords, cords);
-				fillBishopCheckMoves(queenCords, cords);
+				if( 
+				(cords.x == queenCords.x) or # same Q
+			 	(cords.y == queenCords.y) or # same R
+			 	(cords.x+cords.y) == (queenCords.x+queenCords.y) ): # same s
+					fillRookCheckMoves(queenCords, cords);
+				else:
+					fillBishopCheckMoves(queenCords, cords);
 		
 		GameInCheck = true;
 		print("Game In Check Moves: ", GameInCheckMoves);
