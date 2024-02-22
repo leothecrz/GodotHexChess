@@ -5,7 +5,7 @@ extends Control
 @onready var offset = 35;
 @onready var MoveGUI = $MoveGUI;
 
-@onready var BoardControler = $ColorRect/Central;
+@onready var BoardControler = $Background/Central;
 @onready var GameDataNode = $ChessEngine;
 @onready var ChessPiecesNode = $PiecesContainer;
 @onready var LeftPanel = $LeftPanel;
@@ -140,12 +140,15 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 	activePieces = GameDataNode._getActivePieces()
 	currentLegalsMoves = GameDataNode._getMoves()
 	
-	if(GameDataNode._getGameInCheck()):
-		if( not LeftPanel.getLabelState() ):
-			LeftPanel.swapLabelState();
-	else:
-		if ( LeftPanel.getLabelState() ):
-			LeftPanel.swapLabelState();
+	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
+		LeftPanel._swapLabelState();
+	
+	#if(GameDataNode._getGameInCheck()):
+		#if( not LeftPanel._getLabelState() ):
+			#LeftPanel._swapLabelState();
+	#else:
+		#if ( LeftPanel._getLabelState() ):
+			#LeftPanel._swapLabelState();
 
 	if(GameDataNode._getCaptureValid()):
 		handleMoveCapture();
@@ -156,10 +159,12 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 		emit_signal("gameSwitchedSides", 0);
 
 	if(GameDataNode._getGameOverStatus()):
-		
-
-		
-
+		if(GameDataNode._getGameOverStatus() != LeftPanel._getLabelState()):
+			LeftPanel._swapLabelState();
+		if(GameDataNode._getGameInCheck()):
+			LeftPanel._setCheckMateText(GameDataNode._getIsBlackTurn());
+		else:
+			LeftPanel._setStaleMateText();
 	return;
 
 #
@@ -273,6 +278,14 @@ func _resign_OnButtonPress() -> void:
 			for piece in pieceNodes.get_children():
 				piece.queue_free();
 	
+	if(LeftPanel._getLabelState()):
+		LeftPanel._swapLabelState();
+	
+	return;
+
+## Undo Button Pressed
+func _on_undo_pressed():
+	GameDataNode._undoLastMove();
 	return;
 
 # Set item select value.
@@ -298,3 +311,6 @@ func _ready():
 func _process(_delta):
 	return;
 ####
+
+
+

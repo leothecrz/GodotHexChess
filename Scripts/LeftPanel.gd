@@ -1,19 +1,47 @@
 extends Control
-
+###
+###
+### State
 @onready var inCheckLabel:RichTextLabel = $ColumnBack/InCheck/CheckLabel;
 
-func swapLabelState() -> void:
+###
+###
+### User Created
+##
+func _swapLabelState() -> void:
 	inCheckLabel.visible = !inCheckLabel.visible;
 	return;
 
-func getLabelState() -> bool:
+##
+func _getLabelState() -> bool:
 	return inCheckLabel.visible;
 
-# Called when the node enters the scene tree for the first time.
+##
+func setLabelText(str:String) -> void:
+	inCheckLabel.text = str;
+	return;
+
+##
+func _setInCheckText() -> void:
+	setLabelText("\n\n\n[center][font_size=40]You Are\nIn Check[/font_size][/center]");
+	return;
+
+##
+func _setStaleMateText() -> void:
+	setLabelText("\n\n\n[center][font_size=40]STALEMATE[/font_size][/center]");
+	return;
+
+##
+func _setCheckMateText(whiteWon:bool) -> void:
+	var winnerText:String = "White" if whiteWon else "Black"
+	setLabelText("\n\n\n[center][font_size=36]CHECKMATE\n%s Wins![/font_size][/center]" % winnerText);
+	return;
+
+###
+###
+### GODOT
 func _ready():
 	pass # Replace with function body.
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
 	pass

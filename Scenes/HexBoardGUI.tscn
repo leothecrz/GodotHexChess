@@ -35,7 +35,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dl4cn")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -44,7 +44,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0.0509804, 0.0509804, 1)
 
-[node name="Central" type="Control" parent="ColorRect"]
+[node name="Central" type="Control" parent="Background"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -55,7 +55,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_tcmm4")
 
-[node name="BoardBack" type="ColorRect" parent="ColorRect/Central"]
+[node name="BoardBack" type="ColorRect" parent="Background/Central"]
 layout_mode = 0
 offset_left = -324.0
 offset_top = -324.0
@@ -63,7 +63,7 @@ offset_right = 324.0
 offset_bottom = 324.0
 color = Color(1, 1, 1, 0.156863)
 
-[node name="BoardTiles" type="TileMap" parent="ColorRect/Central"]
+[node name="BoardTiles" type="TileMap" parent="Background/Central"]
 position = Vector2(-33, 0)
 tile_set = SubResource("TileSet_7e04f")
 format = 2
@@ -85,13 +85,13 @@ offset_right = 40.0
 offset_bottom = 644.0
 color = Color(1, 1, 1, 0.0588235)
 
-[node name="MoveHistory" type="Control" parent="PlayerColumn/ColumnBack"]
+[node name="TurnInfo" type="Control" parent="PlayerColumn/ColumnBack"]
 layout_mode = 1
 anchors_preset = 0
 offset_right = 230.0
 offset_bottom = 322.0
 
-[node name="RichTextLabel" type="RichTextLabel" parent="PlayerColumn/ColumnBack/MoveHistory"]
+[node name="Info" type="RichTextLabel" parent="PlayerColumn/ColumnBack/TurnInfo"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -111,6 +111,23 @@ offset_right = 115.0
 offset_bottom = 322.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Undo" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -46.5
+offset_top = -141.0
+offset_right = 46.5
+offset_bottom = -110.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Start a new game."
+text = "Undo
+"
 
 [node name="NewGameButton" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
 layout_mode = 1
@@ -265,6 +282,7 @@ offset_bottom = 40.0
 [node name="ChessEngine" type="Node" parent="."]
 script = ExtResource("7_uqrw5")
 
+[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Undo" to="." method="_on_undo_pressed"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]
 [connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/SideSelect" to="." method="_selectSide_OnItemSelect"]

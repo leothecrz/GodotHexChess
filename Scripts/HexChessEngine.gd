@@ -254,6 +254,10 @@ func isPieceFriendly(val,isWhiteTrn):
 	#	return isPieceBlack(val);
 	return (isWhiteTrn != isPieceBlack(val));
 
+##
+func isPieceKing(id:int) -> bool:
+	return getPieceType(id) == "K";
+
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 func checkForBlockingPiecesFrom(Cords:Vector2i) -> Dictionary:
 	
@@ -846,6 +850,7 @@ func handleMoveCapture(moveTo, pieceType) -> void:
 	if(pieceType == "P" && HexBoard[moveTo.x][moveTo.y] == 0):
 		moveTo.y += 1 if isWhiteTurn else -1;
 		captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
+		HexBoard[moveTo.x][moveTo.y] = 0;
 		revertEnPassant = true;
 
 	var i:int = 0;
