@@ -70,7 +70,6 @@ func spawnPieces() -> void:
 		for pieceType in activePieces[i]:
 			for piece in activePieces[i][pieceType]:
 				var cord = piece if boardRotatedForWhite else (piece * -1);
-				print("SP: ", pieceType);
 				spawnPiecesSubRoutine(i, j, pieceType, piece, cord);
 				
 			j = j+1;
@@ -173,10 +172,15 @@ func handleMovesSpawn(moves:Array, color:Color, key, cords):
 	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 	
 	for i in range(moves.size()):
-		var move = moves[i]
+		var move = moves[i];
+		
+		#var kingCord```s = activePieces[0 if GameDataNode.__getIsBlackTurn() else 1]["K"][0];
+		#if(move.x == kingCords.x && move.y == kingCords.y):
+		#	continue;
 		
 		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
 		var cord = move if boardRotatedForWhite else (move * -1);
+		
 		
 		activeScene.hexCords = cords;
 		activeScene.hexKey = key;

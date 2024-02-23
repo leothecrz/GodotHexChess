@@ -18,6 +18,9 @@ enum SIDES{ BLACK, WHITE };
 	#Defaults
 const HEX_BOARD_RADIUS = 5;
 const DEFAULT_FEN_STRING = "6/p5P/rp4PR/n1p3P1N/q2p2P2Q/bbb1p1P1BBB/k2p2P2K/n1p3P1N/rp4PR/p5P/6 w - 1" ;
+	#AttackBoardTest
+const ATTACK_BOARD_TEST = '6/7/8/9/k9/11/9K/9/8/7/6 w - 1';
+const ATTACKING_BOARD_TEST = 'p5/7/8/9/10/k9K/10/9/8/7/5P w - 1';
 	#Variations
 const VARIATION_ONE_FEN = 'p4P/rp3PR/bp4PN/np5PB/bp6PQ/kp7PK/qp6PB/pb5PN/np4BP/rp3PR/p4P w - 1';
 const VARIATION_TWO_FEN = '6/rp3PR/bp4PN/np5PB/bp6PQ/kp7PK/qp6PB/pb5PN/np4BP/rp3PR/6 w - 1';
@@ -35,7 +38,7 @@ const KING_TEST = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1';
 	#CheckMate Test:
 const CHECK_IN_ONE = '6/7/8/9/k9/2QK7/10/9/8/7/6 w - 1';
 const CHECK_IN_TWO = '2B3/7/8/9/10/R10/10/9/8/2p4/2k1K1 w - 1';
-const ATTACKING_BOARD_TEST = 'p5/7/8/9/10/k9K/10/9/8/7/5P w - 1';
+
 ###
 ###
 ### State
@@ -930,7 +933,12 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			activePieces[selfColor][pieceType][i] = moveTo;
 			break
 
+	print("Board : ")
 	printBoard(HexBoard);
+	print("W.A.B. : ")
+	printBoard(WhiteAttackBoard);
+	print("B.A.B. : ")
+	printBoard(BlackAttackBoard);
 
 	removeAttacksFrom(cords, getPieceType(previousPieceVal));
 	checkState(moveTo);
@@ -1159,7 +1167,9 @@ func _getCaptureIndex() -> int:
 
 ## Print HexBoard UNFINISHED FORMATING
 func printBoard(board: Dictionary):
-	for key in board.keys():
+	var flipedKeys = board.keys();
+	flipedKeys.reverse();
+	for key in flipedKeys:
 		var rowString = [];
 		var offset = 12 - board[key].size();
 		for i in range(offset):
@@ -1177,7 +1187,7 @@ func printBoard(board: Dictionary):
 ## Default Game
 func _initDefault() -> void:
 	
-	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
+	HexBoard = fillBoardwithFEN(ATTACK_BOARD_TEST);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	printBoard(HexBoard);
