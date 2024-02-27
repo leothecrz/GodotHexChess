@@ -15,10 +15,6 @@ config/version="0.0.1"
 run/main_scene="res://Scenes/HexBoardGUI.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 
-[autoload]
-
-CONSTANTS="*res://Scripts/CONSTANTS.gd"
-
 [display]
 
 window/size/resizable=false

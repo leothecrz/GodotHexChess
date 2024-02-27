@@ -1,5 +1,8 @@
 extends Node
 
+
+
+
 ##TODO:
 # 1 - Starting from a fen string requires that attack boards be created before anybody can go.
 # 2 - Pawn Promotion
@@ -10,7 +13,9 @@ extends Node
 # 7 - Random AI
 # 8 - MinMax AI
 # 9 - Neural Network AI
-# 10 - 
+
+
+
 
 ### Constants
 enum PIECES{ ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
@@ -39,27 +44,34 @@ const KING_TEST = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1';
 const CHECK_IN_ONE = '6/7/8/9/k9/2QK7/10/9/8/7/6 w - 1';
 const CHECK_IN_TWO = '2B3/7/8/9/10/R10/10/9/8/2p4/2k1K1 w - 1';
 
+
+
+
 ###
 ###
 ### State
-
 	# Board
 var HexBoard:Dictionary = {};
 var WhiteAttackBoard:Dictionary = {};
 var BlackAttackBoard:Dictionary = {};
+
 	# Game Turn
 var isWhiteTurn:bool = true;
 var turnNumber:int = 1;
+
 	# Pieces
 var blockingPieces:Dictionary = {};
 var activePieces:Array = [];
+
 	# Moves
 var legalMoves:Dictionary = {};
+
 	# Check & Mate
 var GameInCheck:bool = false;
 var GameInCheckFrom:Vector2i = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 var GameInCheckMoves:Array = [];
 var GameIsOver = false;
+
 	# Captures
 var blackCaptures:Array = [];
 var whiteCaptures:Array = [];
@@ -67,18 +79,24 @@ var whiteCaptures:Array = [];
 var captureType:String = "";
 var captureIndex = -1;
 var captureValid:bool = false;
+
 	# EnPassant
 var EnPassantCords:Vector2i = Vector2i(-5,-5);
 var EnPassantTarget:Vector2i = Vector2i(-5,-5);
 var EnPassantCordsValid:bool = false;
+
 	# History
 var moveHistory:Array = [];
+
+
+
+
 ###
 ###
 ### Internal
 
 ## Create A hexagonal board with axial cordinates. (Q,R). Centers At 0,0.
-func createBoard(radius : int):
+func createBoard(radius : int) -> Dictionary:
 	var Board:Dictionary = {}
 	var i:int = 1;
 	for q:int in range(-radius, radius+1):
@@ -91,72 +109,37 @@ func createBoard(radius : int):
 			Board[q][r] = 0;
 	return Board;
 
-## Get int representation of piece.
-func decodePieceStringToInt(piece:String, isBlack:bool) -> int:
-	var id:int = 0;
+## Use the board to find the location of all pieces. 
+## Intended to be ran only once at the begining.
+func findPieces(board:Dictionary) -> Array:
+	var pieceCords:Array = [
+	{ 
+		"P":[],
+		"N":[],
+		"R":[],
+		"B":[],
+		"Q":[],
+		"K":[] 
+	},{ 
+		"P":[],
+		"N":[],
+		"R":[],
+		"B":[],
+		"Q":[],
+		"K":[] 
+	}];
 	
-	match piece.to_lower():
-		"p": id=PIECES.PAWN;
-		"n": id=PIECES.KNIGHT;
-		"r": id=PIECES.ROOK;
-		"b": id=PIECES.BISHOP;
-		"q": id=PIECES.QUEEN;
-		"k": id=PIECES.KING;
-	
-	if(isBlack):
-		id += 8;		
-
-	return id;
-
-## Get int representation of piece.
-func getPieceInt(piece : String, isBlack: bool) -> int:
-	var id:int = 0;
-	match piece.to_lower():
-		"p":
-			id = PIECES.PAWN;
-		"n":
-			id = PIECES.KNIGHT;
-		"r":
-			id = PIECES.ROOK;
-		"b":
-			id = PIECES.BISHOP;
-		"q":
-			id = PIECES.QUEEN;
-		"k":
-			id = PIECES.KING;
-		_:
-			push_error("Unknow Piece Type");
-	if(isBlack):
-		id += 8;		
-	return id;
-
-## Strip the color bit information and find what piece is in use.
-func getPieceType(id:int) -> String:
-	var mask = ~(1 << 3);
-	var res = (id & mask);
-	match res:
-		PIECES.PAWN:
-			return "P";
-		PIECES.KNIGHT:
-			return "N";
-		PIECES.ROOK:
-			return "R";
-		PIECES.BISHOP:
-			return "B";
-		PIECES.QUEEN:
-			return "Q";
-		PIECES.KING:
-			return "K";
-		_:
-			push_error("Unknow PieceType. Invalid Use");
-			return "";
-
-## Checks if the fourth bit is fliped.
-func isPieceBlack(id: int) -> bool:
-	var mask = 1 << 3; #8
-	if ((id & mask) != 0):
-		return true;
-	return false;
+	for q in board.keys():
+		for r in board[q].keys():
+			var val:int = board[q][r];	
+			if val == 0:
+				continue;
+			
+			var pieceType = getPieceType(val);	
+			if( isPieceBlack(val) ): pieceCords[SIDES.BLACK][pieceType].append(Vector2i(q, r));
+			else: pieceCords[SIDES.WHITE][pieceType].append(Vector2i(q, r));
+			
+	return pieceCords;
 
 ## ADD A Piece To Board. At (Q,R) in 'board' decode 'val' and place it.
 func addPieceToBoardAt( q:int, r:int, val:String, board:Dictionary) -> void:
@@ -166,7 +149,7 @@ func addPieceToBoardAt( q:int, r:int, val:String, board:Dictionary) -> void:
 		isBlack = false;
 		val = val.to_lower();
 	
-	board[q][r] = decodePieceStringToInt(val, isBlack)	;
+	board[q][r] = getPieceInt(val, isBlack)	;
 	return;
 
 ## Fill The Board by translating a fen string. DOES NOT FULLY VERIFY FEN STRING 
@@ -243,11 +226,20 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	## TODO 3
 	return Board;
 
-## Update Turn Counter and swap player turn
-func swapPlayerTurn():
-	isWhiteTurn = !isWhiteTurn;
-	turnNumber += 1;
-	return;
+
+
+
+### PIECE IDENTIFING
+## Checks if the fourth bit is fliped.
+func isPieceBlack(id: int) -> bool:
+	var mask = 1 << 3; #8
+	if ((id & mask) != 0):
+		return true;
+	return false;
+
+## Checks if the fourth bit is fliped.
+func isPiecewhite(id: int) -> bool:
+	return !isPieceBlack(id);
 
 ## Given the int value of a chess piece and the current turn determine if friendly.
 func isPieceFriendly(val,isWhiteTrn):
@@ -257,10 +249,158 @@ func isPieceFriendly(val,isWhiteTrn):
 	#	return isPieceBlack(val);
 	return (isWhiteTrn != isPieceBlack(val));
 
-##
+## Given the int value of a chess piece determine if the piece is a king.
 func isPieceKing(id:int) -> bool:
 	return getPieceType(id) == "K";
 
+
+
+
+### PAWN POSITIONS
+## Check if cords are in the black pawn start
+## (-4, -1) (-3,-1) (-2,-1) (-1,-1) (0, -1) (1, -2) (2, -3) (3, -4) (4, -5)
+func isBlackPawnStart(cords:Vector2i) -> bool:
+	#print(cords);
+	var r:int = -1;
+	for q:int in range (-4,4+1):
+		if( q > 0 ):
+			r -= 1;
+		if (cords.x == q) && (cords.y == r):
+			return true;
+	return false;
+
+## Check if cords are in the white pawn start
+func isWhitePawnStar(cords:Vector2i) ->bool:
+	#print(cords);
+	var r:int = 5;
+	for q:int in range (-4,4+1):
+		if (cords.x == q) && (cords.y == r):
+			return true;
+		if( q < 0 ):
+			r -= 1;
+			
+	return false;
+
+##
+func isWhitePawnPromotion(cords:Vector2i)-> bool:
+	var r:int = 0;
+	for q:int in range(-5,5):
+		
+		if (cords.x == q) && (cords.y == r):
+			return true;
+		
+		if(r > -5):
+			r -= 1;
+		
+	return false;
+
+##
+func isBlackPawnPromotion(cords:Vector2i) -> bool:
+	var r:int = 5;
+	for q:int in range(-5,5):
+		
+		if (cords.x == q) && (cords.y == r):
+			return true;
+		
+		if(q >= 0):
+			r -= 1;
+		
+	return false;
+
+
+
+
+### GETS
+## Get int representation of piece.
+func getPieceInt(piece : String, isBlack: bool) -> int:
+	var id:int = 0;
+	match piece.to_lower():
+		"p":
+			id = PIECES.PAWN;
+		"n":
+			id = PIECES.KNIGHT;
+		"r":
+			id = PIECES.ROOK;
+		"b":
+			id = PIECES.BISHOP;
+		"q":
+			id = PIECES.QUEEN;
+		"k":
+			id = PIECES.KING;
+		_:
+			push_error("Unknow Piece Type");
+	if(isBlack):
+		id += 8;		
+	return id;
+
+## Strip the color bit information and find what piece is in use.
+func getPieceType(id:int) -> String:
+	var mask = ~(1 << 3);
+	var res = (id & mask);
+	match res:
+		PIECES.PAWN:
+			return "P";
+		PIECES.KNIGHT:
+			return "N";
+		PIECES.ROOK:
+			return "R";
+		PIECES.BISHOP:
+			return "B";
+		PIECES.QUEEN:
+			return "Q";
+		PIECES.KING:
+			return "K";
+		_:
+			push_error("Unknow PieceType. Invalid Use");
+			return "";
+
+
+
+
+### ENPASSANT
+## Turn a vector (q,r) into a string representation of the position.
+func encodeEnPassantFEN(q:int, r:int) -> String:
+	var rStr:int = 6 - r;
+	var qStr:int = 5 + q;
+
+	var qLetter = char(65 + qStr);
+	return "%s%d" % [qLetter, rStr];
+
+## Turn a string represenation of board postiion to a vector2i.
+func decodeEnPassantFEN(s:String) -> Vector2i:
+
+	if(s.length() < 2):
+		return Vector2i();
+
+	var qStr:int = s.unicode_at(0) - "A".unicode_at(0) - 5;
+	var rStr:int = int(s.substr(1,-1))
+	rStr += 6-(2*rStr);
+
+	return Vector2i(qStr, rStr);
+
+
+
+
+### TURN MODIFICATION
+##
+func incrementTurnNumber():
+	turnNumber += 1;
+	return;
+
+##
+func decrementTurnNumber():
+	turnNumber -= 1;
+	return;
+	
+## Update Turn Counter and swap player turn
+func swapPlayerTurn():
+	isWhiteTurn = !isWhiteTurn;
+	return;
+
+
+
+
+### MOVE GENERATION
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 func checkForBlockingPiecesFrom(Cords:Vector2i) -> Dictionary:
 	
@@ -325,87 +465,6 @@ func checkForBlockingPiecesFrom(Cords:Vector2i) -> Dictionary:
 				checkingR += activeVector.y;
 	
 	return blockingpieces;
-
-## Use the board to find the location of all pieces. 
-## Intended to be ran only once at the begining.
-func findPieces(board:Dictionary) -> Array:
-	var pieceCords:Array = [
-	{ 
-		"P":[],
-		"N":[],
-		"R":[],
-		"B":[],
-		"Q":[],
-		"K":[] 
-	},{ 
-		"P":[],
-		"N":[],
-		"R":[],
-		"B":[],
-		"Q":[],
-		"K":[] 
-	}];
-	
-	for q in board.keys():
-		for r in board[q].keys():
-			var val:int = board[q][r];	
-			if val == 0:
-				continue;
-			
-			var pieceType = getPieceType(val);	
-			if( isPieceBlack(val) ): pieceCords[SIDES.BLACK][pieceType].append(Vector2i(q, r));
-			else: pieceCords[SIDES.WHITE][pieceType].append(Vector2i(q, r));
-			
-	return pieceCords;
-
-## Check if cords are in the black pawn start
-func isBlackPawnStart(cords:Vector2i) -> bool:
-	#print(cords);
-	var r:int = -1;
-	for q:int in range (-4,4+1):
-		if( q > 0 ):
-			r -= 1;
-		if (cords.x == q) && (cords.y == r):
-			return true;
-	return false;
-
-## Check if cords are in the white pawn start
-func isWhitePawnStar(cords:Vector2i) ->bool:
-	#print(cords);
-	var r:int = 5;
-	for q:int in range (-4,4+1):
-		if (cords.x == q) && (cords.y == r):
-			return true;
-		if( q < 0 ):
-			r -= 1;
-			
-	return false;
-
-##
-func isWhitePawnPromotion(cords:Vector2i)-> bool:
-	var r:int = 0;
-	for q:int in range(-5,5):
-		
-		if (cords.x == q) && (cords.y == r):
-			return true;
-		
-		if(r > -5):
-			r -= 1;
-		
-	return false;
-
-##
-func isBlackPawnPromotion(cords:Vector2i) -> bool:
-	var r:int = 5;
-	for q:int in range(-5,5):
-		
-		if (cords.x == q) && (cords.y == r):
-			return true;
-		
-		if(q >= 0):
-			r -= 1;
-		
-	return false;
 
 ## Calculate Pawn Moves (TODO: Unfinished Promote)
 func findMovesForPawn(PawnArray:Array)-> void:
@@ -737,7 +796,7 @@ func findLegalMovesFor(activepieces:Array) -> void:
 
 	return;
 
-## Check if
+## Check if an active piece appears in the capture moves of any piece.
 func checkIfCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 	for piece:Vector2i in enemyMoves.keys():
 		for move in enemyMoves[piece]['Capture']:
@@ -745,7 +804,11 @@ func checkIfCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 				return true;
 	return false;
 
-## 
+
+
+
+### ATTACK BOARD
+## Based on the turn determine the appropiate board to update.
 func updateAttackBoard(q:int, r:int, mod:int) -> void:
 	#print("UPDATE: %d,%d by %d" % [q,r,mod]);
 	if(isWhiteTurn):
@@ -754,8 +817,8 @@ func updateAttackBoard(q:int, r:int, mod:int) -> void:
 		BlackAttackBoard[q][r] += mod;
 	return;
 
-## 
-func updateOpAttackBoard(q:int, r:int, mod:int) -> void:
+## Based on the turn determine the appropiate board to update.
+func updateOpposingAttackBoard(q:int, r:int, mod:int) -> void:
 	if(!isWhiteTurn):
 		WhiteAttackBoard[q][r] += mod;
 	else:
@@ -763,24 +826,51 @@ func updateOpAttackBoard(q:int, r:int, mod:int) -> void:
 	return;
 
 ##
-func encodeEnPassantFEN(q:int, r:int) -> String:
-	var rStr:int = 6 - r;
-	var qStr:int = 5 + q;
+func removePawnAttacks(cords:Vector2i) -> void:
+	##FIX
+	var leftCaptureR = cords.y if isWhiteTurn else cords.y + 1; 
+	var rightCaptureR = cords.y-1 if isWhiteTurn else cords.y;
+	
+	##Left Capture
+	if( HexBoard.has(cords.x-1) && HexBoard[cords.x-1].has(leftCaptureR)):
+		updateAttackBoard(cords.x-1, leftCaptureR, -1);
+	##Right Capture
+	if( HexBoard.has(cords.x+1) && HexBoard[cords.x+1].has(rightCaptureR)):
+		updateAttackBoard(cords.x+1, rightCaptureR, -1);
+	return;
 
-	var qLetter = char(65 + qStr);
-	return "%s%d" % [qLetter, rStr];
+## 
+func removeAttacksFrom(cords:Vector2i, id:String) -> void:
+	
+	if(id == "P"):
+		removePawnAttacks(cords);
+		return;
+			
+	for moveType in legalMoves[cords].keys():
+		for move in legalMoves[cords][moveType]:
+			updateAttackBoard(move.x,move.y,-1);
+	
+	return;
 
 ##
-func decodeEnPassantFEN(s:String) -> Vector2i:
+func removeCapturedFromATBoard(pieceType:String, cords:Vector2i):
+	isWhiteTurn = !isWhiteTurn;
+	
+	var movedPiece = [{ pieceType : [Vector2i(cords)] }];
+	if(!isWhiteTurn):
+		movedPiece.insert(0, {});
+		
+	var savedMoves = legalMoves.duplicate(true);
+	legalMoves.clear();
+	findLegalMovesFor(movedPiece);
+	removeAttacksFrom(cords, pieceType);
+	legalMoves = savedMoves;
+	
+	isWhiteTurn = !isWhiteTurn;
+	return;
 
-	if(s.length() < 2):
-		return Vector2i();
 
-	var qStr:int = s.unicode_at(0) - "A".unicode_at(0) - 5;
-	var rStr:int = int(s.substr(1,-1))
-	rStr += 6-(2*rStr);
 
-	return Vector2i(qStr, rStr);
 
 ##
 func resetFlags() -> void:
@@ -788,59 +878,6 @@ func resetFlags() -> void:
 	if(GameInCheck): GameInCheck = false;
 	if(captureValid): captureValid = false;
 	if(EnPassantCordsValid): EnPassantCordsValid = false;
-	return;
-
-## 
-func removeAttacksFrom(cords:Vector2i, id:String) -> void:
-	
-	if(not legalMoves.has(cords)):
-		return;
-	
-	if(id == "P"):
-		##FIX
-		var fowardR = cords.y - 1 if isWhiteTurn else cords.y + 1;
-		var leftCaptureR = cords.y if isWhiteTurn else cords.y + 1; 
-		var rightCaptureR = cords.y-1 if isWhiteTurn else cords.y;
-		
-		##Left Capture
-		if( HexBoard.has(cords.x-1) && HexBoard[cords.x-1].has(leftCaptureR)):
-			updateAttackBoard(cords.x-1, leftCaptureR, -1);
-		##Right Capture
-		if( HexBoard.has(cords.x+1) && HexBoard[cords.x+1].has(rightCaptureR)):
-			updateAttackBoard(cords.x+1, rightCaptureR, -1);
-			
-	else:
-		for moveType in legalMoves[cords].keys():
-			for move in legalMoves[cords][moveType]:
-				updateAttackBoard(move.x,move.y,-1);
-	
-	return;
-
-##
-func removeCapturedFromATBoard(pieceType:String, cords:Vector2i):
-
-	var movedPiece = [{ pieceType : [Vector2i(cords)] }];
-
-	isWhiteTurn = !isWhiteTurn;
-
-	if(isWhiteTurn):
-		movedPiece.insert(0, {});
-
-	legalMoves.clear();
-	findLegalMovesFor(movedPiece);
-
-	#if(pieceType == "P"):
-		### FIX
-		#for move in legalMoves[cords]['Capture']:
-			#updateAttackBoard(move.x,move.y,-1);
-	#else:
-		#for moveType in legalMoves[cords].keys():
-			#for move in legalMoves[cords][moveType]:
-				#updateAttackBoard(move.x,move.y,-1);
-	removeAttacksFrom(cords, pieceType);
-	
-	isWhiteTurn = !isWhiteTurn;
-
 	return;
 
 ##
@@ -1008,24 +1045,6 @@ func fillBishopCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
 		else: break;
 	return;
 
-## Count the amount of moves found
-func countMoves(movesList:Dictionary) -> int:
-	var count:int = 0;
-	
-	for piece:Vector2i in movesList.keys():
-		for moveType:String in movesList[piece]:
-			for move:Vector2i in movesList[piece][moveType]:
-				count += 1;
-	
-	return count;
-
-##
-func resetBoard(attackBoard:Dictionary) -> void:
-	for key in attackBoard.keys():
-		for innerKey in attackBoard[key].keys():
-			attackBoard[key][innerKey]=0;	
-	return;
-
 ##
 func checkState(cords:Vector2i):
 
@@ -1089,9 +1108,30 @@ func checkState(cords:Vector2i):
 
 	return;
 
+
+
+
 ### 
 ###
 ### UTILITY
+
+## set all values of given board to zero.
+func resetBoard(board:Dictionary) -> void:
+	for key in board.keys():
+		for innerKey in board[key].keys():
+			board[key][innerKey] = 0;	
+	return;
+
+## Count the amount of moves found
+func countMoves(movesList:Dictionary) -> int:
+	var count:int = 0;
+	
+	for piece:Vector2i in movesList.keys():
+		for moveType:String in movesList[piece]:
+			for move:Vector2i in movesList[piece][moveType]:
+				count += 1;
+	
+	return count;
 
 ## Find Intersection Of Two Arrays. O(N^2)
 func intersectOfTwoArrays(ARR:Array, ARR1:Array):
@@ -1109,63 +1149,52 @@ func differenceOfTwoArrays(ARR:Array, ARR1:Array):
 			intersection.append(item);
 	return intersection;
 
+
+
+
 ###
 ###
 ### API INTERACTIONS
 
-##
-func _undoLastMove() -> void:
-	
-	if(moveHistory.size() < 1):
-		print("No move history");
-		return;
-	
-	turnNumber -= 1;
-	var currentMove = moveHistory.pop_back();
-	var splits = currentMove.split(" ");
-	#moveHistory.append("%s %s %s %s" % [pieceType,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
-	var pieceVal = getPieceInt(splits[0], !isWhiteTurn);
-	var newTo = decodeEnPassantFEN(splits[1]);
-	var newFrom = decodeEnPassantFEN(splits[2]);
-	return;
-
-##
+## Get Is Game Over
 func _getGameOverStatus() -> bool:
 	return GameIsOver;
 
-##
+## Get Is White Turn
 func _getIsWhiteTurn() -> bool:
 	return isWhiteTurn;
 
-##
+## Get Is Black Turn
 func _getIsBlackTurn() -> bool:
 	return !isWhiteTurn;
 
-##
+## Get Active Pieces
 func _getActivePieces() -> Array:
 	return activePieces;
 
-##	
+##	Get Moves
 func _getMoves() -> Dictionary:
 	return legalMoves;
 
-##
+## Get Game In Check 
 func _getGameInCheck() -> bool:
 	return GameInCheck;
 
-##
+## Get Capture Valid
 func _getCaptureValid() -> bool:
 	return captureValid;
 
-## 
+## Get Capture Type
 func _getCaptureType() -> String:
 	return captureType;
 
-##
+## Get Capture Index
 func _getCaptureIndex() -> int:
 	return captureIndex;
 
-## Print HexBoard UNFINISHED FORMATING
+
+
+## Print HexBoard UNFINISHED FORMATING - DEBUG METHOD
 func printBoard(board: Dictionary):
 	var flipedKeys = board.keys();
 	flipedKeys.reverse();
@@ -1184,7 +1213,9 @@ func printBoard(board: Dictionary):
 		print("\n","".join(rowString),"\n");
 	return;
 
-## Default Game
+
+
+## START DEFAULT PUBLIC CALL
 func _initDefault() -> void:
 	
 	HexBoard = fillBoardwithFEN(ATTACK_BOARD_TEST);
@@ -1214,7 +1245,7 @@ func _initDefault() -> void:
 	findLegalMovesFor(activePieces);
 	return;
 
-## 
+## MAKE MOVE PUBLIC CALL
 func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
 	
 	if(GameIsOver):
@@ -1228,21 +1259,35 @@ func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES)
 	
 	return;
 
-##
+## RESIGN PUBLIC CALL
 func _resign():
+	
+	
 	GameIsOver = true;
-	if(isWhiteTurn):
-		print("Black WINS BY RESIGN");
-	else:
-		print("White WINS BY RESIGN");
-
-	print(moveHistory);
+	print("%s WINS BY RESIGN" % ("White" if isWhiteTurn else "Black"));
 
 	return
 
-###
-###
-### GODOT Functions 
-func _ready():
-	pass
-###
+## Undo Move PUBLIC CALL
+func _undoLastMove() -> void:
+	
+	if(moveHistory.size() < 1):
+		print("No move history");
+		return;
+	
+	turnNumber -= 1;
+	var currentMove = moveHistory.pop_back();
+	var splits = currentMove.split(" ");
+	
+	#moveHistory.append("%s %s %s %s" % [pieceType,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
+	var pieceVal:int = getPieceInt(splits[0], !isWhiteTurn);
+	var newTo:Vector2i = decodeEnPassantFEN(splits[1]);
+	var newFrom:Vector2i = decodeEnPassantFEN(splits[2]);
+	var histMod:String = splits[3];
+	
+	HexBoard[newFrom.x][newFrom.y] = 0;
+	HexBoard[newTo.x][newTo.y] = pieceVal;
+	
+	
+	
+	return;

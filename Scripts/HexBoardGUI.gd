@@ -1,6 +1,9 @@
 extends Control
 
-#### State
+
+###
+###
+### State
 @onready var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @onready var offset = 35;
 @onready var MoveGUI = $MoveGUI;
@@ -16,16 +19,18 @@ var currentLegalsMoves:Dictionary;
 
 var boardRotatedForWhite:bool;
 
-####
 
-####Signals
+###
+###
+### Signals
 signal gameSwitchedSides(newSideTurn);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
-####
 
-#### Scene Events
+
+### Scene Events
 # Convert Axial Cordinates To Viewport Cords
+##
 func axial_to_pixel(axial: Vector2i) -> Vector2:
 	const xScale = 1.4;
 	const yScale = 0.94;
@@ -60,7 +65,7 @@ func spawnPiecesSubRoutine(side, typeindex, pieceType, piece, cords) -> void:
 	pieceUnselectedUnlockOthers.connect(activeScene._on_Control_UnlockPiece);
 	return;
 
-# Spawn all the pieces in 'activePieces' at there positions.
+## Spawn all the pieces in 'activePieces' at there positions.
 func spawnPieces() -> void:
 	
 	#var i:int = 0;
@@ -76,7 +81,7 @@ func spawnPieces() -> void:
 
 	return;
 
-#
+##
 func handleMoveCapture() -> void:
 
 	print("Type: ",GameDataNode._getCaptureType(), ". Index: ", GameDataNode._getCaptureIndex());
@@ -166,7 +171,7 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 			LeftPanel._setStaleMateText();
 	return;
 
-#
+##
 func handleMovesSpawn(moves:Array, color:Color, key, cords):
 	
 	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
@@ -200,7 +205,7 @@ func handleMovesSpawn(moves:Array, color:Color, key, cords):
 		
 	pass;
 
-#
+##
 func spawnChessMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
@@ -218,7 +223,9 @@ func spawnChessMoves(moves:Dictionary, cords) -> void:
 				pass
 	return;
 
-#
+
+
+##
 func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> void:
 	
 	if(index >= 0):
@@ -233,7 +240,7 @@ func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> vo
 	
 	return;
 
-#
+##
 func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:String, CORDS:Vector2i) -> void:
 	
 	emit_signal("pieceSelectedLockOthers");
@@ -246,7 +253,7 @@ func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:String, CORDS:Vector2i) -> vo
 	
 	return;
 
-# New Game Button Pressed.
+## New Game Button Pressed.
 func _newGame_OnButtonPress() -> void:
 	if(activePieces):
 		return; # Ignore if pieces already set.
@@ -269,8 +276,8 @@ func _newGame_OnButtonPress() -> void:
 	else: emit_signal("gameSwitchedSides", 0);
 
 	return;
-
-# Resign Button Pressed.
+	
+## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
 	
 	GameDataNode._resign();
@@ -292,17 +299,22 @@ func _on_undo_pressed():
 	GameDataNode._undoLastMove();
 	return;
 
-# Set item select value.
+
+## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
 	selectedSide = index;
 	return;
 
+
+
 #TODO: Implement Resize
 func onResize() ->void:
 	return;
-####
 
-#### GODOT DEFAULTS
+
+
+
+### GODOT DEFAULTS
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	selectedSide = 0;
@@ -314,7 +326,3 @@ func _ready():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
 	return;
-####
-
-
-
