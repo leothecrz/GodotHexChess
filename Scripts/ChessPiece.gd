@@ -142,11 +142,13 @@ func _input(event) -> void:
 				
 			status = STATES.UNSET;
 			preDragPosition = Vector2();
-			
+		
 	if status == STATES.CLICKED and event is InputEventMouseMotion:
 		status = STATES.DRAGGING;
 	
-	mousePos = event.global_position;
+	if( event is InputEventMouseMotion):
+		mousePos = event.global_position;
+		
 	return;
 
 # Called when the Layer 1 collision hextile area leaves

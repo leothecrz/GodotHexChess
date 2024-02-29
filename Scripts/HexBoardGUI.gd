@@ -1,23 +1,27 @@
 extends Control
 
 
+
+
 ###
 ###
 ### State
 @onready var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @onready var offset = 35;
+	# REF
 @onready var MoveGUI = $MoveGUI;
-
 @onready var BoardControler = $Background/Central;
 @onready var GameDataNode = $ChessEngine;
 @onready var ChessPiecesNode = $PiecesContainer;
 @onready var LeftPanel = $LeftPanel;
-
+	# Board Setup
 var selectedSide:int;
+var boardRotatedForWhite:bool;
+	# Game Info
 var activePieces:Array;
 var currentLegalsMoves:Dictionary;
 
-var boardRotatedForWhite:bool;
+
 
 
 ###
@@ -28,17 +32,26 @@ signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 
 
+
+
+###
+###
 ### Scene Events
-# Convert Axial Cordinates To Viewport Cords
-##
+
+## Convert Axial Cordinates To Viewport Cords
+##	i=y/(3/2*s);
+##	j=(x-(y/sqrt(3)))/s*sqrt(3);
 func axial_to_pixel(axial: Vector2i) -> Vector2:
+
+	#const yScale = 0.94;
 	const xScale = 1.4;
-	const yScale = 0.94;
-	
-	var x = xScale * float(axial.x);
-	var y = (sqrt(3) * (float(axial.y) + float(axial.x) / 2)) * yScale;
+	const yScale = 0.9395;
+	var x = float(axial.x) * xScale;
+	var y = (sqrt(3) * ( float(axial.y) + (float(axial.x) / 2) )) * yScale;
 	
 	return Vector2(x, y);
+
+
 
 ##
 func spawnPiecesSubRoutine(side, typeindex, pieceType, piece, cords) -> void:
@@ -68,18 +81,19 @@ func spawnPiecesSubRoutine(side, typeindex, pieceType, piece, cords) -> void:
 ## Spawn all the pieces in 'activePieces' at there positions.
 func spawnPieces() -> void:
 	
-	#var i:int = 0;
 	for i:int in range(activePieces.size()):
-	#for side in activePieces:
 		var j:int = 0;
 		for pieceType in activePieces[i]:
 			for piece in activePieces[i][pieceType]:
-				var cord = piece if boardRotatedForWhite else (piece * -1);
+				
+				var cord = piece * (1 if boardRotatedForWhite else -1);
+				
 				spawnPiecesSubRoutine(i, j, pieceType, piece, cord);
 				
 			j = j+1;
-
 	return;
+
+
 
 ##
 func handleMoveCapture() -> void:
@@ -146,13 +160,6 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 	
 	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
 		LeftPanel._swapLabelState();
-	
-	#if(GameDataNode._getGameInCheck()):
-		#if( not LeftPanel._getLabelState() ):
-			#LeftPanel._swapLabelState();
-	#else:
-		#if ( LeftPanel._getLabelState() ):
-			#LeftPanel._swapLabelState();
 
 	if(GameDataNode._getCaptureValid()):
 		handleMoveCapture();
@@ -170,6 +177,8 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 		else:
 			LeftPanel._setStaleMateText();
 	return;
+
+
 
 ##
 func handleMovesSpawn(moves:Array, color:Color, key, cords):
@@ -253,10 +262,13 @@ func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:String, CORDS:Vector2i) -> vo
 	
 	return;
 
+
+
 ## New Game Button Pressed.
 func _newGame_OnButtonPress() -> void:
 	if(activePieces):
 		return; # Ignore if pieces already set.
+	
 	if(!GameDataNode):	
 		push_error("GUI HAS NO GAME DATA - ON READY FAIL");
 		return;
@@ -300,6 +312,7 @@ func _on_undo_pressed():
 	return;
 
 
+
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
 	selectedSide = index;
@@ -307,22 +320,22 @@ func _selectSide_OnItemSelect(index:int) -> void:
 
 
 
-#TODO: Implement Resize
+##TODO: Implement Resize - Cascade scale factor to gui elements
+## Begining of resize cascade
 func onResize() ->void:
 	return;
 
 
 
 
+###
+###
 ### GODOT DEFAULTS
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	selectedSide = 0;
 	
+	selectedSide = 0;
 	get_tree().get_root().size_changed.connect(onResize);
 	
 	return;
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta):
-	return;

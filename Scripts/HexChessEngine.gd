@@ -24,7 +24,7 @@ enum SIDES{ BLACK, WHITE };
 const HEX_BOARD_RADIUS = 5;
 const DEFAULT_FEN_STRING = "6/p5P/rp4PR/n1p3P1N/q2p2P2Q/bbb1p1P1BBB/k2p2P2K/n1p3P1N/rp4PR/p5P/6 w - 1" ;
 	#AttackBoardTest
-const ATTACK_BOARD_TEST = '6/7/8/9/k9/11/9K/9/8/7/6 w - 1';
+const ATTACK_BOARD_TEST = '6/7/8/9/k9/10Q/9K/9/8/7/6 w - 1';
 const ATTACKING_BOARD_TEST = 'p5/7/8/9/10/k9K/10/9/8/7/5P w - 1';
 	#Variations
 const VARIATION_ONE_FEN = 'p4P/rp3PR/bp4PN/np5PB/bp6PQ/kp7PK/qp6PB/pb5PN/np4BP/rp3PR/p4P w - 1';
@@ -617,8 +617,9 @@ func findMovesForRook(RookArray:Array) -> void:
 					
 					#King Escape Fix
 					if(getPieceType(HexBoard[checkingQ][checkingR]) == "K"):
-						checkingQ = rook.x + activeVector.x;
-						checkingR = rook.y + activeVector.y;	
+						checkingQ += activeVector.x;
+						checkingR += activeVector.y;
+						print("King Escape %d %d" % [checkingQ, checkingR]);
 						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 							updateAttackBoard(checkingQ, checkingR, 1);
 					
@@ -678,8 +679,9 @@ func findMovesForBishop(BishopArray:Array) -> void:
 					
 					#King Escape Fix
 					if(getPieceType(HexBoard[checkingQ][checkingR]) == "K"):
-						checkingQ = bishop.x + activeVector.x;
-						checkingR = bishop.y + activeVector.y;	
+						checkingQ += activeVector.x;
+						checkingR += activeVector.y;
+						print("King Escape %d %d" % [checkingQ, checkingR]);
 						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 							updateAttackBoard(checkingQ, checkingR, 1);
 					
@@ -857,7 +859,7 @@ func removeCapturedFromATBoard(pieceType:String, cords:Vector2i):
 	isWhiteTurn = !isWhiteTurn;
 	
 	var movedPiece = [{ pieceType : [Vector2i(cords)] }];
-	if(!isWhiteTurn):
+	if(isWhiteTurn):
 		movedPiece.insert(0, {});
 		
 	var savedMoves = legalMoves.duplicate(true);
@@ -969,14 +971,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 		if (activePieces[selfColor][pieceType][i] == cords):
 			activePieces[selfColor][pieceType][i] = moveTo;
 			break
-
-	print("Board : ")
-	printBoard(HexBoard);
-	print("W.A.B. : ")
-	printBoard(WhiteAttackBoard);
-	print("B.A.B. : ")
-	printBoard(BlackAttackBoard);
-
+			
 	removeAttacksFrom(cords, getPieceType(previousPieceVal));
 	checkState(moveTo);
 
@@ -1067,7 +1062,7 @@ func checkState(cords:Vector2i):
 		match pieceType:
 			"K":
 				pass; # No Blocking Moves
-			"P", "N":
+			"P", "N": # Can not be blocked
 				GameInCheckMoves.append(cords);
 			"R":
 				fillRookCheckMoves(queenCords, cords);
@@ -1075,15 +1070,16 @@ func checkState(cords:Vector2i):
 				fillBishopCheckMoves(queenCords, cords);
 			"Q":
 				if( 
-				(cords.x == queenCords.x) or # same Q
-			 	(cords.y == queenCords.y) or # same R
-			 	(cords.x+cords.y) == (queenCords.x+queenCords.y) ): # same s
+					(cords.x == queenCords.x) or # same Q
+			 		(cords.y == queenCords.y) or # same R
+			 		(cords.x+cords.y) == (queenCords.x+queenCords.y) ): # same s
 					fillRookCheckMoves(queenCords, cords);
 				else:
 					fillBishopCheckMoves(queenCords, cords);
 		
 		GameInCheck = true;
 		print("Game In Check Moves: ", GameInCheckMoves);
+
 
 	swapPlayerTurn();
 
@@ -1093,10 +1089,10 @@ func checkState(cords:Vector2i):
 		resetBoard(BlackAttackBoard);
 
 	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]['K'][0]);
-	#print("Blocking Pieces: ", blockingPieces);
 	legalMoves.clear();
 	findLegalMovesFor(activePieces);
 
+	## Check For Mate and Stale Mate
 	var moveCount = countMoves(legalMoves);
 	print("Move Count: ", moveCount);
 	if( moveCount <= 0):
@@ -1105,6 +1101,15 @@ func checkState(cords:Vector2i):
 		else:
 			print("Stale Mate")
 		GameIsOver = true;
+
+
+	print("Board : ")
+	printBoard(HexBoard);
+	print("W.A.B. : ")
+	printBoard(WhiteAttackBoard);
+	print("B.A.B. : ")
+	printBoard(BlackAttackBoard);
+
 
 	return;
 
@@ -1218,17 +1223,17 @@ func printBoard(board: Dictionary):
 ## START DEFAULT PUBLIC CALL
 func _initDefault() -> void:
 	
-	HexBoard = fillBoardwithFEN(ATTACK_BOARD_TEST);
+	HexBoard = fillBoardwithFEN(CHECK_IN_ONE);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
-	printBoard(HexBoard);
 
-	legalMoves.clear();
 	blackCaptures.clear();
 	whiteCaptures.clear();
-	captureValid = false;
+
 	blockingPieces.clear();
 
+	captureValid = false;
+	
 	isWhiteTurn = true;
 	turnNumber = 1;
 	
@@ -1242,7 +1247,9 @@ func _initDefault() -> void:
 	EnPassantCordsValid = false;
 
 	activePieces = findPieces(HexBoard);
+	legalMoves.clear();
 	findLegalMovesFor(activePieces);
+	
 	return;
 
 ## MAKE MOVE PUBLIC CALL

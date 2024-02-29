@@ -1,8 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=8 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
-[ext_resource type="Script" path="res://Scripts/HexChessGame.gd" id="4_oqfl2"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scripts/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/HexChessEngine.gd" id="7_uqrw5"]
@@ -238,9 +237,6 @@ History
 (WIP)
 [/font_size] 
 [/center]"
-
-[node name="GameState" type="Node" parent="."]
-script = ExtResource("4_oqfl2")
 
 [node name="MoveGUI" type="Node" parent="."]
 
