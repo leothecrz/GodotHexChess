@@ -88,6 +88,8 @@ var EnPassantCordsValid:bool = false;
 	# History
 var moveHistory:Array = [];
 
+var undoSpawnedPiece:bool = false;
+
 
 
 
@@ -948,9 +950,11 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 
 		'EnPassant':
 			EnPassantCords = legalMoves[cords]['Moves'][0];
-			print("EPCords: ", EnPassantCords);
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
+
+			moveHistMod = "E";
+
 			pass;
 
 		'Capture':
@@ -987,6 +991,7 @@ func fillRookCheckMoves(queenCords:Vector2i, moveToCords:Vector2i):
 		direction.x = 1;
 	elif (deltaQ < 0):
 		direction.x = -1;				
+	
 	if(deltaR > 0):
 		direction.y = 1;
 	elif (deltaR < 0):
