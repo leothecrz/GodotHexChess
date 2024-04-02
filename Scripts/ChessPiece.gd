@@ -18,7 +18,7 @@ var chessTexture:AtlasTexture = preload("res://Textures/chessPiece.tres");
 
 var isSetup:bool;
 var side:int;
-var pieceType:String;
+var pieceType:int;
 var pieceCords:Vector2i;
 
 	# Click and drag
@@ -55,17 +55,17 @@ func setupSelf() -> void:
 		y += 320;
 	
 	match pieceType:
-		"K":
+		6:
 			x =  0;
-		"Q":
+		5:
 			x = 320;
-		"B":
+		4:
 			x = 320 * 2;
-		"N":
+		2:
 			x = 320 * 3;
-		"R":
+		3:
 			x = 320 * 4;
-		"P":
+		1:
 			x = 320 * 5;
 	
 	var initialRegion:Rect2 = Rect2(x,y,320,320);

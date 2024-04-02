@@ -81,7 +81,7 @@ grow_horizontal = 0
 layout_mode = 0
 offset_left = -190.0
 offset_right = 40.0
-offset_bottom = 644.0
+offset_bottom = 648.0
 color = Color(1, 1, 1, 0.0588235)
 
 [node name="TurnInfo" type="Control" parent="PlayerColumn/ColumnBack"]
@@ -185,7 +185,7 @@ script = ExtResource("5_ermre")
 [node name="ColumnBack" type="ColorRect" parent="LeftPanel"]
 layout_mode = 0
 offset_right = 230.0
-offset_bottom = 644.0
+offset_bottom = 648.0
 color = Color(1, 1, 1, 0.0588235)
 
 [node name="InCheck" type="Control" parent="LeftPanel/ColumnBack"]

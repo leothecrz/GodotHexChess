@@ -43,7 +43,7 @@ signal pieceUnselectedUnlockOthers();
 ##	j=(x-(y/sqrt(3)))/s*sqrt(3);
 func axial_to_pixel(axial: Vector2i) -> Vector2:
 
-	#const yScale = 0.94;
+
 	const xScale = 1.4;
 	const yScale = 0.9395;
 	var x = float(axial.x) * xScale;
@@ -102,14 +102,7 @@ func handleMoveCapture() -> void:
 	var i:int = 0;
 	if(GameDataNode._getIsWhiteTurn()):
 		i += 1;
-	var j:int = 0;
-	match GameDataNode._getCaptureType():
-		"P": j = 0;
-		"N": j = 1;
-		"R": j = 2;
-		"B": j = 3;
-		"Q": j = 4;
-		"K": j = 5;
+	var j:int =  GameDataNode._getCaptureType() - 1;
 	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex()).queue_free();
 	return;
 
@@ -250,7 +243,7 @@ func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> vo
 	return;
 
 ##
-func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:String, CORDS:Vector2i) -> void:
+func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	
 	emit_signal("pieceSelectedLockOthers");
 	
