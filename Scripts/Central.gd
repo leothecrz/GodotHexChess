@@ -3,13 +3,13 @@ extends Control
 ###
 ### Vars
 @onready var tileMap:TileMap = $BoardTiles;
+@onready var turnSignal:Sprite2D = $TurnSignal;
 ##
 
 ###
 ###
 ### State
 var boardRotatedToWhite;
-
 ###
 ###
 ### USER CREATED
@@ -25,11 +25,20 @@ func rotate_tilemap():
 	tileMap.scale.y *= -1;
 	return;
 
+func setSignalWhite():
+	turnSignal.modulate = Color(1, 1, 0.514);
+	return;
+	
+func setSignalBlack():
+	turnSignal.modulate = Color(0.125, 0.18, 0.663);
+	return;
+
 ###
 ###
 ### GODOT Functions
 func _ready():
 	boardRotatedToWhite = true;
+	setSignalWhite();
 	tileMap.scale.y = -1;
 	
 	#tileMap.position.x = -30;

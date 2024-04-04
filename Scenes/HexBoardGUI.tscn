@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=9 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scripts/LeftPanel.gd" id="5_ermre"]
+[ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Script" path="res://Scripts/HexChessEngine.gd" id="7_uqrw5"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_poe7d"]
@@ -67,6 +68,11 @@ position = Vector2(-33, 0)
 tile_set = SubResource("TileSet_7e04f")
 format = 2
 layer_0/tile_data = PackedInt32Array(-131077, 4, 65536, -65541, 4, 196608, -5, 4, 131072, 65531, 4, 65536, 131067, 4, 196608, 196603, 4, 131072, -196612, 4, 196608, -131076, 4, 131072, -65540, 4, 65536, -4, 4, 196608, 65532, 4, 131072, 131068, 4, 65536, 196604, 4, 196608, -196611, 4, 131072, -131075, 4, 65536, -65539, 4, 196608, -3, 4, 131072, 65533, 4, 65536, 131069, 4, 196608, 196605, 4, 131072, 262141, 4, 65536, -262146, 4, 65536, -196610, 4, 196608, -131074, 4, 131072, -65538, 4, 65536, -2, 4, 196608, 65534, 4, 131072, 131070, 4, 65536, 196606, 4, 196608, 262142, 4, 131072, -262145, 4, 196608, -196609, 4, 131072, -131073, 4, 65536, -65537, 4, 196608, -1, 4, 131072, 65535, 4, 65536, 131071, 4, 196608, 196607, 4, 131072, 262143, 4, 65536, -327680, 4, 65536, -262144, 4, 196608, -196608, 4, 131072, -131072, 4, 65536, -65536, 4, 196608, 0, 4, 131072, 65536, 4, 65536, 131072, 4, 196608, -262143, 4, 131072, -196607, 4, 65536, -131071, 4, 196608, -65535, 4, 131072, 1, 4, 65536, 65537, 4, 196608, 131073, 4, 131072, 262145, 4, 196608, -262142, 4, 196608, -196606, 4, 131072, -131070, 4, 65536, -65534, 4, 196608, 2, 4, 131072, 65538, 4, 65536, 131074, 4, 196608, 196610, 4, 131072, -196605, 4, 65536, -131069, 4, 196608, -65533, 4, 131072, 3, 4, 65536, 65539, 4, 196608, 131075, 4, 131072, 196611, 4, 65536, -196604, 4, 131072, -131068, 4, 65536, -65532, 4, 196608, 4, 4, 131072, 65540, 4, 65536, 131076, 4, 196608, -393216, 4, 131072, -327679, 4, 196608, -327678, 4, 65536, -262141, 4, 131072, -262140, 4, 196608, -196603, 4, 65536, -131067, 4, 196608, -65531, 4, 131072, 5, 4, 65536, 65541, 4, 196608, 131077, 4, 131072, 262144, 4, 65536, 327679, 4, 196608, 196608, 4, 131072, 196609, 4, 65536)
+
+[node name="TurnSignal" type="Sprite2D" parent="Background/Central"]
+position = Vector2(-270, -270)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("6_dt4tv")
 
 [node name="PlayerColumn" type="Control" parent="."]
 layout_mode = 1
@@ -269,11 +275,6 @@ History
 [node name="Queens" type="Node" parent="PiecesContainer/White"]
 
 [node name="King" type="Node" parent="PiecesContainer/White"]
-
-[node name="RichTextLabel" type="RichTextLabel" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
 
 [node name="ChessEngine" type="Node" parent="."]
 script = ExtResource("7_uqrw5")

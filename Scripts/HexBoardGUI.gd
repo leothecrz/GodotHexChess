@@ -115,8 +115,8 @@ func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
 	if(GameDataNode._getIsWhiteTurn()):
 		i += 1;
 		
-	for pawnIndex in range( activePieces[i]["P"].size() ):
-		if (activePieces[i]["P"][pawnIndex] == cords):
+	for pawnIndex in range( activePieces[i][1].size() ):
+		if (activePieces[i][1][pawnIndex] == cords):
 			ref = ChessPiecesNode.get_child(i).get_child(0).get_child(pawnIndex);
 			break;
 	######### FIX
@@ -151,16 +151,18 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 	activePieces = GameDataNode._getActivePieces()
 	currentLegalsMoves = GameDataNode._getMoves()
 	
-	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
-		LeftPanel._swapLabelState();
-
 	if(GameDataNode._getCaptureValid()):
 		handleMoveCapture();
 	
+	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
+		LeftPanel._swapLabelState();
+
 	if(GameDataNode._getIsWhiteTurn()):
 		emit_signal("gameSwitchedSides", 1);
+		BoardControler.setSignalWhite();
 	else:
 		emit_signal("gameSwitchedSides", 0);
+		BoardControler.setSignalBlack();
 
 	if(GameDataNode._getGameOverStatus()):
 		if(GameDataNode._getGameOverStatus() != LeftPanel._getLabelState()):
@@ -253,7 +255,13 @@ func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 		
 	spawnChessMoves(thisPiecesMoves, CORDS);
 	
+
+	
 	return;
+
+
+
+
 
 
 
@@ -285,6 +293,8 @@ func _newGame_OnButtonPress() -> void:
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
 	
+	print(GameDataNode.moveHistory)
+	
 	GameDataNode._resign();
 	activePieces.clear();
 	currentLegalsMoves.clear();
@@ -302,6 +312,9 @@ func _resign_OnButtonPress() -> void:
 ## Undo Button Pressed
 func _on_undo_pressed():
 	GameDataNode._undoLastMove();
+	
+	
+	
 	return;
 
 
@@ -329,6 +342,5 @@ func _ready():
 	
 	selectedSide = 0;
 	get_tree().get_root().size_changed.connect(onResize);
-	
 	return;
 
