@@ -52,7 +52,10 @@ const CHECK_IN_TWO = '2B3/7/8/9/10/R10/10/9/8/2p4/2k1K1 w - 1';
 const ROOK_VECTORS = { 'foward':Vector2i(0,-1), 'lFoward':Vector2i(-1,0,), 'rFoward':Vector2i(1,-1), 'backward':Vector2i(0,1), 'lBackward':Vector2i(-1,1), 'rBackward':Vector2i(1,0) };
 const BISHOP_VECTORS = { 'lfoward':Vector2i(-2,1), 'rFoward':Vector2i(-1,-1), 'left':Vector2i(-1,2), 'lbackward':Vector2i(1,1), 'rBackward':Vector2i(2,-1), 'right':Vector2i(1,-2) };
 const KING_VECTORS = { 'foward':Vector2i(0,-1), 'lFoward':Vector2i(-1,0,), 'rFoward':Vector2i(1,-1), 'backward':Vector2i(0,1), 'lBackward':Vector2i(-1,1), 'rBackward':Vector2i(1,0), 'dlfoward':Vector2i(-2,1), 'drFoward':Vector2i(-1,-1), 'left':Vector2i(-1,2), 'dlbackward':Vector2i(1,1), 'drBackward':Vector2i(2,-1), 'right':Vector2i(1,-2) };
+const KNIGHT_VECTORS = { 'left':Vector2i(-1,-2), 'lRight':Vector2i(1,-3), 'rRight':Vector2i(2,-3),}
 
+const DEFAULT_MOVE_TEMPLATE : Dictionary = { 'Capture':[], 'Moves':[] };
+const PAWN_MOVE_TEMPLATE : Dictionary = { 'Promote':[], 'EnPassant':[],'Capture':[], 'Moves':[] };
 
 ### State
 	# Board
@@ -389,7 +392,7 @@ func swapPlayerTurn():
 ### MOVE GENERATION
 
 ##Blocking Piece Search Logic
-func checkForBlockingPieces(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
+func checkForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
 	
 	var isWhiteTrn:bool = !isPieceBlack(HexBoard[cords.x][cords.y]);
 	
@@ -426,110 +429,94 @@ func checkForBlockingPieces(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cor
 			checkingR += activeVector.y;
 	return;
 
-
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 func checkForBlockingPiecesFrom(cords:Vector2i) -> Dictionary:
 	
 	var blockingpieces:Dictionary = {};
 	
-	checkForBlockingPieces(PIECES.ROOK, ROOK_VECTORS, blockingpieces, cords);
-	checkForBlockingPieces(PIECES.BISHOP, BISHOP_VECTORS, blockingpieces, cords);
+	checkForBlockingOnVector(PIECES.ROOK, ROOK_VECTORS, blockingpieces, cords);
+	checkForBlockingOnVector(PIECES.BISHOP, BISHOP_VECTORS, blockingpieces, cords);
 		
 	return blockingpieces;
 
 
+## Calculate Pawn Capture Moves
+func findCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void:
+	var move = Vector2i(qpos, rpos)
+	if( HexBoard.has(qpos) && HexBoard[qpos].has(rpos)):
+		if ( (HexBoard[qpos][rpos] != PIECES.ZERO) && (!isPieceFriendly(HexBoard[qpos][rpos], isWhiteTurn)) ):
+			if ( isWhitePawnPromotion(move) if isWhiteTurn else isBlackPawnPromotion(move) ) :
+				legalMoves[pawn]['Promote'].append(move);
+			else:
+				legalMoves[pawn]['Capture'].append(move);
+		else:
+			if( EnPassantCordsValid && (EnPassantCords.x == qpos) && (EnPassantCords.y == rpos) ):
+				legalMoves[pawn]['Capture'].append(move);
+		updateAttackBoard(qpos, rpos, 1);
+	return;
+
+## Calculate Pawn Foward Moves
+func findFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
+	var boolCanGoFoward = false;
+	##Foward Move
+	if (HexBoard[pawn.x].has(fowardR) && HexBoard[pawn.x][fowardR] == 0):
+		if ( isWhitePawnPromotion(Vector2i(pawn.x,fowardR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x,fowardR)) ) :
+			legalMoves[pawn]['Promote'].append(Vector2i(pawn.x, fowardR));
+		else:
+			legalMoves[pawn]['Moves'].append(Vector2i(pawn.x, fowardR));
+			boolCanGoFoward = true;
+	
+	##Double Move From Start
+	if( boolCanGoFoward && ( isWhitePawnStar(pawn) if isWhiteTurn else isBlackPawnStart(pawn) ) ):
+		var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
+		if (HexBoard[pawn.x][doubleF] == 0):
+			legalMoves[pawn]['EnPassant'].append(Vector2i(pawn.x, doubleF));
 
 ## Calculate Pawn Moves (TODO: Unfinished Promote)
 func findMovesForPawn(PawnArray:Array)-> void:
-	
-	var pawnMoves:Dictionary = { 'Promote':[], 'EnPassant':[],'Capture':[], 'Moves':[] };
-
 	for i in range(PawnArray.size()):
 		var pawn = PawnArray[i];
+		legalMoves[pawn] = PAWN_MOVE_TEMPLATE.duplicate(true);
 
-		legalMoves[pawn] = pawnMoves.duplicate(true);
-		
-		var boolCanGoFoward = false;
 		var fowardR = pawn.y - 1 if isWhiteTurn else pawn.y + 1;
 		var leftCaptureR = pawn.y if isWhiteTurn else pawn.y + 1; 
 		var rightCaptureR = pawn.y-1 if isWhiteTurn else pawn.y;
-		
+
 		##Foward Move
-		if (HexBoard[pawn.x].has(fowardR) && HexBoard[pawn.x][fowardR] == 0):
-			if ( isWhitePawnPromotion(Vector2i(pawn.x,fowardR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x,fowardR)) ) :
-				legalMoves[pawn]['Promote'].append(Vector2i(pawn.x, fowardR));
-			else:
-				legalMoves[pawn]['Moves'].append(Vector2i(pawn.x, fowardR));
-				boolCanGoFoward = true;
-		
-		##Double Move From Start
-		if( boolCanGoFoward && ( isWhitePawnStar(pawn) if (isWhiteTurn) else isBlackPawnStart(pawn) ) ):
-			var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
-			if (HexBoard[pawn.x][doubleF] == 0):
-				legalMoves[pawn]['EnPassant'].append(Vector2i(pawn.x, doubleF));
+		findFowardMovesForPawn(pawn, fowardR);
 
 		##Left Capture
-		if( HexBoard.has(pawn.x-1) && HexBoard[pawn.x-1].has(leftCaptureR)):
-			if (HexBoard[pawn.x-1][leftCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x-1][leftCaptureR], isWhiteTurn) ):
-				if ( isWhitePawnPromotion(Vector2i(pawn.x-1,leftCaptureR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x-1,leftCaptureR)) ) :
-					legalMoves[pawn]['Promote'].append(Vector2i(pawn.x-1, leftCaptureR));
-				else:
-					legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
-			else:
-				if(EnPassantCordsValid):
-					if(EnPassantCords.x == pawn.x-1 && EnPassantCords.y == leftCaptureR):
-						legalMoves[pawn]['Capture'].append(Vector2i(pawn.x-1, leftCaptureR));
-						pass;
-			updateAttackBoard(pawn.x-1, leftCaptureR, 1);
+		findCaptureMovesForPawn(pawn, pawn.x-1, leftCaptureR);
 
 		##Right Capture
-		if( HexBoard.has(pawn.x+1) && HexBoard[pawn.x+1].has(rightCaptureR)):
-			if (HexBoard[pawn.x+1][rightCaptureR] != 0 && !isPieceFriendly(HexBoard[pawn.x+1][rightCaptureR], isWhiteTurn) ):
-				if ( isWhitePawnPromotion(Vector2i(pawn.x+1,rightCaptureR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x+1,rightCaptureR)) ) :
-					legalMoves[pawn]['Promote'].append(Vector2i(pawn.x+1, rightCaptureR));
-				else:
-					legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
-			else:
-				if(EnPassantCordsValid):
-					if(EnPassantCords.x == pawn.x+1 && EnPassantCords.y == rightCaptureR):
-						legalMoves[pawn]['Capture'].append(Vector2i(pawn.x+1, rightCaptureR));
-						pass;
-			updateAttackBoard(pawn.x+1, rightCaptureR, 1);
+		findCaptureMovesForPawn(pawn, pawn.x+1, rightCaptureR);
 
 		## Not Efficient FIX LATER
 		if(  blockingPieces.has(pawn) ):
 			var newLegalmoves = blockingPieces[pawn];
 			for moveType in legalMoves[pawn].keys():
 				legalMoves[pawn][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[pawn][moveType]);
-		
+
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
 			for moveType in legalMoves[pawn].keys():
 				legalMoves[pawn][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[pawn][moveType]);
-		
+
 	return;
 
 
 ## Calculate Knight Moves
 func findMovesForKnight(KnightArray:Array) -> void:
-
-	var knightMoves:Dictionary = { 'Capture':[], 'Moves':[] };	
-	var directionVectors = { 
-	 'left':Vector2i(-1,-2),
-	 'lRight':Vector2i(1,-3),
-	 'rRight':Vector2i(2,-3),
-	}
-	
 	for i in range(KnightArray.size()):
 
 		var knight = KnightArray[i];
-		legalMoves[knight] = knightMoves.duplicate(true);
+		legalMoves[knight] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
 
 		var invertAt2Counter = 0;
 		for m in [-1,1,-1,1]:
 			
-			for dir in directionVectors.keys():
-				var activeVector:Vector2i = directionVectors[dir];
+			for dir in KNIGHT_VECTORS.keys():
+				var activeVector:Vector2i = KNIGHT_VECTORS[dir];
 				var checkingQ = knight.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
 				var checkingR = knight.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
 				
@@ -552,7 +539,7 @@ func findMovesForKnight(KnightArray:Array) -> void:
 
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
-			for moveType in knightMoves.keys():
+			for moveType in legalMoves[knight].keys():
 				legalMoves[knight][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[knight][moveType]);
 
 	return;
@@ -560,12 +547,9 @@ func findMovesForKnight(KnightArray:Array) -> void:
 
 ## Calculate Rook Moves
 func findMovesForRook(RookArray:Array) -> void:
-	
-	var rookMoves:Dictionary = { 'Capture':[], 'Moves':[] };
-	
 	for i in range(RookArray.size()):
 		var rook = RookArray[i];
-		legalMoves[rook] = rookMoves.duplicate(true);
+		legalMoves[rook] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
 		
 		for dir in ROOK_VECTORS.keys():
 			var activeVector:Vector2i = ROOK_VECTORS[dir];
@@ -614,7 +598,7 @@ func findMovesForRook(RookArray:Array) -> void:
 		
 		## Not Efficient TODO: FIX LATER
 		if( GameInCheck ):
-			for moveType in rookMoves.keys():
+			for moveType in legalMoves[rook]:
 				legalMoves[rook][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[rook][moveType]);
 		
 	return;
@@ -622,12 +606,10 @@ func findMovesForRook(RookArray:Array) -> void:
 
 ## Calculate Bishop Moves
 func findMovesForBishop(BishopArray:Array) -> void:
-	var bishopMoves:Dictionary = { 'Capture':[], 'Moves':[] };
-	
 	for i in range(BishopArray.size()):
 		var bishop = BishopArray[i];
 		
-		legalMoves[bishop] = bishopMoves.duplicate(true);
+		legalMoves[bishop] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
 		
 		for dir in BISHOP_VECTORS.keys():
 			var activeVector:Vector2i = BISHOP_VECTORS[dir];
@@ -704,11 +686,9 @@ func findMovesForQueen(QueenArray:Array) -> void:
 
 ## Calculate King Moves
 func findMovesForKing(KingArray:Array) -> void:
-	var kingMoves:Dictionary = { 'Capture':[], 'Moves':[] };
-	
 	for i in range(KingArray.size()):
 		var king = KingArray[i];
-		legalMoves[king] = kingMoves.duplicate(true);
+		legalMoves[king] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
 
 		for dir in KING_VECTORS.keys():
 			var activeVector:Vector2i = KING_VECTORS[dir];
@@ -734,14 +714,14 @@ func findMovesForKing(KingArray:Array) -> void:
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
 			legalMoves[king]['Capture'] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[king]['Capture']);
-			for moveType in kingMoves.keys():
+			for moveType in legalMoves[king]:
 				if(moveType == 'Capture'): continue;
 				legalMoves[king][moveType] = differenceOfTwoArrays(legalMoves[king][moveType], GameInCheckMoves);
 
 	return;
 
 
-## Find the legal moves for a single player
+## Find the legal moves for a single player given an  of pieces
 func findLegalMovesFor(activepieces:Array) -> void:
 	
 	var pieces:Dictionary = activepieces[SIDES.WHITE] if isWhiteTurn else activepieces[SIDES.BLACK];
@@ -900,7 +880,6 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			var i:int = 0;
 			for pieceCords in activePieces[selfColor][pieceType]:
 				if(cords == pieceCords):
-					captureIndex = i;
 					break;
 				i = i+1;
 			activePieces[selfColor][pieceType].remove_at(i);
