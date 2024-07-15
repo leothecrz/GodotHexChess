@@ -14,7 +14,7 @@ var boardRotatedToWhite;
 ###
 ### USER CREATED
 ## Flip the board if POV player does not match selected player.
-func checkIfFlipBoard(isPOVWhite:bool):
+func checkAndFlipBoard(isPOVWhite:bool):
 	if(isPOVWhite != boardRotatedToWhite):
 		boardRotatedToWhite = !boardRotatedToWhite;
 		rotate_tilemap();

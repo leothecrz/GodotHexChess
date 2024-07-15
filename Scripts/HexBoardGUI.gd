@@ -1,31 +1,43 @@
 extends Control
 
+##
+# Entry Point of Game
+##
 
 
+## Underscores( _name ) signal public methods
+## 
+## 
+## 
 
-###
-###
+## Error Codes
+## 1 No Game Data Node
+
 ### State
+
+	# Position References
 @onready var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @onready var offset = 35;
-	# REF
+
+	# Node Ref
 @onready var MoveGUI = $MoveGUI;
 @onready var BoardControler = $Background/Central;
 @onready var GameDataNode = $ChessEngine;
 @onready var ChessPiecesNode = $PiecesContainer;
 @onready var LeftPanel = $LeftPanel;
+
 	# Board Setup
 var selectedSide:int;
-var boardRotatedForWhite:bool;
-	# Game Info
+var isRotatedWhiteDown:bool;
+
+	# Temp State
 var activePieces:Array;
 var currentLegalsMoves:Dictionary;
 
+	# State
+@onready var errorAttempts:int = 0;
+@onready var GameStartTime = 0;
 
-
-
-###
-###
 ### Signals
 signal gameSwitchedSides(newSideTurn);
 signal pieceSelectedLockOthers();
@@ -42,8 +54,6 @@ signal pieceUnselectedUnlockOthers();
 ##	i=y/(3/2*s);
 ##	j=(x-(y/sqrt(3)))/s*sqrt(3);
 func axial_to_pixel(axial: Vector2i) -> Vector2:
-
-
 	const xScale = 1.4;
 	const yScale = 0.9395;
 	var x = float(axial.x) * xScale;
@@ -53,44 +63,48 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 
 
 
-##
+## Hand piece data to new scene.
+## Connect scene to piece controller. 
 func spawnPiecesSubRoutine(side, typeindex, pieceType, piece, cords) -> void:
-	var activeScene = preload("res://Scenes/chess_piece.tscn").instantiate();
+	var newPieceScene = preload("res://Scenes/chess_piece.tscn").instantiate();
 
-	activeScene.side = side;
-	activeScene.pieceType = pieceType;
-	activeScene.pieceCords = piece;
-	activeScene.isSetup = true;
-	
-	activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cords));
+	newPieceScene.isSetup = true;
+	newPieceScene.side = side;
+	newPieceScene.pieceType = pieceType;
+	newPieceScene.pieceCords = piece;
+
+	newPieceScene.transform.origin = centerPos + (offset * axial_to_pixel(cords));
 	
 	# TODO: FIX SCALE-ING
-	activeScene.scale.x = 0.18;
-	activeScene.scale.y = 0.18;
+	newPieceScene.scale.x = 0.18;
+	newPieceScene.scale.y = 0.18;
 	
-	ChessPiecesNode.get_child(side).get_child(typeindex).add_child(activeScene);
+	ChessPiecesNode\
+	.get_child(side)\
+	.get_child(typeindex)\
+	.add_child(newPieceScene);
 
-	activeScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
-	activeScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
+	## Connect Piece To Piece Controller
+	newPieceScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
+	newPieceScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
 	
-	gameSwitchedSides.connect(activeScene._on_Control_GameSwitchedSides);
-	pieceSelectedLockOthers.connect(activeScene._on_Control_LockPiece);
-	pieceUnselectedUnlockOthers.connect(activeScene._on_Control_UnlockPiece);
+	## Connect Piece Controller To Piece
+	gameSwitchedSides.connect(newPieceScene._on_Control_GameSwitchedSides);
+	pieceSelectedLockOthers.connect(newPieceScene._on_Control_LockPiece);
+	pieceUnselectedUnlockOthers.connect(newPieceScene._on_Control_UnlockPiece);
 	return;
 
 ## Spawn all the pieces in 'activePieces' at there positions.
 func spawnPieces() -> void:
-	
-	for i:int in range(activePieces.size()):
-		var j:int = 0;
-		for pieceType in activePieces[i]:
-			for piece in activePieces[i][pieceType]:
+	for side:int in range(activePieces.size()):
+		var index:int = 0;
+		for pieceType in activePieces[side]:
+			for piece in activePieces[side][pieceType]:
 				
-				var cord = piece * (1 if boardRotatedForWhite else -1);
+				var visualCords = piece * (1 if isRotatedWhiteDown else -1);
+				spawnPiecesSubRoutine(side, index, pieceType, piece, visualCords);
 				
-				spawnPiecesSubRoutine(i, j, pieceType, piece, cord);
-				
-			j = j+1;
+			index += 1;
 	return;
 
 
@@ -120,7 +134,7 @@ func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
 			ref = ChessPiecesNode.get_child(i).get_child(0).get_child(pawnIndex);
 			break;
 	######### FIX
-	spawnPiecesSubRoutine(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords, ref.pieceCords * 1 if boardRotatedForWhite else -1);
+	spawnPiecesSubRoutine(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords, ref.pieceCords * 1 if isRotatedWhiteDown else -1);
 	ref.queue_free();
 	
 	handleMakeMove(cords, key, index, pTo, true);
@@ -182,14 +196,8 @@ func handleMovesSpawn(moves:Array, color:Color, key, cords):
 	
 	for i in range(moves.size()):
 		var move = moves[i];
-		
-		#var kingCord```s = activePieces[0 if GameDataNode.__getIsBlackTurn() else 1]["K"][0];
-		#if(move.x == kingCords.x && move.y == kingCords.y):
-		#	continue;
-		
 		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
-		var cord = move if boardRotatedForWhite else (move * -1);
-		
+		var cord = move if isRotatedWhiteDown else (move * -1);
 		
 		activeScene.hexCords = cords;
 		activeScene.hexKey = key;
@@ -214,16 +222,16 @@ func spawnChessMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
 			"Promote":
-				handleMovesSpawn(moves[key], Color(0,255,255,255), key, cords);
+				handleMovesSpawn(moves[key], Color.DARK_KHAKI, key, cords);
 				pass
 			"EnPassant":
-				handleMovesSpawn(moves[key], Color(255,255,0,255), key, cords);
+				handleMovesSpawn(moves[key], Color.SEA_GREEN, key, cords);
 				pass
 			"Capture":
-				handleMovesSpawn(moves[key], Color(255,0,0,255), key, cords);
+				handleMovesSpawn(moves[key], Color.DARK_RED, key, cords);
 				pass
 			"Moves":
-				handleMovesSpawn(moves[key], Color(0,255,0,255), key, cords);
+				handleMovesSpawn(moves[key], Color.WHITE, key, cords);
 				pass
 	return;
 
@@ -244,7 +252,8 @@ func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> vo
 	
 	return;
 
-##
+## Lock Other Pieces
+## Sub :: Spawn Piece's Moves 
 func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	
 	emit_signal("pieceSelectedLockOthers");
@@ -252,44 +261,46 @@ func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	var thisPiecesMoves = {};
 	for key in currentLegalsMoves[CORDS].keys():
 		thisPiecesMoves[key] = currentLegalsMoves[CORDS][key];
-		
 	spawnChessMoves(thisPiecesMoves, CORDS);
 	
-
-	
 	return;
-
-
 
 
 
 
 
 ## New Game Button Pressed.
+# Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
 	if(activePieces):
-		return; # Ignore if pieces already set.
+		# TODO: Signal Warning a game is already running.
+		return; 
 	
 	if(!GameDataNode):	
 		push_error("GUI HAS NO GAME DATA - ON READY FAIL");
+		get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST);
+		get_tree().quit(1);
 		return;
 
 	var isWhite = (selectedSide == 0);
 	
 	GameDataNode._initDefault();
 	
-	BoardControler.checkIfFlipBoard(isWhite);
-	boardRotatedForWhite = isWhite;
-
+	BoardControler.checkAndFlipBoard(isWhite);
+	
+	isRotatedWhiteDown = isWhite;
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
 	spawnPieces();
 
-	if(GameDataNode._getIsWhiteTurn()): emit_signal("gameSwitchedSides", 1);
-	else: emit_signal("gameSwitchedSides", 0);
+	if(GameDataNode._getIsWhiteTurn()): 
+		emit_signal("gameSwitchedSides", 1);
+	else: 
+		emit_signal("gameSwitchedSides", 0);
 
+	GameStartTime = Time.get_ticks_msec();
 	return;
-	
+
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
 	
@@ -298,6 +309,8 @@ func _resign_OnButtonPress() -> void:
 	GameDataNode._resign();
 	activePieces.clear();
 	currentLegalsMoves.clear();
+	
+	BoardControler.setSignalWhite();
 	
 	for colorNodes in ChessPiecesNode.get_children():
 		for pieceNodes in colorNodes.get_children():
@@ -333,14 +346,17 @@ func onResize() ->void:
 
 
 
-
-###
-###
 ### GODOT DEFAULTS
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	
-	selectedSide = 0;
+
+##
+func connectResizeToRoot() -> void:
 	get_tree().get_root().size_changed.connect(onResize);
+	return;
+
+## First Method Called
+func _ready():
+	selectedSide = 0;
+	connectResizeToRoot();
+	
 	return;
 
