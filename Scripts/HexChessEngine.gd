@@ -375,7 +375,7 @@ func incrementTurnNumber():
 func decrementTurnNumber():
 	turnNumber -= 1;
 	return;
-	
+
 ## Update Turn Counter and swap player turn
 func swapPlayerTurn():
 	isWhiteTurn = !isWhiteTurn;
@@ -821,7 +821,7 @@ func resetFlags() -> void:
 	return;
 
 ##
-func handleMoveCapture(moveTo, pieceType) -> void:
+func handleMoveCapture(moveTo, pieceType) -> bool:
 	captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
 	captureValid = true;
 
@@ -850,7 +850,7 @@ func handleMoveCapture(moveTo, pieceType) -> void:
 	#Add To Captures
 	if(isWhiteTurn): whiteCaptures.append(captureType);
 	else: blackCaptures.append(captureType);
-	return;
+	return revertEnPassant;
 
 ##
 func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
@@ -868,6 +868,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 	match moveType:
 		'Promote':
 			print("1: ", activePieces);
+			
 			if(moveTo.x != cords.x):
 				handleMoveCapture(moveTo, pieceType);
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
@@ -880,23 +881,26 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			activePieces[selfColor][pieceType].remove_at(i);
 			
 			pieceType = getPieceType(promoteTo);
-			activePieces[selfColor][pieceType].append(moveTo);
+			activePieces[selfColor][pieceType].push_back(moveTo);
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
 			moveHistMod = moveHistMod + (" +%s" % pieceType);
-			print("2: ",activePieces)
+			
+			print("2: ",activePieces);
 			pass;
 
 		'EnPassant':
 			EnPassantCords = legalMoves[cords]['Moves'][0];
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
-
+			
 			moveHistMod = "E";
 			pass;
 
 		'Capture':
-			handleMoveCapture(moveTo, pieceType);
-			moveHistMod = "/%d,%d" % [captureType,captureIndex];
+			if handleMoveCapture(moveTo, pieceType):
+				moveHistMod = "-%d,%d" % [captureType,captureIndex];
+			else:
+				moveHistMod = "/%d,%d" % [captureType,captureIndex];
 			pass;
 
 		'Moves': pass;
@@ -909,7 +913,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 	for i in range(activePieces[selfColor][pieceType].size()):
 		if (activePieces[selfColor][pieceType][i] == cords):
 			activePieces[selfColor][pieceType][i] = moveTo;
-			break
+			break;
 
 	removeAttacksFrom(cords, getPieceType(previousPieceVal));
 	checkState(moveTo, cords, histPreview);
@@ -981,7 +985,7 @@ func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 	return;
 
 ##
-func debugPrintOne(run:bool):
+func debugPrintOne(run:bool) -> void:
 	if(!run):
 		return;
 	print("Board : ")
@@ -990,6 +994,16 @@ func debugPrintOne(run:bool):
 	printBoard(WhiteAttackBoard);
 	print("B.A.B. : ")
 	printBoard(BlackAttackBoard);
+	return;
+
+##
+func debugPrintTwo(run:bool) -> void:
+	print("History: \n", moveHistory[moveHistory.size()-1], "\n");
+	print("Active Pieces: \n", activePieces, "\n");
+	print("HexBoard: ")
+	printBoard(HexBoard)
+	print("\n\n")
+	return;
 
 ##
 # SUB Routine
@@ -1083,16 +1097,16 @@ func checkState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 		
 		GameIsOver = true;
 	
-	print("Move Count: ", moveCount);
+	print("Available Move Count: ", moveCount);
 	moveHistory.append("%s %s" % [historyPreview, mateStatus])
 	
-	debugPrintOne(false);
+	
 
 	return;
 
 ##
 # SUB Routine
-func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2i):
+func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2i):	
 	var i = 3;
 	while (i < splits.size()):
 		var flag:String = splits[i];
@@ -1133,14 +1147,43 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				captureIndex = index;
 				#signal gui // finished?
 				pass;
-			
+
+			_ when flag[0] == '-':
+				var cleanFlag:String = flag.get_slice('/', 0);
+				var idAndIndex = cleanFlag.split(',');
+				
+				var id = int(idAndIndex[0]);
+				var index = int(idAndIndex[1]);
+				
+				newTo.y += 1 if isWhiteTurn else -1;
+				
+				HexBoard[newTo.x][newTo.y] = getPieceInt(id, isWhiteTurn);
+				
+				activePieces\
+				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
+				[captureType]\
+				.insert( index, Vector2i(newTo) );
+				
+				uncaptureValid = true;
+				captureType = id;
+				captureIndex = index;
+				#signal gui // finished?
+				pass;
+
 			_ when flag[0] == '+':
 				HexBoard[newFrom.x][newFrom.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
-
+				
 				var cleanFlag:String = flag.get_slice('+', 0);
 				var idAndIndex = cleanFlag.split(',');
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
+				
+				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][getPieceType(id)].pop_back();
+				
+				activePieces\
+				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
+				[PIECES.PAWN]\
+				.insert( index, Vector2i(newTo) );
 				
 				unpromoteValid = true;
 				unpromoteType = id;
@@ -1239,11 +1282,8 @@ func differenceOfTwoArrays(ARR:Array, ARR1:Array):
 	return intersection;
 
 
-
-
-###
-###
 ### API INTERACTIONS
+
 
 ## Get Is Game Over
 func _getGameOverStatus() -> bool:
@@ -1280,6 +1320,14 @@ func _getCaptureType() -> PIECES:
 ## Get Capture Index
 func _getCaptureIndex() -> int:
 	return captureIndex;
+
+## Get Uncapture Valid Flag
+func _getUncaptureValid() -> bool:
+	return uncaptureValid;
+
+## Get Unpromote Valid Flag
+func _getUnpromoteValid() -> bool:
+	return unpromoteValid;
 
 
 ## Print HexBoard 
@@ -1347,12 +1395,14 @@ func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES)
 	resetFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
 	
-	print(moveHistory[moveHistory.size()-1]);
+	debugPrintOne(false)
+	debugPrintTwo(true);
 	
 	return;
 
 ## RESIGN PUBLIC CALL
 func _resign():
+	
 	GameIsOver = true;
 	print("%s WINS BY RESIGN" % ("White" if isWhiteTurn else "Black"));
 
@@ -1360,6 +1410,7 @@ func _resign():
 
 ## Undo Move PUBLIC CALL
 func _undoLastMove() -> void:
+	
 	if(moveHistory.size() < 1):
 		print("No move history");
 		return;
@@ -1371,12 +1422,23 @@ func _undoLastMove() -> void:
 	var splits:PackedStringArray = currentMove.split(" ");
 	
 	var pieceVal:int = getPieceInt(int(splits[0]), !isWhiteTurn);
+	
 	var newTo:Vector2i = decodeEnPassantFEN(splits[1]);
 	var newFrom:Vector2i = decodeEnPassantFEN(splits[2]);
+	
+	var pieceType = getPieceType(pieceVal);
+	var selfColor = SIDES.BLACK if isWhiteTurn else SIDES.WHITE;
+	var index:int = 0;
 	
 	##Default Undo
 	HexBoard[newFrom.x][newFrom.y] = pieceVal;
 	HexBoard[newTo.x][newTo.y] = PIECES.ZERO;
+	
+	for pieceCords in activePieces[selfColor][pieceType]:
+		if(newTo == pieceCords):
+			break;
+		index += 1;
+	activePieces[selfColor][pieceType][index] = newFrom;
 	
 	undoSubCleanFlags(splits, newTo, newFrom);
 	undoSubFixState();

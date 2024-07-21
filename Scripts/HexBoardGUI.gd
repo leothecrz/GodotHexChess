@@ -326,9 +326,16 @@ func _resign_OnButtonPress() -> void:
 func _on_undo_pressed():
 	GameDataNode._undoLastMove();
 	
-	## Handle Falgs from node
+	if(GameDataNode._getUncaptureValid()):
+		## respawn captured piece
+		pass;
 	
+	if(GameDataNode._getUnpromoteValid()):
+		## despawn promotion piece, spawn pawn in its sted.
+		pass;
 	
+	## ID which piece needs to be moved
+	##
 	return;
 
 
