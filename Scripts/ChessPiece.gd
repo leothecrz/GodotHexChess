@@ -166,14 +166,11 @@ func _on_area_2d_area_entered(area:Area2D):
 
 # Called when a move is submitted and active pieces need to be swapped.
 func _on_Control_GameSwitchedSides(newSide):
-	var mySide = side;
-	locked = false if (newSide == mySide) else true;
-	
+	locked = newSide != side;
 	if locked:
 		set_process(false);
 	else:
 		set_process(true);
-
 	return;
 
 #

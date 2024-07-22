@@ -98,6 +98,10 @@ var unpromoteValid:bool = false;
 var unpromoteType:PIECES = PIECES.ZERO;
 var unpromoteIndex:int = 0;
 
+var undoType:PIECES = PIECES.ZERO ;
+var undoIndex:int = -1;
+var undoTo:Vector2i = Vector2i();
+
 	# EnPassant
 var EnPassantCords : Vector2i = Vector2i(-5,-5);
 var EnPassantTarget : Vector2i = Vector2i(-5,-5);
@@ -1356,6 +1360,15 @@ func _getUncaptureValid() -> bool:
 func _getUnpromoteValid() -> bool:
 	return unpromoteValid;
 
+## Get Unpromote Type
+func _getUnpromoteType() -> PIECES:
+	return unpromoteType;
+
+## Get Unpromote Index
+func _getUnpromoteIndex() -> int:
+	return unpromoteIndex;
+
+
 # NON-GETTER FUNCTIONS
 
 ## MAKE MOVE PUBLIC CALL
@@ -1384,11 +1397,11 @@ func _resign():
 	return
 
 ## Undo Move PUBLIC CALL
-func _undoLastMove() -> void:
+func _undoLastMove() -> bool:
 	
 	if(moveHistory.size() < 1):
 		print("No move history");
-		return;
+		return false;
 	
 	uncaptureValid = false;
 	unpromoteValid = false;
@@ -1422,7 +1435,7 @@ func _undoLastMove() -> void:
 	
 	generateNextLegalMoves();
 	
-	return;
+	return true;
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> void:

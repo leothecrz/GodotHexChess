@@ -5,19 +5,16 @@ extends Control
 ##
 
 
-## Underscores( _name ) signal public methods
-## 
-## 
-## 
-
 ## Error Codes
 ## 1 No Game Data Node
 
+
 ### State
 
+
 	# Position References
-@onready var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-@onready var offset = 35;
+@onready var VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
+@onready var PIXEL_OFFSET = 35;
 
 	# Node Ref
 @onready var MoveGUI = $MoveGUI;
@@ -38,17 +35,27 @@ var currentLegalsMoves:Dictionary;
 @onready var errorAttempts:int = 0;
 @onready var GameStartTime = 0;
 
+
 ### Signals
+
+
 signal gameSwitchedSides(newSideTurn);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 
 
+## Utility
 
 
-###
-###
-### Scene Events
+##
+func connectResizeToRoot() -> void:
+	get_tree().get_root().size_changed.connect(onResize);
+	return;
+
+##TODO: Implement Resize - Cascade scale factor to gui elements
+## Begining of resize cascade
+func onResize() ->void:
+	return;
 
 ## Convert Axial Cordinates To Viewport Cords
 ##	i=y/(3/2*s);
@@ -62,18 +69,20 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 	return Vector2(x, y);
 
 
+## DISPLAY PIECES
+
 
 ## Hand piece data to new scene.
 ## Connect scene to piece controller. 
-func spawnPiecesSubRoutine(side, typeindex, pieceType, piece, cords) -> void:
+func spawnPiecesSubRoutine(side:int, typeindex:int, pieceType, piece:Vector2i, cords:Vector2i) -> void:
 	var newPieceScene = preload("res://Scenes/chess_piece.tscn").instantiate();
-
-	newPieceScene.isSetup = true;
+	
 	newPieceScene.side = side;
 	newPieceScene.pieceType = pieceType;
 	newPieceScene.pieceCords = piece;
+	newPieceScene.isSetup = true;
 
-	newPieceScene.transform.origin = centerPos + (offset * axial_to_pixel(cords));
+	newPieceScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords));
 	
 	# TODO: FIX SCALE-ING
 	newPieceScene.scale.x = 0.18;
@@ -85,13 +94,14 @@ func spawnPiecesSubRoutine(side, typeindex, pieceType, piece, cords) -> void:
 	.add_child(newPieceScene);
 
 	## Connect Piece To Piece Controller
-	newPieceScene.pieceSelected.connect(_chessPiece_OnPieceSelected);
-	newPieceScene.pieceDeselected.connect(_chessPiece_OnPieceDeselected);
+	newPieceScene.pieceSelected.connect(_chessPiece_OnPieceSELECTED);
+	newPieceScene.pieceDeselected.connect(_chessPiece_OnPieceDESELECTED);
 	
 	## Connect Piece Controller To Piece
 	gameSwitchedSides.connect(newPieceScene._on_Control_GameSwitchedSides);
 	pieceSelectedLockOthers.connect(newPieceScene._on_Control_LockPiece);
 	pieceUnselectedUnlockOthers.connect(newPieceScene._on_Control_UnlockPiece);
+	
 	return;
 
 ## Spawn all the pieces in 'activePieces' at there positions.
@@ -107,6 +117,8 @@ func spawnPieces() -> void:
 			index += 1;
 	return;
 
+
+## MOVE RESPONCE
 
 
 ##
@@ -172,10 +184,10 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 		LeftPanel._swapLabelState();
 
 	if(GameDataNode._getIsWhiteTurn()):
-		emit_signal("gameSwitchedSides", 1);
+		emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
 		BoardControler.setSignalWhite();
 	else:
-		emit_signal("gameSwitchedSides", 0);
+		emit_signal("gameSwitchedSides", GameDataNode.SIDES.BLACK);
 		BoardControler.setSignalBlack();
 
 	if(GameDataNode._getGameOverStatus()):
@@ -187,12 +199,8 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 			LeftPanel._setStaleMateText();
 	return;
 
-
-
 ##
 func handleMovesSpawn(moves:Array, color:Color, key, cords):
-	
-	var centerPos = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 	
 	for i in range(moves.size()):
 		var move = moves[i];
@@ -205,7 +213,7 @@ func handleMovesSpawn(moves:Array, color:Color, key, cords):
 		activeScene.hexMove = move;
 		activeScene.isSetup = true;
 
-		activeScene.transform.origin = centerPos + (offset * axial_to_pixel(cord));
+		activeScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cord));
 		activeScene.rotation_degrees = 90;
 		activeScene.scale.x = 0.015;
 		activeScene.scale.y = 0.015;
@@ -236,9 +244,11 @@ func spawnChessMoves(moves:Dictionary, cords) -> void:
 	return;
 
 
+## CLICK AND DRAG (MOUSE) API
+
 
 ##
-func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> void:
+func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key:String, index:int) -> void:
 	
 	if(index >= 0):
 		handleMakeMove(cords, key, index);
@@ -254,51 +264,49 @@ func  _chessPiece_OnPieceDeselected(cords:Vector2i, key:String, index:int) -> vo
 
 ## Lock Other Pieces
 ## Sub :: Spawn Piece's Moves 
-func  _chessPiece_OnPieceSelected(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
+func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	
 	emit_signal("pieceSelectedLockOthers");
 	
 	var thisPiecesMoves = {};
 	for key in currentLegalsMoves[CORDS].keys():
 		thisPiecesMoves[key] = currentLegalsMoves[CORDS][key];
+	
 	spawnChessMoves(thisPiecesMoves, CORDS);
 	
 	return;
 
 
-
+## BUTTONS
 
 
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
 	if(activePieces):
-		# TODO: Signal Warning a game is already running.
+		# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
 		return; 
 	
-	if(!GameDataNode):	
+	if(!GameDataNode):
 		push_error("GUI HAS NO GAME DATA - ON READY FAIL");
 		get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST);
 		get_tree().quit(1);
 		return;
 
-	var isWhite = (selectedSide == 0);
+	var isUserPlayingW = (selectedSide == 0);
+	BoardControler.checkAndFlipBoard(isUserPlayingW);
+	isRotatedWhiteDown = isUserPlayingW;
 	
 	GameDataNode._initDefault();
-	
-	BoardControler.checkAndFlipBoard(isWhite);
-	
-	isRotatedWhiteDown = isWhite;
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
+	
 	spawnPieces();
 
-	if(GameDataNode._getIsWhiteTurn()): 
-		emit_signal("gameSwitchedSides", 1);
-	else: 
-		emit_signal("gameSwitchedSides", 0);
+	emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
 
 	GameStartTime = Time.get_ticks_msec();
+	
 	return;
 
 ## Resign Button Pressed.
@@ -324,7 +332,10 @@ func _resign_OnButtonPress() -> void:
 
 ## Undo Button Pressed
 func _on_undo_pressed():
-	GameDataNode._undoLastMove();
+	if not GameDataNode._undoLastMove():
+		## TODO ALERT THAT UNDO IMPOSSIBLE
+		return;
+	
 	
 	if(GameDataNode._getUncaptureValid()):
 		## respawn captured piece
@@ -339,6 +350,8 @@ func _on_undo_pressed():
 	return;
 
 
+## MENUS
+
 
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
@@ -346,20 +359,8 @@ func _selectSide_OnItemSelect(index:int) -> void:
 	return;
 
 
-
-##TODO: Implement Resize - Cascade scale factor to gui elements
-## Begining of resize cascade
-func onResize() ->void:
-	return;
-
-
-
 ### GODOT DEFAULTS
 
-##
-func connectResizeToRoot() -> void:
-	get_tree().get_root().size_changed.connect(onResize);
-	return;
 
 ## First Method Called
 func _ready():
@@ -367,4 +368,3 @@ func _ready():
 	connectResizeToRoot();
 	
 	return;
-
