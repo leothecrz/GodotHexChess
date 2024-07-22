@@ -20,9 +20,10 @@ extends Node
 
 ### Constants
 	#ENUMS
-enum PIECES{ ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
-enum SIDES{ BLACK, WHITE };
+enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
+enum SIDES { BLACK, WHITE };
 
+enum MOVE_TYPES {MOVES, CAPTURE, ENPASSANT, PROMOTE}
 enum MATE_STATUS{ NONE, CHECK, OVER }
 
 	#Defaults
@@ -132,17 +133,16 @@ func findPieces(board:Dictionary) -> Array:
 	
 	for q in board.keys():
 		for r in board[q].keys():
+			
 			var val:int = board[q][r];	
 			if val == PIECES.ZERO:
 				continue;
 			
 			var pieceType:PIECES = getPieceType(val);	
 			var pos:Vector2i = Vector2i(q,r);
+			var side = SIDES.BLACK if isPieceBlack(val) else SIDES.WHITE;
 			
-			if( isPieceBlack(val) ): 
-				pieceCords[SIDES.BLACK][pieceType].append(pos);
-			else: 
-				pieceCords[SIDES.WHITE][pieceType].append(pos);
+			pieceCords[side][pieceType].append(pos);
 			
 	return pieceCords;
 
@@ -249,7 +249,7 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 
 
 ## Checks if the fourth bit is fliped.
-func isPiecewhite(id: int) -> bool:
+func isPieceWhite(id: int) -> bool:
 	var mask = 0b1000; #8
 	if ((id & mask) != 0):
 		return true;
@@ -257,7 +257,7 @@ func isPiecewhite(id: int) -> bool:
 
 ## Checks if the fourth bit is fliped.
 func isPieceBlack(id: int) -> bool:
-	return !isPiecewhite(id);
+	return !isPieceWhite(id);
 
 ## Given the int value of a chess piece and the current turn determine if friendly.
 func isPieceFriendly(val,isWhiteTrn) -> bool:
@@ -320,7 +320,7 @@ func isBlackPawnPromotion(cords:Vector2i) -> bool:
 	return false;
 
 
-### GETS
+### Internal GETS
 
 
 ## Get int representation of piece.
@@ -750,7 +750,7 @@ func checkWHERECordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> Vector
 ### ATTACK BOARD
 
 
-## Based on the turn determine the appropiate board to update.
+## Based on the turn determine the appropriate board to update.
 func updateAttackBoard(q:int, r:int, mod:int) -> void:
 	if(isWhiteTurn):
 		WhiteAttackBoard[q][r] += mod;
@@ -758,7 +758,7 @@ func updateAttackBoard(q:int, r:int, mod:int) -> void:
 		BlackAttackBoard[q][r] += mod;
 	return;
 
-## Based on the turn determine the appropiate board to update.
+## Based on the turn determine the appropriate board to update.
 func updateOpposingAttackBoard(q:int, r:int, mod:int) -> void:
 	if(!isWhiteTurn):
 		WhiteAttackBoard[q][r] += mod;
@@ -811,6 +811,101 @@ func removeCapturedFromATBoard(pieceType:PIECES, cords:Vector2i):
 	return;
 
 
+### In CHECK MOVES
+
+
+# 
+func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
+	var deltaQ = kingCords.x - moveToCords.x;
+	var deltaR = kingCords.y - moveToCords.y;
+	var direction:Vector2i = Vector2i(0,0);
+
+	if(deltaQ > 0):
+		direction.x = 1;
+	elif (deltaQ < 0):
+		direction.x = -1;				
+	
+	if(deltaR > 0):
+		direction.y = 1;
+	elif (deltaR < 0):
+		direction.y = -1;
+
+	while( true ):
+		
+		GameInCheckMoves.append(moveToCords);
+		moveToCords.x += direction.x;
+		moveToCords.y += direction.y;
+
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+				break;
+		else: break;
+	return;
+
+#
+func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
+	var deltaQ = kingCords.x - moveToCords.x;
+	var deltaR = kingCords.y - moveToCords.y;
+	var direction:Vector2i = Vector2i(0,0);
+
+	if(deltaQ > 0):
+		if(deltaR < 0):
+			if(abs(deltaQ) < abs(deltaR)):
+				direction = Vector2i(1,-2);
+			else:
+				direction = Vector2i(2,-1);
+		elif (deltaR > 0):
+			direction = Vector2i(1,1);
+
+	elif (deltaQ < 0):
+		if(deltaR > 0):
+			if(abs(deltaQ) < abs(deltaR)):
+				direction = Vector2i(-1,2);
+			else:
+				direction = Vector2i(-2,1);
+		elif (deltaR < 0):
+			direction = Vector2i(-1,-1);
+		
+	while( true ):
+
+		GameInCheckMoves.append(moveToCords);
+		moveToCords.x += direction.x;
+		moveToCords.y += direction.y;
+
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+				break;
+		else: break;
+	return;
+
+##
+# SUB Routine
+func fillInCheckMoves(pieceType:PIECES, cords:Vector2i, kingCords:Vector2i):
+	GameInCheckFrom = Vector2i(cords.x, cords.y);
+	GameInCheckMoves.clear();
+	GameInCheck = true;
+	
+	match pieceType:
+		PIECES.KING:
+			pass; # No Blocking Moves
+		PIECES.PAWN, PIECES.KNIGHT: # Can not be blocked
+			GameInCheckMoves.append(cords);
+		PIECES.ROOK:
+			fillRookCheckMoves(kingCords, cords);
+		PIECES.BISHOP:
+			fillBishopCheckMoves(kingCords, cords);
+		PIECES.QUEEN:
+			if( 
+				(cords.x == kingCords.x) or # same Q
+		 		(cords.y == kingCords.y) or # same R
+		 		(cords.x+cords.y) == (kingCords.x+kingCords.y) ): # same s
+				fillRookCheckMoves(kingCords, cords);
+			else:
+				fillBishopCheckMoves(kingCords, cords);
+	pass;
+
+
+### 
 
 
 ##
@@ -916,97 +1011,12 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			break;
 
 	removeAttacksFrom(cords, getPieceType(previousPieceVal));
-	checkState(moveTo, cords, histPreview);
-
-	return;
-
-# 
-func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
-	var deltaQ = kingCords.x - moveToCords.x;
-	var deltaR = kingCords.y - moveToCords.y;
-	var direction:Vector2i = Vector2i(0,0);
-
-	if(deltaQ > 0):
-		direction.x = 1;
-	elif (deltaQ < 0):
-		direction.x = -1;				
 	
-	if(deltaR > 0):
-		direction.y = 1;
-	elif (deltaR < 0):
-		direction.y = -1;
+	handleMoveState(moveTo, cords, histPreview);
 
-	while( true ):
-		
-		GameInCheckMoves.append(moveToCords);
-		moveToCords.x += direction.x;
-		moveToCords.y += direction.y;
-
-		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
-			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
-				break;
-		else: break;
 	return;
 
-#
-func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
-	var deltaQ = kingCords.x - moveToCords.x;
-	var deltaR = kingCords.y - moveToCords.y;
-	var direction:Vector2i = Vector2i(0,0);
-
-	if(deltaQ > 0):
-		if(deltaR < 0):
-			if(abs(deltaQ) < abs(deltaR)):
-				direction = Vector2i(1,-2);
-			else:
-				direction = Vector2i(2,-1);
-		elif (deltaR > 0):
-			direction = Vector2i(1,1);
-
-	elif (deltaQ < 0):
-		if(deltaR > 0):
-			if(abs(deltaQ) < abs(deltaR)):
-				direction = Vector2i(-1,2);
-			else:
-				direction = Vector2i(-2,1);
-		elif (deltaR < 0):
-			direction = Vector2i(-1,-1);
-		
-	while( true ):
-
-		GameInCheckMoves.append(moveToCords);
-		moveToCords.x += direction.x;
-		moveToCords.y += direction.y;
-
-		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
-			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
-				break;
-		else: break;
-	return;
-
-##
-func debugPrintOne(run:bool) -> void:
-	if(!run):
-		return;
-	print("Board : ")
-	printBoard(HexBoard);
-	print("W.A.B. : ")
-	printBoard(WhiteAttackBoard);
-	print("B.A.B. : ")
-	printBoard(BlackAttackBoard);
-	return;
-
-##
-func debugPrintTwo(run:bool) -> void:
-	print("History: \n", moveHistory[moveHistory.size()-1], "\n");
-	print("Active Pieces: \n", activePieces, "\n");
-	print("HexBoard: ")
-	printBoard(HexBoard)
-	print("\n\n")
-	return;
-
-##
-# SUB Routine
+## SUB Routine
 func generateNextLegalMoves():
 	if(isWhiteTurn):
 		resetBoard(WhiteAttackBoard);
@@ -1020,8 +1030,7 @@ func generateNextLegalMoves():
 	
 	pass;
 
-##
-# SUB Routine
+## SUB Routine
 func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 	var movedPiece = [{ type : [Vector2i(cords)] }];
 	
@@ -1039,33 +1048,7 @@ func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 	return movedPiece;
 
 ##
-# SUB Routine
-func fillInCheckMoves(pieceType:PIECES, cords:Vector2i, kingCords:Vector2i):
-	GameInCheckFrom = Vector2i(cords.x, cords.y);
-	GameInCheckMoves.clear();
-	GameInCheck = true;
-	
-	match pieceType:
-		PIECES.KING:
-			pass; # No Blocking Moves
-		PIECES.PAWN, PIECES.KNIGHT: # Can not be blocked
-			GameInCheckMoves.append(cords);
-		PIECES.ROOK:
-			fillRookCheckMoves(kingCords, cords);
-		PIECES.BISHOP:
-			fillBishopCheckMoves(kingCords, cords);
-		PIECES.QUEEN:
-			if( 
-				(cords.x == kingCords.x) or # same Q
-		 		(cords.y == kingCords.y) or # same R
-		 		(cords.x+cords.y) == (kingCords.x+kingCords.y) ): # same s
-				fillRookCheckMoves(kingCords, cords);
-			else:
-				fillBishopCheckMoves(kingCords, cords);
-	pass;
-
-##
-func checkState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
+func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 	var pieceType:PIECES = getPieceType(HexBoard[cords.x][cords.y]);
 	var movedPiece = setupActiveForSingle(pieceType, cords, lastCords);
 	var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][0];
@@ -1103,6 +1086,10 @@ func checkState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 	
 
 	return;
+
+
+### UNDO
+
 
 ##
 # SUB Routine
@@ -1243,9 +1230,9 @@ func undoSubFixState():
 		i += 1;
 	pass;
 
-### 
-###
+
 ### UTILITY
+
 
 ## set all values of given board to zero.
 func resetBoard(board:Dictionary) -> void:
@@ -1273,13 +1260,53 @@ func intersectOfTwoArrays(ARR:Array, ARR1:Array):
 			intersection.append(item);
 	return intersection;
 
-# Find Items Unique Only To ARR. O(N^2)
+## Find Items Unique Only To ARR. O(N^2)
 func differenceOfTwoArrays(ARR:Array, ARR1:Array):
 	var intersection = [];
 	for item in ARR:
 		if ( not ARR1.has(item)):
 			intersection.append(item);
 	return intersection;
+
+## Print HexBoard 
+func printBoard(board: Dictionary):
+	var flipedKeys = board.keys();
+	flipedKeys.reverse();
+	for key in flipedKeys:
+		var rowString = [];
+		var offset = 12 - board[key].size();
+		for i in range(offset):
+			rowString.append("  ");
+
+		for innerKey in board[key].keys():
+			if board[key][innerKey] == 0:
+				rowString.append( "   " )
+			else:
+				rowString.append( str((" %02d" % board[key][innerKey] )) )
+			rowString.append(", ");
+		print("\n","".join(rowString),"\n");
+	return;
+
+##
+func debugPrintOne(run:bool) -> void:
+	if(!run):
+		return;
+	print("Board : ")
+	printBoard(HexBoard);
+	print("W.A.B. : ")
+	printBoard(WhiteAttackBoard);
+	print("B.A.B. : ")
+	printBoard(BlackAttackBoard);
+	return;
+
+##
+func debugPrintTwo(run:bool) -> void:
+	print("History: \n", moveHistory[moveHistory.size()-1], "\n");
+	print("Active Pieces: \n", activePieces, "\n");
+	print("HexBoard: ")
+	printBoard(HexBoard)
+	print("\n\n")
+	return;
 
 
 ### API INTERACTIONS
@@ -1329,59 +1356,7 @@ func _getUncaptureValid() -> bool:
 func _getUnpromoteValid() -> bool:
 	return unpromoteValid;
 
-
-## Print HexBoard 
-func printBoard(board: Dictionary):
-	var flipedKeys = board.keys();
-	flipedKeys.reverse();
-	for key in flipedKeys:
-		var rowString = [];
-		var offset = 12 - board[key].size();
-		for i in range(offset):
-			rowString.append("  ");
-
-		for innerKey in board[key].keys():
-			if board[key][innerKey] == 0:
-				rowString.append( "   " )
-			else:
-				rowString.append( str((" %02d" % board[key][innerKey] )) )
-			rowString.append(", ");
-		print("\n","".join(rowString),"\n");
-	return;
-
-
-## START DEFAULT PUBLIC CALL
-func _initDefault() -> void:
-	
-	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
-	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
-	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
-
-	blackCaptures.clear();
-	whiteCaptures.clear();
-
-	blockingPieces.clear();
-
-	captureValid = false;
-	
-	isWhiteTurn = true;
-	turnNumber = 1;
-	
-	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
-	GameInCheckMoves.clear();
-	GameIsOver = false;
-	GameInCheck = false;
-
-	EnPassantCords = Vector2i(-5,-5);
-	EnPassantTarget = Vector2i(-5,-5);
-	EnPassantCordsValid = false;
-
-	activePieces = findPieces(HexBoard);
-	
-	legalMoves.clear();
-	findLegalMovesFor(activePieces);
-	
-	return;
+# NON-GETTER FUNCTIONS
 
 ## MAKE MOVE PUBLIC CALL
 func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
@@ -1441,11 +1416,43 @@ func _undoLastMove() -> void:
 	activePieces[selfColor][pieceType][index] = newFrom;
 	
 	undoSubCleanFlags(splits, newTo, newFrom);
-	undoSubFixState();
 	
 	decrementTurnNumber();
 	swapPlayerTurn();
 	
 	generateNextLegalMoves();
+	
+	return;
+
+## START DEFAULT GAME PUBLIC CALL
+func _initDefault() -> void:
+	
+	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
+	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
+	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
+
+	blackCaptures.clear();
+	whiteCaptures.clear();
+
+	blockingPieces.clear();
+
+	captureValid = false;
+	
+	isWhiteTurn = true;
+	turnNumber = 1;
+	
+	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
+	GameInCheckMoves.clear();
+	GameIsOver = false;
+	GameInCheck = false;
+
+	EnPassantCords = Vector2i(-5,-5);
+	EnPassantTarget = Vector2i(-5,-5);
+	EnPassantCordsValid = false;
+
+	activePieces = findPieces(HexBoard);
+	
+	legalMoves.clear();
+	findLegalMovesFor(activePieces);
 	
 	return;
