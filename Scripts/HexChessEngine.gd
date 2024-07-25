@@ -18,7 +18,10 @@ extends Node
 # AI3 - Neural Network AI
 # Untested - Attacking King with King cause odd behaviour sometimes
 
+
 ### Constants
+
+
 	#ENUMS
 enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
 enum SIDES { BLACK, WHITE };
@@ -60,31 +63,34 @@ const KNIGHT_VECTORS = { 'left':Vector2i(-1,-2), 'lRight':Vector2i(1,-3), 'rRigh
 const DEFAULT_MOVE_TEMPLATE : Dictionary = { 'Capture':[], 'Moves':[] };
 const PAWN_MOVE_TEMPLATE : Dictionary    = { 'Promote':[], 'EnPassant':[],'Capture':[], 'Moves':[] };
 
+
 ### State
-	# Board
+
+
+# Board
 var HexBoard : Dictionary         = {};
 var WhiteAttackBoard : Dictionary = {};
 var BlackAttackBoard : Dictionary = {};
 
-	# Game Turn
+# Game Turn
 var isWhiteTurn : bool = true;
 var turnNumber : int   = 1;
 
-	# Pieces
+# Pieces
 var influencedPieces : Dictionary = {};
 var blockingPieces : Dictionary = {};
 var activePieces : Array = [];
 
-	# Moves
+# Moves
 var legalMoves : Dictionary = {};
 
-	# Check & Mate
+# Check & Mate
 var GameIsOver = false;
 var GameInCheck : bool = false;
 var GameInCheckFrom : Vector2i = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 var GameInCheckMoves : Array = [];
 
-	# Captures
+# Captures
 var blackCaptures : Array = [];
 var whiteCaptures : Array = [];
 
@@ -92,7 +98,7 @@ var captureType : PIECES = PIECES.ZERO;
 var captureIndex = -1;
 var captureValid : bool = false;
 
-	# UndoFlags and Data
+# UndoFlags and Data
 var uncaptureValid: bool = false;
 var unpromoteValid:bool = false;
 var unpromoteType:PIECES = PIECES.ZERO;
@@ -102,12 +108,12 @@ var undoType:PIECES = PIECES.ZERO ;
 var undoIndex:int = -1;
 var undoTo:Vector2i = Vector2i();
 
-	# EnPassant
+# EnPassant
 var EnPassantCords : Vector2i = Vector2i(-5,-5);
 var EnPassantTarget : Vector2i = Vector2i(-5,-5);
 var EnPassantCordsValid : bool = false;
 
-	# History
+# History
 var moveHistory : Array = [];
 
 
@@ -982,7 +988,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			pieceType = getPieceType(promoteTo);
 			activePieces[selfColor][pieceType].push_back(moveTo);
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
-			moveHistMod = moveHistMod + (" +%s" % pieceType);
+			moveHistMod = moveHistMod + ("+%s,%d" % [pieceType, i]);
 			
 			print("2: ",activePieces);
 			pass;
@@ -1087,8 +1093,6 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 	print("Available Move Count: ", moveCount);
 	moveHistory.append("%s %s" % [historyPreview, mateStatus])
 	
-	
-
 	return;
 
 
@@ -1101,30 +1105,28 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 	var i = 3;
 	while (i < splits.size()):
 		var flag:String = splits[i];
+		
 		print(flag);
+		
 		match flag:
 			"":
 				i += 1;
 				continue;
-				
 			"C":
 				GameInCheck = false;
-				pass;
-
 			"O":
 				GameIsOver = false;
-				pass;
-
 			"E":
 				EnPassantCordsValid = false;
-				pass;
-
+				
 			_ when flag[0] == '/':
-				var cleanFlag:String = flag.get_slice('/', 0);
+				var cleanFlag:String = flag.get_slice('/', 1);
 				var idAndIndex = cleanFlag.split(',');
 				
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
+				
+				print("Captured Returned: ", id);
 				
 				HexBoard[newTo.x][newTo.y] = getPieceInt(id, isWhiteTurn);
 				
@@ -1137,14 +1139,15 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				captureType = id;
 				captureIndex = index;
 				#signal gui // finished?
-				pass;
 
 			_ when flag[0] == '-':
-				var cleanFlag:String = flag.get_slice('/', 0);
+				var cleanFlag:String = flag.get_slice('-', 1);
 				var idAndIndex = cleanFlag.split(',');
 				
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
+				
+				print("Top Sneak Returned: ", id);
 				
 				newTo.y += 1 if isWhiteTurn else -1;
 				
@@ -1159,15 +1162,16 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				captureType = id;
 				captureIndex = index;
 				#signal gui // finished?
-				pass;
 
 			_ when flag[0] == '+':
 				HexBoard[newFrom.x][newFrom.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
 				
-				var cleanFlag:String = flag.get_slice('+', 0);
+				var cleanFlag:String = flag.get_slice('+', 1);
 				var idAndIndex = cleanFlag.split(',');
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
+				
+				print("Promotion Returned: ", id);
 				
 				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][getPieceType(id)].pop_back();
 				
@@ -1180,7 +1184,6 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				unpromoteType = id;
 				unpromoteIndex = index;
 				#signal gui // finished?
-				pass;
 				
 		i += 1;
 		continue;
@@ -1201,6 +1204,9 @@ func undoSubFixState():
 		match flag:
 			"C":
 				# GET IN CHECK DATA
+				
+				print("Undo onto a check");
+				
 				var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
 				
 				isWhiteTurn = !isWhiteTurn;
@@ -1220,6 +1226,7 @@ func undoSubFixState():
 				pass;
 				
 			"E":
+				print("Undo onto EnPassant")
 				EnPassantCordsValid = true;
 				# GET EnPASSANT DATA
 				var from:Vector2i = decodeEnPassantFEN(splits[1]);
@@ -1305,6 +1312,8 @@ func debugPrintOne(run:bool) -> void:
 
 ##
 func debugPrintTwo(run:bool) -> void:
+	if(!run):
+		return;
 	print("History: \n", moveHistory[moveHistory.size()-1], "\n");
 	print("Active Pieces: \n", activePieces, "\n");
 	print("HexBoard: ")
@@ -1410,7 +1419,6 @@ func _undoLastMove() -> bool:
 	var splits:PackedStringArray = currentMove.split(" ");
 	
 	var pieceVal:int = getPieceInt(int(splits[0]), !isWhiteTurn);
-	
 	var newTo:Vector2i = decodeEnPassantFEN(splits[1]);
 	var newFrom:Vector2i = decodeEnPassantFEN(splits[2]);
 	
@@ -1419,16 +1427,19 @@ func _undoLastMove() -> bool:
 	var index:int = 0;
 	
 	##Default Undo
-	HexBoard[newFrom.x][newFrom.y] = pieceVal;
-	HexBoard[newTo.x][newTo.y] = PIECES.ZERO;
+	HexBoard[newTo.x][newTo.y] = pieceVal;
+	HexBoard[newFrom.x][newFrom.y] = PIECES.ZERO;
 	
 	for pieceCords in activePieces[selfColor][pieceType]:
-		if(newTo == pieceCords):
+		if(pieceCords == newFrom):
 			break;
 		index += 1;
-	activePieces[selfColor][pieceType][index] = newFrom;
+	
+	if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
+		activePieces[selfColor][pieceType][index] = newTo;
 	
 	undoSubCleanFlags(splits, newTo, newFrom);
+	undoSubFixState();
 	
 	decrementTurnNumber();
 	swapPlayerTurn();

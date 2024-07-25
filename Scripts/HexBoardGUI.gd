@@ -333,15 +333,19 @@ func _resign_OnButtonPress() -> void:
 ## Undo Button Pressed
 func _on_undo_pressed():
 	if not GameDataNode._undoLastMove():
+		print("Undo Failed")
 		## TODO ALERT THAT UNDO IMPOSSIBLE
 		return;
 	
+	print("Undo Required")
 	
 	if(GameDataNode._getUncaptureValid()):
+		print("Undo Uncapture")
 		## respawn captured piece
 		pass;
 	
 	if(GameDataNode._getUnpromoteValid()):
+		print("Undo Promotion")
 		## despawn promotion piece, spawn pawn in its sted.
 		pass;
 	
