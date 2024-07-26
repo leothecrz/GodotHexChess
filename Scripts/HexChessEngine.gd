@@ -1196,7 +1196,7 @@ func undoSubFixState():
 	if(moveHistory.size() <= 0):
 		return;
 		
-	var currentMove = moveHistory.pop_back();
+	var currentMove = moveHistory[moveHistory.size()-1];
 	var splits = currentMove.split(" ");
 	var i = 3;
 	while (i < splits.size()):
@@ -1377,6 +1377,14 @@ func _getUnpromoteType() -> PIECES:
 func _getUnpromoteIndex() -> int:
 	return unpromoteIndex;
 
+## Get Undo Type
+func _getUndoType() -> PIECES:
+	return undoType;
+
+## Get Undo Index
+func _getUndoIndex() -> int:
+	return undoIndex;
+
 
 # NON-GETTER FUNCTIONS
 
@@ -1418,12 +1426,12 @@ func _undoLastMove() -> bool:
 	var currentMove:String = moveHistory.pop_back();
 	var splits:PackedStringArray = currentMove.split(" ");
 	
-	var pieceVal:int = getPieceInt(int(splits[0]), !isWhiteTurn);
+	var pieceVal:int = int(splits[0]);
 	var newTo:Vector2i = decodeEnPassantFEN(splits[1]);
 	var newFrom:Vector2i = decodeEnPassantFEN(splits[2]);
 	
 	var pieceType = getPieceType(pieceVal);
-	var selfColor = SIDES.BLACK if isWhiteTurn else SIDES.WHITE;
+	var selfColor = SIDES.WHITE if !isWhiteTurn else SIDES.BLACK;
 	var index:int = 0;
 	
 	##Default Undo
@@ -1437,6 +1445,10 @@ func _undoLastMove() -> bool:
 	
 	if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
 		activePieces[selfColor][pieceType][index] = newTo;
+	
+	undoType = pieceType;
+	undoIndex = index;
+	
 	
 	undoSubCleanFlags(splits, newTo, newFrom);
 	undoSubFixState();
@@ -1480,3 +1492,9 @@ func _initDefault() -> void:
 	findLegalMovesFor(activePieces);
 	
 	return;
+
+
+
+
+
+

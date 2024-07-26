@@ -42,6 +42,12 @@ func moveTo(cords:Vector2):
 	transform.origin = cords;
 	return;
 
+# Move to cords
+func _setPieceCords(cords:Vector2i, pos:Vector2):
+	pieceCords = cords;
+	transform.origin = pos;
+	return;
+
 # Update the hextile
 func setHextile(newTile):
 	hexTile = newTile;
@@ -130,9 +136,10 @@ func _input(event) -> void:
 			print(hexTile);
 			if(hexTile):
 				print("\nSuccess\n")
-				moveTo(hexTile.transform.origin);
 				
+				moveTo(hexTile.transform.origin);
 				pieceCords = hexTile.hexMove;
+				
 				emit_signal("pieceDeselected", hexTile.hexCords, hexTile.hexKey, hexTile.hexIndex);
 				
 			else:

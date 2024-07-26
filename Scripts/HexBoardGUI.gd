@@ -125,11 +125,13 @@ func spawnPieces() -> void:
 func handleMoveCapture() -> void:
 
 	print("Type: ",GameDataNode._getCaptureType(), ". Index: ", GameDataNode._getCaptureIndex());
+	
 	var i:int = 0;
 	if(GameDataNode._getIsWhiteTurn()):
 		i += 1;
 	var j:int =  GameDataNode._getCaptureType() - 1;
 	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex()).queue_free();
+	
 	return;
 
 ##
@@ -156,6 +158,28 @@ func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
 	return;
 
 ##
+func updateGUI_Elements() -> void:
+	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
+		LeftPanel._swapLabelState();
+
+	if(GameDataNode._getIsWhiteTurn()):
+		emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
+		BoardControler.setSignalWhite();
+	else:
+		emit_signal("gameSwitchedSides", GameDataNode.SIDES.BLACK);
+		BoardControler.setSignalBlack();
+
+	if(GameDataNode._getGameOverStatus()):
+		if(GameDataNode._getGameOverStatus() != LeftPanel._getLabelState()):
+			LeftPanel._swapLabelState();
+		if(GameDataNode._getGameInCheck()):
+			LeftPanel._setCheckMateText(GameDataNode._getIsBlackTurn());
+		else:
+			LeftPanel._setStaleMateText();
+	pass;
+	
+
+##
 #func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECES) -> void:
 func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:int=0, passInterupt=false) -> void:
 
@@ -180,23 +204,8 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 	if(GameDataNode._getCaptureValid()):
 		handleMoveCapture();
 	
-	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
-		LeftPanel._swapLabelState();
-
-	if(GameDataNode._getIsWhiteTurn()):
-		emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
-		BoardControler.setSignalWhite();
-	else:
-		emit_signal("gameSwitchedSides", GameDataNode.SIDES.BLACK);
-		BoardControler.setSignalBlack();
-
-	if(GameDataNode._getGameOverStatus()):
-		if(GameDataNode._getGameOverStatus() != LeftPanel._getLabelState()):
-			LeftPanel._swapLabelState();
-		if(GameDataNode._getGameInCheck()):
-			LeftPanel._setCheckMateText(GameDataNode._getIsBlackTurn());
-		else:
-			LeftPanel._setStaleMateText();
+	updateGUI_Elements();
+	
 	return;
 
 ##
@@ -333,24 +342,45 @@ func _resign_OnButtonPress() -> void:
 ## Undo Button Pressed
 func _on_undo_pressed():
 	if not GameDataNode._undoLastMove():
-		print("Undo Failed")
+		print("Undo Failed");
 		## TODO ALERT THAT UNDO IMPOSSIBLE
 		return;
 	
-	print("Undo Required")
+	var uType = GameDataNode._getUndoType();
+	var uIndex = GameDataNode._getUndoIndex();
+	var sideToUndo = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
 	
+	print("Undo Required");
+	print("Type: ", uType);
+	print("Index: ", uIndex);
+	
+	activePieces = GameDataNode._getActivePieces();
+	currentLegalsMoves = GameDataNode._getMoves();
+	
+	if(GameDataNode._getUnpromoteValid()):
+		print("Undo Promotion")
+		print("Promote Ignore Moving Promoted");
+		pass
+	else:
+		print("Default Continue");
+		var newPos = activePieces[sideToUndo][uType][uIndex];
+		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
+
+		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos)));
+		
+		
+		
 	if(GameDataNode._getUncaptureValid()):
 		print("Undo Uncapture")
 		## respawn captured piece
 		pass;
 	
-	if(GameDataNode._getUnpromoteValid()):
-		print("Undo Promotion")
-		## despawn promotion piece, spawn pawn in its sted.
-		pass;
+	
 	
 	## ID which piece needs to be moved
-	##
+	
+	updateGUI_Elements();
+	
 	return;
 
 
