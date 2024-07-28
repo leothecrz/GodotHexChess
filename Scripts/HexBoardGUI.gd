@@ -71,28 +71,7 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 
 ## DISPLAY PIECES
 
-
-## Hand piece data to new scene.
-## Connect scene to piece controller. 
-func spawnPiecesSubRoutine(side:int, typeindex:int, pieceType, piece:Vector2i, cords:Vector2i) -> void:
-	var newPieceScene = preload("res://Scenes/chess_piece.tscn").instantiate();
-	
-	newPieceScene.side = side;
-	newPieceScene.pieceType = pieceType;
-	newPieceScene.pieceCords = piece;
-	newPieceScene.isSetup = true;
-
-	newPieceScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords));
-	
-	# TODO: FIX SCALE-ING
-	newPieceScene.scale.x = 0.18;
-	newPieceScene.scale.y = 0.18;
-	
-	ChessPiecesNode\
-	.get_child(side)\
-	.get_child(typeindex)\
-	.add_child(newPieceScene);
-
+func connectPieceToSignals(newPieceScene:Node) -> void:
 	## Connect Piece To Piece Controller
 	newPieceScene.pieceSelected.connect(_chessPiece_OnPieceSELECTED);
 	newPieceScene.pieceDeselected.connect(_chessPiece_OnPieceDESELECTED);
@@ -101,6 +80,37 @@ func spawnPiecesSubRoutine(side:int, typeindex:int, pieceType, piece:Vector2i, c
 	gameSwitchedSides.connect(newPieceScene._on_Control_GameSwitchedSides);
 	pieceSelectedLockOthers.connect(newPieceScene._on_Control_LockPiece);
 	pieceUnselectedUnlockOthers.connect(newPieceScene._on_Control_UnlockPiece);
+	return;
+
+func preloadChessPiece(side:int, pieceType, piece:Vector2i) -> Node:
+	var newPieceScene:Node = preload("res://Scenes/chess_piece.tscn").instantiate();
+	
+	newPieceScene.side = side;
+	newPieceScene.pieceType = pieceType;
+	newPieceScene.pieceCords = piece;
+	newPieceScene.isSetup = true;
+	
+	var cords = piece * (1 if isRotatedWhiteDown else -1);
+
+	newPieceScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords));
+	
+	# TODO: FIX SCALE-ING
+	newPieceScene.scale.x = 0.18;
+	newPieceScene.scale.y = 0.18;
+	
+	return newPieceScene;
+
+## Hand piece data to new scene.
+## Connect scene to piece controller. 
+func spawnPiecesSubRoutine(side:int, typeindex:int, pieceType, piece:Vector2i) -> void:
+	var newPieceScene = preloadChessPiece(side, pieceType, piece);
+	
+	ChessPiecesNode\
+	.get_child(side)\
+	.get_child(typeindex)\
+	.add_child(newPieceScene,);
+	
+	connectPieceToSignals(newPieceScene);
 	
 	return;
 
@@ -110,10 +120,7 @@ func spawnPieces() -> void:
 		var index:int = 0;
 		for pieceType in activePieces[side]:
 			for piece in activePieces[side][pieceType]:
-				
-				var visualCords = piece * (1 if isRotatedWhiteDown else -1);
-				spawnPiecesSubRoutine(side, index, pieceType, piece, visualCords);
-				
+				spawnPiecesSubRoutine(side, index, pieceType, piece);
 			index += 1;
 	return;
 
@@ -148,7 +155,7 @@ func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
 			ref = ChessPiecesNode.get_child(i).get_child(0).get_child(pawnIndex);
 			break;
 	######### FIX
-	spawnPiecesSubRoutine(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords, ref.pieceCords * 1 if isRotatedWhiteDown else -1);
+	spawnPiecesSubRoutine(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords);
 	ref.queue_free();
 	
 	handleMakeMove(cords, key, index, pTo, true);
@@ -341,7 +348,7 @@ func _resign_OnButtonPress() -> void:
 
 ## Undo Button Pressed
 func _on_undo_pressed():
-	if not GameDataNode._undoLastMove():
+	if(not GameDataNode._undoLastMove()):
 		print("Undo Failed");
 		## TODO ALERT THAT UNDO IMPOSSIBLE
 		return;
@@ -350,30 +357,38 @@ func _on_undo_pressed():
 	var uIndex = GameDataNode._getUndoIndex();
 	var sideToUndo = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
 	
-	print("Undo Required");
-	print("Type: ", uType);
-	print("Index: ", uIndex);
-	
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
 	
-	if(GameDataNode._getUnpromoteValid()):
-		print("Undo Promotion")
-		print("Promote Ignore Moving Promoted");
-		pass
-	else:
-		print("Default Continue");
+	if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
 		var newPos = activePieces[sideToUndo][uType][uIndex];
 		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
-
 		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos)));
-		
-		
+	else: 
+		print("Undo Promotion")
+		print("Promote Ignore Moving Promoted");
 		
 	if(GameDataNode._getUncaptureValid()):
 		print("Undo Uncapture")
+		var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
+		var cType = GameDataNode._getCaptureType();
+		var cIndex = GameDataNode._getCaptureIndex();
+		
+		var newPos = activePieces[captureSideToUndo][cType][cIndex];
+		
+		var newPieceScene = preloadChessPiece(captureSideToUndo, cType, newPos);
+		connectPieceToSignals(newPieceScene);
+	
+		var ref  = ChessPiecesNode\
+		.get_child(captureSideToUndo)\
+		.get_child(cType-1);
+		
 		## respawn captured piece
-		pass;
+		if( ref.get_child_count(false) > 0):
+			ref.get_child(cIndex-1)\
+			.add_sibling(newPieceScene);
+		else:
+			ref.add_child(newPieceScene);
 	
 	
 	

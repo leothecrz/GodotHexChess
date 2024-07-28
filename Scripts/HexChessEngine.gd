@@ -44,6 +44,8 @@ const VARIATION_TWO_FEN = '6/rp3PR/bp4PN/np5PB/bp6PQ/kp7PK/qp6PB/pb5PN/np4BP/rp3
 const EMPTY_BOARD   = '6/7/8/9/10/11/10/9/8/7/6 w - 1';
 const BLACK_CHECK   = '1P4/1k4K/8/9/10/11/10/9/8/7/6 w - 1';
 const BLOCKING_TEST = '6/7/8/9/10/kr7NK/10/9/8/7/6 w - 1';
+const UNDO_TEST_ONE   = '6/7/8/9/10/4p6/k2p2P2K/9/8/7/6 w - 1';
+									
 	#Piece Tests
 const PAWN_TEST   = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
 const KNIGHT_TEST = '6/7/8/9/10/5N5/10/9/8/7/6 w - 1';
@@ -1107,7 +1109,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 		var flag:String = splits[i];
 		
 		print(flag);
-		
+		 
 		match flag:
 			"":
 				i += 1;
@@ -1126,14 +1128,13 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				print("Captured Returned: ", id);
-				
-				HexBoard[newTo.x][newTo.y] = getPieceInt(id, isWhiteTurn);
+				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, isWhiteTurn) ;
+				print("Captured Returned: ", HexBoard[newFrom.x][newFrom.y]);
 				
 				activePieces\
 				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
-				[captureType]\
-				.insert( index, Vector2i(newTo) );
+				[id]\
+				.insert( index, Vector2i(newFrom) );
 				
 				uncaptureValid = true;
 				captureType = id;
@@ -1151,12 +1152,12 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				
 				newTo.y += 1 if isWhiteTurn else -1;
 				
-				HexBoard[newTo.x][newTo.y] = getPieceInt(id, isWhiteTurn);
+				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, isWhiteTurn);
 				
 				activePieces\
 				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
-				[captureType]\
-				.insert( index, Vector2i(newTo) );
+				[id]\
+				.insert( index, Vector2i(newFrom) );
 				
 				uncaptureValid = true;
 				captureType = id;
@@ -1173,7 +1174,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				
 				print("Promotion Returned: ", id);
 				
-				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][getPieceType(id)].pop_back();
+				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][id].pop_back();
 				
 				activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
@@ -1410,7 +1411,7 @@ func _resign():
 	
 	GameIsOver = true;
 	print("%s WINS BY RESIGN" % ("White" if isWhiteTurn else "Black"));
-
+	
 	return
 
 ## Undo Move PUBLIC CALL
@@ -1449,7 +1450,6 @@ func _undoLastMove() -> bool:
 	undoType = pieceType;
 	undoIndex = index;
 	
-	
 	undoSubCleanFlags(splits, newTo, newFrom);
 	undoSubFixState();
 	
@@ -1463,7 +1463,7 @@ func _undoLastMove() -> bool:
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> void:
 	
-	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
+	HexBoard = fillBoardwithFEN(UNDO_TEST_ONE);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 
