@@ -1150,7 +1150,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				
 				print("Top Sneak Returned: ", id);
 				
-				newTo.y += 1 if isWhiteTurn else -1;
+				newFrom.y += -1 if isWhiteTurn else 1;
 				
 				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, !isWhiteTurn);
 				
