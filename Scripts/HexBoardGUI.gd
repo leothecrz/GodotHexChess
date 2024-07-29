@@ -368,6 +368,22 @@ func _on_undo_pressed():
 		print("Undo Promotion")
 		print("Promote Ignore Moving Promoted");
 		
+		var pType = GameDataNode._getUnpromoteType(); # promoted type
+		var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
+		var newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex];
+		
+		var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
+		var refChildCount = ref.get_child_count(false);
+		ref.get_child(refChildCount-1).queue_free();
+		
+		var newPieceScene = preloadChessPiece(sideToUndo, GameDataNode.PIECES.PAWN, newPos);
+		connectPieceToSignals(newPieceScene);
+		ref = ChessPiecesNode.get_child(sideToUndo).get_child(GameDataNode.PIECES.PAWN-1)
+		ref.add_child(newPieceScene);
+		ref.move_child(newPieceScene,pIndex);
+		
+		
+		
 	if(GameDataNode._getUncaptureValid()):
 		print("Undo Uncapture")
 		var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;

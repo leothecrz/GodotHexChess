@@ -45,6 +45,7 @@ const EMPTY_BOARD   = '6/7/8/9/10/11/10/9/8/7/6 w - 1';
 const BLACK_CHECK   = '1P4/1k4K/8/9/10/11/10/9/8/7/6 w - 1';
 const BLOCKING_TEST = '6/7/8/9/10/kr7NK/10/9/8/7/6 w - 1';
 const UNDO_TEST_ONE   = '6/7/8/9/10/4p6/k2p2P2K/9/8/7/6 w - 1';
+const UNDO_TEST_TWO   = '6/7/8/9/1P7/11/k2p2P2K/9/8/7/6 w - 1';
 									
 	#Piece Tests
 const PAWN_TEST   = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
@@ -1179,7 +1180,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[PIECES.PAWN]\
-				.insert( index, Vector2i(newTo) );
+				.insert( index, Vector2i(newFrom) );
 				
 				unpromoteValid = true;
 				unpromoteType = id;
@@ -1448,8 +1449,6 @@ func _undoLastMove() -> bool:
 	HexBoard[newTo.x][newTo.y] = pieceVal;
 	HexBoard[newFrom.x][newFrom.y] = PIECES.ZERO;
 	
-	printActivePieces();
-	
 	for pieceCords in activePieces[selfColor][pieceType]:
 		if(pieceCords == newFrom):
 			break;
@@ -1460,23 +1459,18 @@ func _undoLastMove() -> bool:
 	
 	undoType = pieceType;
 	undoIndex = index;
-	
 	undoSubCleanFlags(splits, newTo, newFrom);
 	undoSubFixState();
-	
 	decrementTurnNumber();
 	swapPlayerTurn();
-	
 	generateNextLegalMoves();
-	
-	printActivePieces();
-	
+
 	return true;
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> void:
 	
-	HexBoard = fillBoardwithFEN(UNDO_TEST_ONE);
+	HexBoard = fillBoardwithFEN(UNDO_TEST_TWO);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 
