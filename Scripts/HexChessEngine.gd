@@ -975,7 +975,6 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 
 	match moveType:
 		'Promote':
-			print("1: ", activePieces);
 			
 			if(moveTo.x != cords.x):
 				handleMoveCapture(moveTo, pieceType);
@@ -993,7 +992,6 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
 			moveHistMod = moveHistMod + ("+%s,%d" % [pieceType, i]);
 			
-			print("2: ",activePieces);
 			pass;
 
 		'EnPassant':
@@ -1180,7 +1178,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[PIECES.PAWN]\
-				.insert( index, Vector2i(newFrom) );
+				.insert( index, Vector2i(newTo) );
 				
 				unpromoteValid = true;
 				unpromoteType = id;
