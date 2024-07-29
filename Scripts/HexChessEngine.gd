@@ -146,11 +146,11 @@ func findPieces(board:Dictionary) -> Array:
 	for q in board.keys():
 		for r in board[q].keys():
 			
-			var val:int = board[q][r];	
+			var val:int = board[q][r];
 			if val == PIECES.ZERO:
 				continue;
 			
-			var pieceType:PIECES = getPieceType(val);	
+			var pieceType:PIECES = getPieceType(val);
 			var pos:Vector2i = Vector2i(q,r);
 			var side = SIDES.BLACK if isPieceBlack(val) else SIDES.WHITE;
 			
@@ -339,7 +339,7 @@ func isBlackPawnPromotion(cords:Vector2i) -> bool:
 func getPieceInt(piece : PIECES, isBlack: bool) -> int:
 	var id:int = piece
 	if(!isBlack):
-		id += 8;		
+		id += 8;
 	return id;
 
 ## Strip the color bit information and find what piece is in use.
@@ -408,18 +408,18 @@ func checkForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, c
 		var dirBlockingPiece:Vector2i;
 		
 		var checkingQ:int = cords.x + activeVector.x;
-		var checkingR:int = cords.y + activeVector.y;	
+		var checkingR:int = cords.y + activeVector.y;
 
 		var LegalMoves:Array = [];
 		while ( (HexBoard.has(checkingQ)) && (HexBoard[checkingQ].has(checkingR)) ): # CORDS ARE IN RANGE
 			
 			if ( HexBoard[checkingQ][checkingR] == PIECES.ZERO ):
-				if(dirBlockingPiece): 
+				if(dirBlockingPiece):
 					LegalMoves.append(Vector2i(checkingQ,checkingR)); ## Track legal moves for the blocking pieces
 
 			else:
 				if ( isPieceFriendly( HexBoard[checkingQ][checkingR], isWhiteTrn) ):
-					if(dirBlockingPiece): break; ## Two friendly pieces in a row. No Danger 
+					if(dirBlockingPiece): break; ## Two friendly pieces in a row. No Danger
 					else: dirBlockingPiece = Vector2i(checkingQ,checkingR); ## First piece found
 
 				else: ##Unfriendly Piece Found
@@ -485,7 +485,7 @@ func findMovesForPawn(PawnArray:Array)-> void:
 		legalMoves[pawn] = PAWN_MOVE_TEMPLATE.duplicate(true);
 
 		var fowardR = pawn.y - 1 if isWhiteTurn else pawn.y + 1;
-		var leftCaptureR = pawn.y if isWhiteTurn else pawn.y + 1; 
+		var leftCaptureR = pawn.y if isWhiteTurn else pawn.y + 1;
 		var rightCaptureR = pawn.y-1 if isWhiteTurn else pawn.y;
 
 		##Foward Move
@@ -534,7 +534,7 @@ func findMovesForKnight(KnightArray:Array) -> void:
 					
 					updateAttackBoard(checkingQ, checkingR, 1);
 
-			invertAt2Counter += 1;		
+			invertAt2Counter += 1;
 			
 		## Not Efficient FIX LATER
 		if(  blockingPieces.has(knight) ):
@@ -558,7 +558,7 @@ func findMovesForRook(RookArray:Array) -> void:
 		for dir in ROOK_VECTORS.keys():
 			var activeVector:Vector2i = ROOK_VECTORS[dir];
 			var checkingQ:int = rook.x + activeVector.x;
-			var checkingR:int = rook.y + activeVector.y;	
+			var checkingR:int = rook.y + activeVector.y;
 			
 			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 				
@@ -617,7 +617,7 @@ func findMovesForBishop(BishopArray:Array) -> void:
 		for dir in BISHOP_VECTORS.keys():
 			var activeVector:Vector2i = BISHOP_VECTORS[dir];
 			var checkingQ:int = bishop.x + activeVector.x;
-			var checkingR:int = bishop.y + activeVector.y;	
+			var checkingR:int = bishop.y + activeVector.y;
 			
 			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 			
@@ -694,7 +694,7 @@ func findMovesForKing(KingArray:Array) -> void:
 		for dir in KING_VECTORS.keys():
 			var activeVector:Vector2i = KING_VECTORS[dir];
 			var checkingQ:int = king.x + activeVector.x;
-			var checkingR:int = king.y + activeVector.y;	
+			var checkingR:int = king.y + activeVector.y;
 			
 			if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
 				if(isWhiteTurn):
@@ -729,7 +729,7 @@ func findLegalMovesFor(activepieces:Array) -> void:
 		
 		var singleTypePieces:Array = pieces[pieceType];
 		
-		if singleTypePieces.size() == 0: 
+		if singleTypePieces.size() == 0:
 			continue;
 			
 		match pieceType:
@@ -781,7 +781,7 @@ func updateOpposingAttackBoard(q:int, r:int, mod:int) -> void:
 ##
 func removePawnAttacks(cords:Vector2i) -> void:
 	##FIX
-	var leftCaptureR = cords.y if isWhiteTurn else cords.y + 1; 
+	var leftCaptureR = cords.y if isWhiteTurn else cords.y + 1;
 	var rightCaptureR = cords.y-1 if isWhiteTurn else cords.y;
 	
 	##Left Capture
@@ -835,7 +835,7 @@ func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 	if(deltaQ > 0):
 		direction.x = 1;
 	elif (deltaQ < 0):
-		direction.x = -1;				
+		direction.x = -1;
 	
 	if(deltaR > 0):
 		direction.y = 1;
@@ -848,7 +848,7 @@ func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 
-		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
 			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
 				break;
 		else: break;
@@ -884,7 +884,7 @@ func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 
-		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):			
+		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
 			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
 				break;
 		else: break;
@@ -907,10 +907,10 @@ func fillInCheckMoves(pieceType:PIECES, cords:Vector2i, kingCords:Vector2i):
 		PIECES.BISHOP:
 			fillBishopCheckMoves(kingCords, cords);
 		PIECES.QUEEN:
-			if( 
+			if(
 				(cords.x == kingCords.x) or # same Q
-		 		(cords.y == kingCords.y) or # same R
-		 		(cords.x+cords.y) == (kingCords.x+kingCords.y) ): # same s
+					(cords.y == kingCords.y) or # same R
+					(cords.x+cords.y) == (kingCords.x+kingCords.y) ): # same s
 				fillRookCheckMoves(kingCords, cords);
 			else:
 				fillBishopCheckMoves(kingCords, cords);
@@ -1052,7 +1052,7 @@ func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 			if movedPiece[0].has(inPieceType):
 				movedPiece[0][inPieceType].append(item);
 			else:
-				movedPiece[0][inPieceType] = [item]; 
+				movedPiece[0][inPieceType] = [item];
 	
 	if(isWhiteTurn):
 		movedPiece.insert(0, {});
@@ -1103,7 +1103,7 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 
 ##
 # SUB Routine
-func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2i):	
+func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2i):
 	var i = 3;
 	while (i < splits.size()):
 		var flag:String = splits[i];
@@ -1128,7 +1128,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, isWhiteTurn) ;
+				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, !isWhiteTurn) ;
 				print("Captured Returned: ", HexBoard[newFrom.x][newFrom.y]);
 				
 				activePieces\
@@ -1152,7 +1152,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				
 				newTo.y += 1 if isWhiteTurn else -1;
 				
-				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, isWhiteTurn);
+				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, !isWhiteTurn);
 				
 				activePieces\
 				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
@@ -1246,11 +1246,20 @@ func undoSubFixState():
 ### UTILITY
 
 
+##
+func printActivePieces():
+	var type:Dictionary;
+	for side in activePieces.size():
+		print(SIDES.find_key(side))
+		for piece in activePieces[side]:
+			print(PIECES.find_key(piece), " : ", activePieces[side][piece]);
+		print("");
+
 ## set all values of given board to zero.
 func resetBoard(board:Dictionary) -> void:
 	for key in board.keys():
 		for innerKey in board[key].keys():
-			board[key][innerKey] = 0;	
+			board[key][innerKey] = 0;
 	return;
 
 ## Count the amount of moves found
@@ -1439,6 +1448,8 @@ func _undoLastMove() -> bool:
 	HexBoard[newTo.x][newTo.y] = pieceVal;
 	HexBoard[newFrom.x][newFrom.y] = PIECES.ZERO;
 	
+	printActivePieces();
+	
 	for pieceCords in activePieces[selfColor][pieceType]:
 		if(pieceCords == newFrom):
 			break;
@@ -1457,6 +1468,8 @@ func _undoLastMove() -> bool:
 	swapPlayerTurn();
 	
 	generateNextLegalMoves();
+	
+	printActivePieces();
 	
 	return true;
 

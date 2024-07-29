@@ -385,13 +385,14 @@ func _on_undo_pressed():
 		
 		## respawn captured piece
 		if( ref.get_child_count(false) > 0):
-			ref.get_child(cIndex-1)\
-			.add_sibling(newPieceScene);
+			if (cIndex == 0):
+				ref.add_child(newPieceScene);
+				ref.move_child(newPieceScene, 0);
+			else:
+				ref.get_child(cIndex-1)\
+				.add_sibling(newPieceScene);
 		else:
 			ref.add_child(newPieceScene);
-	
-	
-	
 	## ID which piece needs to be moved
 	
 	updateGUI_Elements();
