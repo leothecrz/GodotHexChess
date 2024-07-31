@@ -985,13 +985,14 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 				if(cords == pieceCords):
 					break;
 				i = i+1;
-			activePieces[selfColor][pieceType].remove_at(i);
 			
 			pieceType = getPieceType(promoteTo);
-			activePieces[selfColor][pieceType].push_back(moveTo);
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
-			moveHistMod = moveHistMod + ("+%s,%d" % [pieceType, i]);
 			
+			activePieces[selfColor][pieceType].push_back(moveTo);
+			activePieces[selfColor][pieceType].remove_at(i);
+			
+			moveHistMod = moveHistMod + ("+%s,%d" % [pieceType, i]);
 			pass;
 
 		'EnPassant':
@@ -1013,7 +1014,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 
 	HexBoard[moveTo.x][moveTo.y] = pieceVal;
 
-	var histPreview = ("%s %s %s %s" % [previousPieceVal,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
+	var histPreview = ("%s %s %s %s" % [pieceVal,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
 	
 	# Update Piece List
 	for i in range(activePieces[selfColor][pieceType].size()):
@@ -1164,27 +1165,21 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				#signal gui // finished?
 
 			_ when flag[0] == '+':
-				HexBoard[newFrom.x][newFrom.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
-				
 				var cleanFlag:String = flag.get_slice('+', 1);
 				var idAndIndex = cleanFlag.split(',');
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				print("Promotion Returned: ", id);
+				print("Promotion: ", id);
+				
+				HexBoard[newTo.x][newTo.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
 				
 				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][id].pop_back();
-				
-				activePieces\
-				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
-				[PIECES.PAWN]\
-				.insert( index, Vector2i(newTo) );
+				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.PAWN].insert( index, Vector2i(newTo) );
 				
 				unpromoteValid = true;
 				unpromoteType = id;
 				unpromoteIndex = index;
-				#signal gui // finished?
-				
 		i += 1;
 		continue;
 
@@ -1207,7 +1202,7 @@ func undoSubFixState():
 				
 				print("Undo onto a check");
 				
-				var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
+				var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][KING_INDEX];
 				
 				isWhiteTurn = !isWhiteTurn;
 				generateNextLegalMoves();
@@ -1445,6 +1440,7 @@ func _undoLastMove() -> bool:
 	
 	##Default Undo
 	HexBoard[newTo.x][newTo.y] = pieceVal;
+	
 	HexBoard[newFrom.x][newFrom.y] = PIECES.ZERO;
 	
 	for pieceCords in activePieces[selfColor][pieceType]:
@@ -1497,9 +1493,3 @@ func _initDefault() -> void:
 	findLegalMovesFor(activePieces);
 	
 	return;
-
-
-
-
-
-
