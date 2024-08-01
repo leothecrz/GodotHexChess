@@ -45,7 +45,8 @@ const EMPTY_BOARD   = '6/7/8/9/10/11/10/9/8/7/6 w - 1';
 const BLACK_CHECK   = '1P4/1k4K/8/9/10/11/10/9/8/7/6 w - 1';
 const BLOCKING_TEST = '6/7/8/9/10/kr7NK/10/9/8/7/6 w - 1';
 const UNDO_TEST_ONE   = '6/7/8/9/10/4p6/k2p2P2K/9/8/7/6 w - 1';
-const UNDO_TEST_TWO   = '6/7/8/9/1P7/11/k2p2P2K/9/8/7/6 w - 1';
+const UNDO_TEST_TWO   = '6/7/8/9/1P7/11/3p2P2K/9/8/7/k5 w - 1';
+const UNDO_TEST_THREE   = '6/7/8/9/2R6/11/k2p2P2K/9/8/7/6 w - 1';
 									
 	#Piece Tests
 const PAWN_TEST   = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
@@ -575,7 +576,6 @@ func findMovesForRook(RookArray:Array) -> void:
 					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KING):
 						checkingQ += activeVector.x;
 						checkingR += activeVector.y;
-						print("King Escape %d %d" % [checkingQ, checkingR]);
 						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 							updateAttackBoard(checkingQ, checkingR, 1);
 					
@@ -758,6 +758,100 @@ func checkWHERECordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> Vector
 			if(move == Cords):
 				return piece;
 	return Vector2i();
+
+##
+func searchForPawnsAtk(pos:Vector2i, isWTurn:bool) -> Array:
+	var leftCaptureR:int = 0 if isWTurn else  1;
+	var rightCaptureR:int = -1 if isWTurn else 0;
+	var qpos:int = pos.x - 1;
+	var lst:Array = [];
+	if( HexBoard.has(qpos) && HexBoard[qpos].has(leftCaptureR)):
+		if(!isPieceFriendly(HexBoard[qpos][leftCaptureR], isWTurn)):
+			if(getPieceType(HexBoard[qpos][rightCaptureR]) == PIECES.PAWN):
+				lst.append(Vector2i(qpos, leftCaptureR));
+	qpos = pos.x + 1;
+	if( HexBoard.has(qpos) && HexBoard[qpos].has(rightCaptureR)):
+		if(!isPieceFriendly(HexBoard[qpos][rightCaptureR], isWTurn)):
+			if(getPieceType(HexBoard[qpos][rightCaptureR]) == PIECES.PAWN):
+				lst.append(Vector2i(qpos, rightCaptureR));
+	return lst;
+
+##
+func searchForKnightsAtk(pos:Vector2i, isWTurn:bool) -> Array:
+	var lst:Array;
+	var invertAt2Counter = 0;
+	for m in [-1,1,-1,1]:
+		for dir in KNIGHT_VECTORS.keys():
+			var activeVector:Vector2i = KNIGHT_VECTORS[dir];
+			var checkingQ = pos.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
+			var checkingR = pos.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
+			if (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
+				if(!isPieceFriendly(HexBoard[checkingQ][checkingR], isWTurn)):
+					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KNIGHT):
+						lst.append(Vector2i(checkingQ, checkingR));
+	return lst;
+
+##	
+func searchForRooksAtk(pos:Vector2i, isWTurn:bool, checkForQueens:bool) -> Array:
+	var lst:Array = [];
+	var checkFor:Array = [PIECES.ROOK];
+	if(checkForQueens):
+		checkFor.append(PIECES.QUEEN);
+	
+	for dir in ROOK_VECTORS.keys():
+		var activeVector:Vector2i = ROOK_VECTORS[dir];
+		var checkingQ:int = pos.x + activeVector.x;
+		var checkingR:int = pos.y + activeVector.y;
+		
+		while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+			
+			if (HexBoard[checkingQ][checkingR] == 0):
+				continue;
+			elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
+				if (getPieceType(HexBoard[checkingQ][checkingR]) in checkFor):
+					lst.append(Vector2i(checkingQ, checkingR));
+				break;
+			else: ## Blocked by friendly
+				break;
+	return lst;
+
+##
+func searchForBishopsAtk(pos:Vector2i, isWTurn:bool, checkForQueens:bool) -> Array:
+	var lst:Array = [];
+	var checkFor:Array = [PIECES.ROOK];
+	if(checkForQueens):
+		checkFor.append(PIECES.QUEEN);
+	
+	for dir in BISHOP_VECTORS.keys():
+		var activeVector:Vector2i = BISHOP_VECTORS[dir];
+		var checkingQ:int = pos.x + activeVector.x;
+		var checkingR:int = pos.y + activeVector.y;
+		
+		while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+			
+			if (HexBoard[checkingQ][checkingR] == 0):
+				continue;
+			elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
+				if (getPieceType(HexBoard[checkingQ][checkingR]) in checkFor):
+					lst.append(Vector2i(checkingQ, checkingR));
+				break;
+			else: ## Blocked by friendly
+				break;
+	return lst;
+
+## (WIP) Search the board for attacking pieces on FROM cords
+func searchForMyAttackers(from:Vector2i, isWhiteTrn:bool) -> Array:
+	var hasQueens = activePieces[SIDES.BLACK if isWhiteTrn else SIDES.WHITE][PIECES.QUEEN].size() > 0;
+	var attackers:Array = [];
+	if (activePieces[SIDES.BLACK if isWhiteTrn else SIDES.WHITE][PIECES.PAWN].size() > 0): 
+		attackers.append_array(searchForPawnsAtk(from, isWhiteTrn));
+	if (activePieces[SIDES.BLACK if isWhiteTrn else SIDES.WHITE][PIECES.KNIGHT].size() > 0):
+		attackers.append_array(searchForKnightsAtk(from, isWhiteTrn));
+	if (activePieces[SIDES.BLACK if isWhiteTrn else SIDES.WHITE][PIECES.ROOK].size() > 0): 
+		attackers.append_array(searchForRooksAtk(from, isWhiteTrn, hasQueens));
+	if (activePieces[SIDES.BLACK if isWhiteTrn else SIDES.WHITE][PIECES.BISHOP].size() > 0): 
+		attackers.append_array(searchForBishopsAtk(from, isWhiteTrn, hasQueens));
+	return attackers;
 
 
 ### ATTACK BOARD
@@ -1464,7 +1558,7 @@ func _undoLastMove() -> bool:
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> void:
 	
-	HexBoard = fillBoardwithFEN(UNDO_TEST_TWO);
+	HexBoard = fillBoardwithFEN(KNIGHT_TEST);
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 
