@@ -117,6 +117,22 @@ offset_bottom = 322.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="RUN_TEST" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -46.5
+offset_top = -266.5
+offset_right = 46.5
+offset_bottom = -235.5
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Start a new game."
+text = "RUN_TEST"
+
 [node name="Undo" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
 layout_mode = 1
 anchors_preset = 8
@@ -279,6 +295,7 @@ History
 [node name="ChessEngine" type="Node" parent="."]
 script = ExtResource("7_uqrw5")
 
+[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/RUN_TEST" to="." method="_on_run_test_pressed"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Undo" to="." method="_on_undo_pressed"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]

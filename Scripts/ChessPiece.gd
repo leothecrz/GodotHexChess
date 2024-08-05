@@ -28,6 +28,7 @@ enum STATES
 	CLICKED,
 	UNSET
 }
+
 var status:STATES = STATES.UNSET;
 var textureSize:Vector2 = Vector2();
 var mousePos:Vector2 = Vector2();
@@ -55,24 +56,16 @@ func setHextile(newTile):
 
 # Given 'initdata' get appropiate texture
 func setupSelf() -> void:
-	var x;
-	var y = 0;
-	if(side == 0):
-		y += 320;
+	var x = 320;
+	var y = 0 if (side != 0) else 320;
 	
 	match pieceType:
-		6:
-			x =  0;
-		5:
-			x = 320;
-		4:
-			x = 320 * 2;
-		2:
-			x = 320 * 3;
-		3:
-			x = 320 * 4;
-		1:
-			x = 320 * 5;
+		6: x *= 0;
+		5: x *= 1;
+		4: x *= 2;
+		2: x *= 3;
+		3: x *= 4;
+		1: x *= 5;
 	
 	var initialRegion:Rect2 = Rect2(x,y,320,320);
 	var newChessTexture: AtlasTexture = AtlasTexture.new();
@@ -106,57 +99,59 @@ func _process(_delta) -> void:
 		global_position = mousePos + offset;
 	return;
 
+
+#
+func pressedAndNotDragging(eventPos):
+	var eventPosition =  eventPos;
+	var currentPiecePosition = global_position;
+	var pieceHitbox = Rect2(currentPiecePosition.x - textureSize.x / 2, currentPiecePosition.y - textureSize.y / 2,
+	 textureSize.x,textureSize.y);
+	
+	if pieceHitbox.has_point(eventPosition):
+		status = STATES.CLICKED;
+		emit_signal("pieceSelected", side, pieceType, pieceCords);
+		collisionNode.monitoring = true;
+		offset = currentPiecePosition - eventPosition;
+		preDragPosition = global_position;
+	return;
+
+#
+func notPressedAndDragging():
+	print(hexTile);
+	if(hexTile):
+		print("\nSuccess\n")
+		
+		moveTo(hexTile.transform.origin);
+		pieceCords = hexTile.hexMove;
+		
+		emit_signal("pieceDeselected", hexTile.hexCords, hexTile.hexKey, hexTile.hexIndex);
+		
+	else:
+		print("\nCanceled\n")
+		moveTo(preDragPosition);
+		emit_signal("pieceDeselected", Vector2i(), "", -1);
+		
+	status = STATES.UNSET;
+	preDragPosition = Vector2();
+	return;
+
 # Called when an input event is detected.
 func _input(event) -> void:
-	
-	if(locked):
-		return;
-		
-	if(anotherSelected):
+	if(locked or anotherSelected):
 		return;
 		
 	if (event is InputEventMouseButton) and (event.button_index == MOUSE_BUTTON_LEFT):
-		
 		if (status != STATES.DRAGGING) and (event.is_pressed()):
-			var eventPosition =  event.global_position;
-			var currentPiecePosition = global_position;
-			var pieceHitbox = Rect2(currentPiecePosition.x - textureSize.x / 2,
-			 currentPiecePosition.y - textureSize.y / 2,
-			 textureSize.x,
-			 textureSize.y);
-			
-			if pieceHitbox.has_point(eventPosition):
-				status = STATES.CLICKED;
-				emit_signal("pieceSelected", side, pieceType, pieceCords);
-				collisionNode.monitoring = true;
-				offset = currentPiecePosition - eventPosition;
-				preDragPosition = global_position;
-				
-		elif status == STATES.DRAGGING and not event.is_pressed():
-			print(hexTile);
-			if(hexTile):
-				print("\nSuccess\n")
-				
-				moveTo(hexTile.transform.origin);
-				pieceCords = hexTile.hexMove;
-				
-				emit_signal("pieceDeselected", hexTile.hexCords, hexTile.hexKey, hexTile.hexIndex);
-				
-			else:
-				print("\nCanceled\n")
-				moveTo(preDragPosition);
-				emit_signal("pieceDeselected", Vector2i(), "", -1);
-				
-			status = STATES.UNSET;
-			preDragPosition = Vector2();
+			pressedAndNotDragging(event.global_position);
+		elif (status == STATES.DRAGGING) and (not event.is_pressed()):
+			notPressedAndDragging();
 		
-	if status == STATES.CLICKED and event is InputEventMouseMotion:
+	if (status == STATES.CLICKED) and (event is InputEventMouseMotion):
 		status = STATES.DRAGGING;
-	
-	if( event is InputEventMouseMotion):
+	if (event is InputEventMouseMotion):
 		mousePos = event.global_position;
-		
 	return;
+
 
 # Called when the Layer 1 collision hextile area leaves
 func _on_area_2d_area_exited(area:Area2D):

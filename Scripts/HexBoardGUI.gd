@@ -74,6 +74,13 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 	
 	return Vector2(x, y);
 
+##
+func runEngineTest() -> void:
+	var Tester = EngineTest.new();
+	Tester.runSweep(GameDataNode);
+	Tester.queue_free();
+	return;
+
 
 ## DISPLAY PIECES
 
@@ -128,7 +135,7 @@ func spawnPieces() -> void:
 ## MOVE RESPONCE
 
 
-##
+## Destroy gui element of captured piece
 func handleMoveCapture() -> void:
 
 	print("Type: ",GameDataNode._getCaptureType(), ". Index: ", GameDataNode._getCaptureIndex());
@@ -139,27 +146,26 @@ func handleMoveCapture() -> void:
 	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex()).queue_free();
 	return;
 
-##
+## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
 func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
-	
-	## SWAP CHESS PIECE FROM PAWN TO PTO
 	var ref:Node;
 	var i:int = GameDataNode.SIDES.BLACK if (GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
-		
 	for pawnIndex in range( activePieces[i][GameDataNode.PIECES.PAWN].size() ):
 		if (activePieces[i][GameDataNode.PIECES.PAWN][pawnIndex] == cords):
 			ref = ChessPiecesNode.get_child(i).get_child(GameDataNode.PIECES.PAWN-1).get_child(pawnIndex);
 			break;
-			
+	
 	spawnPiecesSubRoutine(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords);
+	
 	ref.queue_free();
-	handleMakeMove(cords, key, index, pTo, true);
+	
+	submitMove(cords, key, index, pTo, false);
 	emit_signal("pieceUnselectedUnlockOthers");
-	disconnect("promotionAccepted", promotionInterupt);
+	
 	get_child(get_child_count() - 1).queue_free();
 	return;
 
-##
+## Get new state data from engine
 func updateGUI_Elements() -> void:
 	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
 		LeftPanel._swapLabelState();
@@ -178,29 +184,28 @@ func updateGUI_Elements() -> void:
 			LeftPanel._setCheckMateText(GameDataNode._getIsBlackTurn());
 		else:
 			LeftPanel._setStaleMateText();
-	pass;
-	
+	return;
 
-##
-#func handleMove(cords:Vector2i, moveType:String, moveIndex:int, _promoteTo:PIECES) -> void:
-func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:int=0, passInterupt=false) -> void:
 
-	if(moveType == 'Promote' and not passInterupt):
-		var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
+## Interupt a promotion submission to get promotion type
+func submitMoveInterupt(cords, moveType, moveIndex) -> void:
+	var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
+	dialog.z_index = 1; #place on foreground
+	dialog.cords = cords;
+	dialog.key = moveType;
+	dialog.index = moveIndex;
+	dialog.promotionAccepted.connect(promotionInterupt); # signal connect
+	add_child(dialog);
+	return;
 
-		dialog.z_index = 1; #place on foreground
-		dialog.cords = cords;
-		dialog.key = moveType;
-		dialog.index = moveIndex;
-		
-		dialog.promotionAccepted.connect(promotionInterupt); # signal connect
+## Sumbit a move to the engine and update state
+func submitMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
 
-		add_child(dialog);
-		
+	if(moveType == 'Promote' and passInterupt):
+		submitMoveInterupt(cords, moveType, moveIndex);
 		return
 
 	GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
-	
 	activePieces = GameDataNode._getActivePieces()
 	currentLegalsMoves = GameDataNode._getMoves()
 	
@@ -208,11 +213,11 @@ func handleMakeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:in
 		handleMoveCapture();
 	
 	updateGUI_Elements();
-	
 	return;
 
-##
-func handleMovesSpawn(moves:Array, color:Color, key, cords):
+
+## Setup and display a legal move on GUI
+func spawnMove(moves:Array, color:Color, key, cords):
 	
 	for i in range(moves.size()):
 		var move = moves[i];
@@ -223,35 +228,33 @@ func handleMovesSpawn(moves:Array, color:Color, key, cords):
 		activeScene.hexKey = key;
 		activeScene.hexIndex = i;
 		activeScene.hexMove = move;
-		activeScene.isSetup = true;
-
 		activeScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cord));
 		activeScene.rotation_degrees = 90;
 		activeScene.scale.x = 0.015;
 		activeScene.scale.y = 0.015;
 		activeScene.z_index = 1;
+		activeScene.isSetup = true;
 		
 		MoveGUI.add_child(activeScene);
 		
 		activeScene.SpriteNode.set_modulate(color);
-		
-	pass;
+	return;
 
-##
-func spawnChessMoves(moves:Dictionary, cords) -> void:
+## Spawn the moves from the given 'moves' dictionary for the piece 'cords'
+func spawnMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
 			"Promote":
-				handleMovesSpawn(moves[key], Color.DARK_KHAKI, key, cords);
+				spawnMove(moves[key], Color.DARK_KHAKI, key, cords);
 				pass
 			"EnPassant":
-				handleMovesSpawn(moves[key], Color.SEA_GREEN, key, cords);
+				spawnMove(moves[key], Color.SEA_GREEN, key, cords);
 				pass
 			"Capture":
-				handleMovesSpawn(moves[key], Color.DARK_RED, key, cords);
+				spawnMove(moves[key], Color.DARK_RED, key, cords);
 				pass
 			"Moves":
-				handleMovesSpawn(moves[key], Color.WHITE, key, cords);
+				spawnMove(moves[key], Color.WHITE, key, cords);
 				pass
 	return;
 
@@ -259,11 +262,11 @@ func spawnChessMoves(moves:Dictionary, cords) -> void:
 ## CLICK AND DRAG (MOUSE) API
 
 
-##
+## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key:String, index:int) -> void:
 	
 	if(index >= 0):
-		handleMakeMove(cords, key, index);
+		submitMove(cords, key, index);
 
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
@@ -284,7 +287,7 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	for key in currentLegalsMoves[CORDS].keys():
 		thisPiecesMoves[key] = currentLegalsMoves[CORDS][key];
 	
-	spawnChessMoves(thisPiecesMoves, CORDS);
+	spawnMoves(thisPiecesMoves, CORDS);
 	
 	return;
 
@@ -411,6 +414,10 @@ func _on_undo_pressed():
 	
 	return;
 
+## RUN TEST DEBUG FUNCTION
+func _on_run_test_pressed():
+	runEngineTest();
+	return;
 
 ## MENUS
 
@@ -428,4 +435,9 @@ func _selectSide_OnItemSelect(index:int) -> void:
 func _ready():
 	selectedSide = 0;
 	connectResizeToRoot();
+	
+	
 	return;
+
+
+

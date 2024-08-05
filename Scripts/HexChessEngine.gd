@@ -1,3 +1,4 @@
+class_name HexEngine
 extends Node
 
 ## Hexagonal Chess Engine
@@ -1391,6 +1392,41 @@ func debugPrintTwo(run:bool) -> void:
 
 
 ###
+
+
+## initiate the engine with a new game
+func __init(FEN_STRING) -> bool:
+	HexBoard = fillBoardwithFEN(FEN_STRING);
+	
+	if HexBoard == {}:
+		print("Invalid FEN");
+		return false;
+	
+	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
+	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
+
+	blackCaptures.clear();
+	whiteCaptures.clear();
+	legalMoves.clear();
+	blockingPieces.clear();
+
+	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
+	GameInCheckMoves.clear();
+	GameIsOver = false;
+	GameInCheck = false;
+	captureValid = false;
+	
+	EnPassantCordsValid = false;
+	EnPassantCords = Vector2i(-5,-5);
+	EnPassantTarget = Vector2i(-5,-5);
+
+	activePieces = findPieces(HexBoard);
+	findLegalMovesFor(activePieces);
+	
+	return true;
+
+
+###
 ##  API INTERACTIONS
 ###
 
@@ -1527,34 +1563,6 @@ func _undoLastMove() -> bool:
 	return true;
 
 ## START DEFAULT GAME PUBLIC CALL
-func _initDefault() -> void:
+func _initDefault() -> bool:
+	return __init(DEFAULT_FEN_STRING);
 	
-	HexBoard = fillBoardwithFEN(DEFAULT_FEN_STRING);
-	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
-	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
-
-	blackCaptures.clear();
-	whiteCaptures.clear();
-
-	blockingPieces.clear();
-
-	captureValid = false;
-	
-	isWhiteTurn = true;
-	turnNumber = 1;
-	
-	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
-	GameInCheckMoves.clear();
-	GameIsOver = false;
-	GameInCheck = false;
-
-	EnPassantCords = Vector2i(-5,-5);
-	EnPassantTarget = Vector2i(-5,-5);
-	EnPassantCordsValid = false;
-
-	activePieces = findPieces(HexBoard);
-	
-	legalMoves.clear();
-	findLegalMovesFor(activePieces);
-	
-	return;
