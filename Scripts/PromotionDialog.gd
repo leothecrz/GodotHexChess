@@ -60,13 +60,3 @@ func _on_queen_button_pressed():
 		qButton.button_pressed = true;
 	CHOICE = RETURNS.QUEEN;
 	return;
-
-###
-###
-### GODOT Fucntions
-
-func _ready():
-	pass 
-
-func _process(delta):
-	pass

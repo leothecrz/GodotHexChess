@@ -45,6 +45,3 @@ func _ready():
 	#tileMap.position.y = 0;
 	
 	return;
-
-func _process(delta):
-	return;

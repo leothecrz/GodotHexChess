@@ -351,7 +351,9 @@ func getPieceType(id:int) -> PIECES:
 	var res = (id & mask);
 	if(res > PIECES.KING):
 		push_error("Invalid Type");
+	@warning_ignore("int_as_enum_without_cast")
 	return res;
+	
 
 
 ### ENPASSANT
@@ -780,7 +782,7 @@ func searchForPawnsAtk(pos:Vector2i, isWTurn:bool) -> Array:
 
 ##
 func searchForKnightsAtk(pos:Vector2i, isWTurn:bool) -> Array:
-	var lst:Array;
+	var lst:Array = [];
 	var invertAt2Counter = 0;
 	for m in [-1,1,-1,1]:
 		for dir in KNIGHT_VECTORS.keys():
@@ -1208,8 +1210,9 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
 				[id]\
 				.insert( index, Vector2i(newFrom) );
-				
+
 				uncaptureValid = true;
+				@warning_ignore("int_as_enum_without_cast")
 				captureType = id;
 				captureIndex = index;
 				#signal gui // finished?
@@ -1231,8 +1234,9 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
 				[id]\
 				.insert( index, Vector2i(newFrom) );
-				
+
 				uncaptureValid = true;
+				@warning_ignore("int_as_enum_without_cast")
 				captureType = id;
 				captureIndex = index;
 				#signal gui // finished?
@@ -1249,8 +1253,8 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				
 				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][id].pop_back();
 				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.PAWN].insert( index, Vector2i(newTo) );
-				
 				unpromoteValid = true;
+				@warning_ignore("int_as_enum_without_cast")
 				unpromoteType = id;
 				unpromoteIndex = index;
 		i += 1;
@@ -1307,7 +1311,6 @@ func undoSubFixState():
 
 ##
 func printActivePieces():
-	var type:Dictionary;
 	for side in activePieces.size():
 		print(SIDES.find_key(side))
 		for piece in activePieces[side]:

@@ -244,18 +244,10 @@ func spawnMove(moves:Array, color:Color, key, cords):
 func spawnMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
-			"Promote":
-				spawnMove(moves[key], Color.DARK_KHAKI, key, cords);
-				pass
-			"EnPassant":
-				spawnMove(moves[key], Color.SEA_GREEN, key, cords);
-				pass
-			"Capture":
-				spawnMove(moves[key], Color.DARK_RED, key, cords);
-				pass
-			"Moves":
-				spawnMove(moves[key], Color.WHITE, key, cords);
-				pass
+			"Promote": 		spawnMove(moves[key], Color.DARK_KHAKI, key, cords);
+			"EnPassant": 	spawnMove(moves[key], Color.SEA_GREEN, key, cords);
+			"Capture": 		spawnMove(moves[key], Color.DARK_RED, key, cords);
+			"Moves": 		spawnMove(moves[key], Color.WHITE, key, cords);
 	return;
 
 

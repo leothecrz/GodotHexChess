@@ -17,8 +17,8 @@ func _getLabelState() -> bool:
 	return inCheckLabel.visible;
 
 ##
-func setLabelText(str:String) -> void:
-	inCheckLabel.text = str;
+func setLabelText(input:String) -> void:
+	inCheckLabel.text = input;
 	return;
 
 ##
