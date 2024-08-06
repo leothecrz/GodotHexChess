@@ -30,6 +30,7 @@ enum SIDES { BLACK, WHITE };
 enum MOVE_TYPES {MOVES, CAPTURE, ENPASSANT, PROMOTE}
 enum MATE_STATUS{ NONE, CHECK, OVER }
 
+enum EnemyTypes { PlayerTwo, Random, MinMax, NN }
 	#Defaults
 const HEX_BOARD_RADIUS = 5;
 const KING_INDEX = 0;
@@ -118,9 +119,11 @@ var EnPassantCords : Vector2i = Vector2i(-5,-5);
 var EnPassantTarget : Vector2i = Vector2i(-5,-5);
 var EnPassantCordsValid : bool = false;
 
+# Enemy
+var EnemyType:EnemyTypes = EnemyTypes.PlayerTwo;
+
 # History
 var moveHistory : Array = [];
-
 
 ### Board State
 
@@ -1401,6 +1404,8 @@ func debugPrintTwo(run:bool) -> void:
 func __init(FEN_STRING) -> bool:
 	HexBoard = fillBoardwithFEN(FEN_STRING);
 	
+	
+	
 	if HexBoard == {}:
 		print("Invalid FEN");
 		return false;
@@ -1433,6 +1438,9 @@ func __init(FEN_STRING) -> bool:
 ##  API INTERACTIONS
 ###
 
+##
+func _getEnemyType() -> EnemyTypes:
+	return EnemyType;
 
 ## Get Is Game Over
 func _getGameOverStatus() -> bool:
@@ -1496,6 +1504,10 @@ func _getUndoIndex() -> int:
 
 
 # NON-GETTER FUNCTIONS
+
+##
+func _setEnemy(type:EnemyTypes) -> void:
+	EnemyType = type;
 
 ## MAKE MOVE PUBLIC CALL
 func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:

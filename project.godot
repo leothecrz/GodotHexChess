@@ -12,6 +12,7 @@ config_version=5
 
 config/name="Hex Chess"
 config/version="0.0.1"
+config/tags=PackedStringArray("hexchess")
 run/main_scene="res://Scenes/HexBoardGUI.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 

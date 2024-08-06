@@ -24,11 +24,18 @@ const yScale = 0.9395;
 @onready var PIXEL_OFFSET = 35;
 
 	# Node Ref
-@onready var MoveGUI = $MoveGUI;
-@onready var BoardControler = $Background/Central;
 @onready var GameDataNode = $ChessEngine;
+
+@onready var BoardControler = $Background/Central;
+
+@onready var MoveGUI = $MoveGUI;
 @onready var ChessPiecesNode = $PiecesContainer;
+
+@onready var SideSelect = $PlayerColumn/ColumnBack/GameButtons/SideSelect;
+@onready var EnemySelect = $PlayerColumn/ColumnBack/GameButtons/EnemySelect;
+
 @onready var LeftPanel = $LeftPanel;
+
 
 	# State
 @onready var errorAttempts:int = 0;
@@ -411,12 +418,28 @@ func _on_run_test_pressed():
 	runEngineTest();
 	return;
 
+
 ## MENUS
 
 
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
+	if(activePieces):
+		# TODO: Throw up warning "Game is ALREADY running, cant change sides during game "
+		SideSelect._setSelected(selectedSide);
+		return; 
 	selectedSide = index;
+	return;
+
+##
+func _on_enemy_select_item_selected(index:int) -> void:
+	pass # Replace with function body.
+	if(activePieces):
+		# TODO: Throw up warning "Game is ALREADY running, cant change enemy during game "
+		EnemySelect._setSelected(GameDataNode._getEnemyType());
+		return; 
+	GameDataNode._setEnemy(index);
+	print("Selected Enemy: ", GameDataNode._getEnemyType());
 	return;
 
 
@@ -430,6 +453,3 @@ func _ready():
 	
 	
 	return;
-
-
-

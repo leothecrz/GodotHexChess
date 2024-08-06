@@ -12,11 +12,11 @@ func testSetupTime(ref):
 
 ##
 # 9 PAWNS. 8 Have 2 moves. Final has 1.
-# 3 BISHOPS
-# 2 ROOKS.
-# 2 KNIGHTS
-# 1 QUEEN
-# 1 KING
+# 3 BISHOPS. 2 have 2 moves. Final has 8.
+# 2 ROOKS. Each have 3 moves.
+# 2 KNIGHTS. Each have 4 moves.
+# 1 QUEEN. 6 moves.
+# 1 KING. 2 moves.
 func testMoveGen(ref):
 	if(ref.countMoves(ref.legalMoves) == 51):
 		return true
@@ -71,7 +71,7 @@ func testMoveInput(ref):
 	return [false, false];
 
 ##
-func testMoveAndCaptures(ref):
+func simpleMoveAndCapTest(ref):
 	testSetupTime(ref);
 	var moveGen = testMoveGen(ref);
 	var moveResults = testMoveInput(ref);
@@ -87,7 +87,7 @@ func runSweep(ERef:HexEngine):
 	var timeStart = Time.get_ticks_usec();
 	print("Running Test, Started at: ", Time.get_datetime_string_from_system());
 	
-	testMoveAndCaptures(ERef);
+	simpleMoveAndCapTest(ERef);
 	
 	print("Total Time Taken: ", Time.get_ticks_usec() - timeStart, " milliseconds");
 	return;
