@@ -10,7 +10,7 @@ var hexIndex:int;
 var hexCords:Vector2i;
 var hexMove:Vector2i;
 var defColor:Color;
-var hexKey:String;
+var hexKey:int = -1;
 ###
 ###
 ### USER CREATED

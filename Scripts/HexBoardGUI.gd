@@ -48,7 +48,7 @@ var isRotatedWhiteDown:bool = true;
 	# Temp State
 var activePieces:Array;
 var currentLegalsMoves:Dictionary;
-
+var isUndoing = false;
 
 ### Signals
 
@@ -207,9 +207,9 @@ func submitMoveInterupt(cords, moveType, moveIndex) -> void:
 	return;
 
 ## Sumbit a move to the engine and update state
-func submitMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
+func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
 
-	if(moveType == 'Promote' and passInterupt):
+	if(moveType == GameDataNode.MOVE_TYPES.PROMOTE and passInterupt):
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
 
@@ -252,10 +252,10 @@ func spawnMove(moves:Array, color:Color, key, cords):
 func spawnMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
-			"Promote": 		spawnMove(moves[key], Color.DARK_KHAKI, key, cords);
-			"EnPassant": 	spawnMove(moves[key], Color.SEA_GREEN, key, cords);
-			"Capture": 		spawnMove(moves[key], Color.DARK_RED, key, cords);
-			"Moves": 		spawnMove(moves[key], Color.WHITE, key, cords);
+			GameDataNode.MOVE_TYPES.MOVES: 			spawnMove(moves[key], Color.WHITE, key, cords);
+			GameDataNode.MOVE_TYPES.CAPTURE: 		spawnMove(moves[key], Color.DARK_RED, key, cords);
+			GameDataNode.MOVE_TYPES.PROMOTE: 		spawnMove(moves[key], Color.DARK_KHAKI, key, cords);
+			GameDataNode.MOVE_TYPES.ENPASSANT: 		spawnMove(moves[key], Color.SEA_GREEN, key, cords);
 	return;
 
 
@@ -263,7 +263,7 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 
 
 ## Submit a move to engine or Deselect 
-func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key:String, index:int) -> void:
+func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 	
 	if(index >= 0):
 		submitMove(cords, key, index);
@@ -275,7 +275,7 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key:String, index:int) -> vo
 		MoveGUI.remove_child(node);
 		node.queue_free();
 	
-	if(key != "Promote"):
+	if(key != GameDataNode.MOVE_TYPES.PROMOTE):
 		emit_signal("pieceUnselectedUnlockOthers");
 	
 	return;
@@ -354,6 +354,10 @@ func _on_undo_pressed():
 		## TODO ALERT THAT UNDO IMPOSSIBLE
 		return;
 	
+	if(isUndoing):
+		return;
+	isUndoing = true;
+	
 	var uType = GameDataNode._getUndoType();
 	var uIndex = GameDataNode._getUndoIndex();
 	var sideToUndo = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
@@ -412,6 +416,7 @@ func _on_undo_pressed():
 	
 	updateGUI_Elements();
 	
+	isUndoing = false;
 	return;
 
 ## RUN TEST DEBUG FUNCTION

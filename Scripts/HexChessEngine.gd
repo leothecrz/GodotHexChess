@@ -27,7 +27,7 @@ extends Node
 enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
 enum SIDES { BLACK, WHITE };
 
-enum MOVE_TYPES {MOVES, CAPTURE, ENPASSANT, PROMOTE}
+enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 enum MATE_STATUS{ NONE, CHECK, OVER }
 
 enum EnemyTypes { PlayerTwo, Random, MinMax, NN }
@@ -66,8 +66,8 @@ const BISHOP_VECTORS = { 'lfoward':Vector2i(-2,1), 'rFoward':Vector2i(-1,-1), 'l
 const KING_VECTORS   = { 'foward':Vector2i(0,-1), 'lFoward':Vector2i(-1,0,), 'rFoward':Vector2i(1,-1), 'backward':Vector2i(0,1), 'lBackward':Vector2i(-1,1), 'rBackward':Vector2i(1,0), 'dlfoward':Vector2i(-2,1), 'drFoward':Vector2i(-1,-1), 'left':Vector2i(-1,2), 'dlbackward':Vector2i(1,1), 'drBackward':Vector2i(2,-1), 'right':Vector2i(1,-2) };
 const KNIGHT_VECTORS = { 'left':Vector2i(-1,-2), 'lRight':Vector2i(1,-3), 'rRight':Vector2i(2,-3),}
 
-const DEFAULT_MOVE_TEMPLATE : Dictionary = { 'Capture':[], 'Moves':[] };
-const PAWN_MOVE_TEMPLATE : Dictionary    = { 'Promote':[], 'EnPassant':[],'Capture':[], 'Moves':[] };
+const DEFAULT_MOVE_TEMPLATE : Dictionary = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[],  };
+const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[], MOVE_TYPES.PROMOTE:[], MOVE_TYPES.ENPASSANT:[] };
 
 
 ### State
@@ -462,12 +462,12 @@ func findCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void:
 	if( HexBoard.has(qpos) && HexBoard[qpos].has(rpos)):
 		if ( (HexBoard[qpos][rpos] != PIECES.ZERO) && (!isPieceFriendly(HexBoard[qpos][rpos], isWhiteTurn)) ):
 			if ( isWhitePawnPromotion(move) if isWhiteTurn else isBlackPawnPromotion(move) ) :
-				legalMoves[pawn]['Promote'].append(move);
+				legalMoves[pawn][MOVE_TYPES.PROMOTE].append(move);
 			else:
-				legalMoves[pawn]['Capture'].append(move);
+				legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
 		else:
 			if( EnPassantCordsValid && (EnPassantCords.x == qpos) && (EnPassantCords.y == rpos) ):
-				legalMoves[pawn]['Capture'].append(move);
+				legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
 		updateAttackBoard(qpos, rpos, 1);
 	return;
 
@@ -477,16 +477,16 @@ func findFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
 	##Foward Move
 	if (HexBoard[pawn.x].has(fowardR) && HexBoard[pawn.x][fowardR] == 0):
 		if ( isWhitePawnPromotion(Vector2i(pawn.x,fowardR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x,fowardR)) ) :
-			legalMoves[pawn]['Promote'].append(Vector2i(pawn.x, fowardR));
+			legalMoves[pawn][MOVE_TYPES.PROMOTE].append(Vector2i(pawn.x, fowardR));
 		else:
-			legalMoves[pawn]['Moves'].append(Vector2i(pawn.x, fowardR));
+			legalMoves[pawn][MOVE_TYPES.MOVES].append(Vector2i(pawn.x, fowardR));
 			boolCanGoFoward = true;
 	
 	##Double Move From Start
 	if( boolCanGoFoward && ( isWhitePawnStar(pawn) if isWhiteTurn else isBlackPawnStart(pawn) ) ):
 		var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
 		if (HexBoard[pawn.x][doubleF] == 0):
-			legalMoves[pawn]['EnPassant'].append(Vector2i(pawn.x, doubleF));
+			legalMoves[pawn][MOVE_TYPES.ENPASSANT].append(Vector2i(pawn.x, doubleF));
 
 ## Calculate Pawn Moves (TODO: Unfinished Promote)
 func findMovesForPawn(PawnArray:Array)-> void:
@@ -537,10 +537,10 @@ func findMovesForKnight(KnightArray:Array) -> void:
 				
 				if (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
 					if (HexBoard[checkingQ][checkingR] == 0) :
-						legalMoves[knight]['Moves'].append(Vector2i(checkingQ,checkingR));
+						legalMoves[knight][MOVE_TYPES.MOVES].append(Vector2i(checkingQ,checkingR));
 
 					elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
-						legalMoves[knight]['Capture'].append(Vector2i(checkingQ,checkingR));
+						legalMoves[knight][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ,checkingR));
 					
 					updateAttackBoard(checkingQ, checkingR, 1);
 
@@ -573,11 +573,11 @@ func findMovesForRook(RookArray:Array) -> void:
 			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 				
 				if( HexBoard[checkingQ][checkingR] == 0):
-					legalMoves[rook]['Moves'].append(Vector2i(checkingQ, checkingR));
+					legalMoves[rook][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
 
 				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
-					legalMoves[rook]['Capture'].append(Vector2i(checkingQ, checkingR));
+					legalMoves[rook][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
 					
 					#King Escape Fix
@@ -631,11 +631,11 @@ func findMovesForBishop(BishopArray:Array) -> void:
 			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 			
 				if( HexBoard[checkingQ][checkingR] == 0):
-					legalMoves[bishop]['Moves'].append(Vector2i(checkingQ, checkingR));
+					legalMoves[bishop][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
 
 				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
-					legalMoves[bishop]['Capture'].append(Vector2i(checkingQ, checkingR));
+					legalMoves[bishop][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
 					
 					#King Escape Fix
@@ -714,18 +714,18 @@ func findMovesForKing(KingArray:Array) -> void:
 						continue;
 
 				if( HexBoard[checkingQ][checkingR] == PIECES.ZERO ):
-					legalMoves[king]['Moves'].append(Vector2i(checkingQ, checkingR));
+					legalMoves[king][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 
 				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
-					legalMoves[king]['Capture'].append(Vector2i(checkingQ, checkingR));
+					legalMoves[king][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
 				
 				updateAttackBoard(checkingQ, checkingR, 1);
 		
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
-			legalMoves[king]['Capture'] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[king]['Capture']);
+			legalMoves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[king][MOVE_TYPES.CAPTURE]);
 			for moveType in legalMoves[king]:
-				if(moveType == 'Capture'): continue;
+				if(moveType == MOVE_TYPES.CAPTURE): continue;
 				legalMoves[king][moveType] = differenceOfTwoArrays(legalMoves[king][moveType], GameInCheckMoves);
 
 	return;
@@ -754,7 +754,7 @@ func findLegalMovesFor(activepieces:Array) -> void:
 ## Check if an active piece appears in the capture moves of any piece.
 func checkIFCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 	for piece:Vector2i in enemyMoves.keys():
-		for move in enemyMoves[piece]['Capture']:
+		for move in enemyMoves[piece][MOVE_TYPES.CAPTURE]:
 			if(move == Cords):
 				return true;
 	return false;
@@ -762,7 +762,7 @@ func checkIFCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 ## Check what piece contains in their capture moves the cords piece.
 func checkWHERECordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> Vector2i:
 	for piece:Vector2i in enemyMoves.keys():
-		for move in enemyMoves[piece]['Capture']:
+		for move in enemyMoves[piece][MOVE_TYPES.CAPTURE]:
 			if(move == Cords):
 				return piece;
 	return Vector2i();
@@ -1041,7 +1041,7 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 	return revertEnPassant;
 
 ##
-func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
+func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
 	var pieceVal:int = HexBoard[cords.x][cords.y]
 	var previousPieceVal = pieceVal;
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
@@ -1054,7 +1054,7 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 	HexBoard[cords.x][cords.y] = PIECES.ZERO;
 
 	match moveType:
-		'Promote':
+		MOVE_TYPES.PROMOTE:
 			
 			if(moveTo.x != cords.x):
 				handleMoveCapture(moveTo, pieceType);
@@ -1075,22 +1075,22 @@ func handleMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES
 			moveHistMod = moveHistMod + ("+%s,%d" % [pieceType, i]);
 			pass;
 
-		'EnPassant':
-			EnPassantCords = legalMoves[cords]['Moves'][0];
+		MOVE_TYPES.ENPASSANT:
+			EnPassantCords = legalMoves[cords][MOVE_TYPES.MOVES][0];
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
 			
 			moveHistMod = "E";
 			pass;
 
-		'Capture':
+		MOVE_TYPES.CAPTURE:
 			if handleMoveCapture(moveTo, pieceType):
 				moveHistMod = "-%d,%d" % [captureType,captureIndex];
 			else:
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
 			pass;
 
-		'Moves': pass;
+		MOVE_TYPES.MOVES: pass;
 
 	HexBoard[moveTo.x][moveTo.y] = pieceVal;
 
@@ -1334,7 +1334,7 @@ func countMoves(movesList:Dictionary) -> int:
 	var count:int = 0;
 	
 	for piece:Vector2i in movesList.keys():
-		for moveType:String in movesList[piece]:
+		for moveType in movesList[piece]:
 			for move:Vector2i in movesList[piece][moveType]:
 				count += 1;
 	
@@ -1523,7 +1523,7 @@ func _setEnemy(type:EnemyTypes, isWhite:bool) -> void:
 	return;
 
 ## MAKE MOVE PUBLIC CALL
-func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:
+func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
 	
 	if(GameIsOver):
 		return;

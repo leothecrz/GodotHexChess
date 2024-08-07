@@ -129,7 +129,7 @@ func notPressedAndDragging():
 	else:
 		print("\nCanceled\n")
 		moveTo(preDragPosition);
-		emit_signal("pieceDeselected", Vector2i(), "", -1);
+		emit_signal("pieceDeselected", Vector2i(), 0, -1);
 		
 	status = STATES.UNSET;
 	preDragPosition = Vector2();

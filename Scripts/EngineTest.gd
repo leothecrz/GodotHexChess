@@ -30,7 +30,7 @@ func testCaptureInput2(ref):
 	var testPassed = true;
 	if (ref.HexBoard[0][-1] != ref.getPieceInt(1, true)):
 		testPassed = false;
-	ref._makeMove(Vector2i(0,-1), "Capture", 0, 0);
+	ref._makeMove(Vector2i(0,-1), 1, 0, 0);
 	if (ref.HexBoard[-1][0] != ref.getPieceInt(1, true)):
 		testPassed = false;
 	return testPassed;
@@ -40,7 +40,7 @@ func testCaptureInput(ref):
 	var testPassed = true;
 	if (ref.HexBoard[0][0] != ref.getPieceInt(1, false)):
 		testPassed = false;
-	ref._makeMove(Vector2i(0,0), "Capture", 0, 0);
+	ref._makeMove(Vector2i(0,0), 1, 0, 0);
 	if (ref.HexBoard[-1][0] != ref.getPieceInt(1, false)):
 		testPassed = false;
 	if (testPassed):
@@ -52,7 +52,7 @@ func testMoveInput2(ref):
 	var testPassed = true;
 	if (ref.HexBoard[-1][-1] != ref.getPieceInt(1, true)):
 		testPassed = false;
-	ref._makeMove(Vector2i(-1,-1), "EnPassant", 0, 0);
+	ref._makeMove(Vector2i(-1,-1), 2, 0, 0);
 	if (ref.HexBoard[-1][1] != ref.getPieceInt(1, true)):
 		testPassed = false;
 	return [testPassed, testCaptureInput(ref)];
@@ -62,7 +62,7 @@ func testMoveInput(ref):
 	var testPassed = true;
 	if (ref.HexBoard[0][1] != ref.getPieceInt(1, false)):
 		testPassed = false;
-	ref._makeMove(Vector2i(0,1), "Moves", 0, 0);
+	ref._makeMove(Vector2i(0,1), 0, 0, 0);
 	if (ref.HexBoard[0][0] != ref.getPieceInt(1, false)):
 		testPassed = false;
 	
