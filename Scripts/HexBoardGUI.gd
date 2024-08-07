@@ -43,7 +43,7 @@ const yScale = 0.9395;
 
 	# Board Setup
 var selectedSide:int;
-var isRotatedWhiteDown:bool;
+var isRotatedWhiteDown:bool = true;
 
 	# Temp State
 var activePieces:Array;
@@ -148,7 +148,7 @@ func handleMoveCapture() -> void:
 
 	print("Type: ",GameDataNode._getCaptureType(), ". Index: ", GameDataNode._getCaptureIndex());
 	
-	var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
+	var i:int = GameDataNode.SIDES.WHITE if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
 	var j:int =  GameDataNode._getCaptureType() - 1;
 	
 	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex()).queue_free();
@@ -268,7 +268,7 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key:String, index:int) -> vo
 	if(index >= 0):
 		submitMove(cords, key, index);
 		
-		if( GameDataNode.__getIsEnemyAI()):
+		if( GameDataNode._getIsEnemyAI()):
 			pass;
 
 	for node in MoveGUI.get_children():
