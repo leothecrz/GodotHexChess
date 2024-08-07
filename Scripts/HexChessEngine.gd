@@ -121,6 +121,7 @@ var EnPassantCordsValid : bool = false;
 
 # Enemy
 var EnemyType:EnemyTypes = EnemyTypes.PlayerTwo;
+var EnemyIsAI = false;
 
 # History
 var moveHistory : Array = [];
@@ -1431,6 +1432,10 @@ func __init(FEN_STRING) -> bool:
 	activePieces = findPieces(HexBoard);
 	findLegalMovesFor(activePieces);
 	
+	if (EnemyType != EnemyTypes.PlayerTwo):
+		pass;
+	
+	
 	return true;
 
 
@@ -1508,6 +1513,11 @@ func _getUndoIndex() -> int:
 ##
 func _setEnemy(type:EnemyTypes) -> void:
 	EnemyType = type;
+	if(EnemyType < EnemyTypes.Random):
+		EnemyIsAI = false;
+	else:
+		EnemyIsAI = true;
+	return;
 
 ## MAKE MOVE PUBLIC CALL
 func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES) -> void:

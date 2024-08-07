@@ -433,13 +433,14 @@ func _selectSide_OnItemSelect(index:int) -> void:
 
 ##
 func _on_enemy_select_item_selected(index:int) -> void:
-	pass # Replace with function body.
 	if(activePieces):
 		# TODO: Throw up warning "Game is ALREADY running, cant change enemy during game "
 		EnemySelect._setSelected(GameDataNode._getEnemyType());
 		return; 
+	
 	GameDataNode._setEnemy(index);
 	print("Selected Enemy: ", GameDataNode._getEnemyType());
+	
 	return;
 
 
