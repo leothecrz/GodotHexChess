@@ -69,6 +69,7 @@ func connectResizeToRoot() -> void:
 ##TODO: Implement Resize - Cascade scale factor to gui elements
 ## Begining of resize cascade
 func onResize() ->void:
+	VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 	return;
 
 ## Convert Axial Cordinates To Viewport Cords
@@ -266,6 +267,9 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key:String, index:int) -> vo
 	
 	if(index >= 0):
 		submitMove(cords, key, index);
+		
+		if( GameDataNode.__getIsEnemyAI()):
+			pass;
 
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
@@ -307,11 +311,10 @@ func _newGame_OnButtonPress() -> void:
 		get_tree().quit(1);
 		return;
 
-	var isUserPlayingW = (selectedSide == 0);
-	BoardControler.checkAndFlipBoard(isUserPlayingW);
-	isRotatedWhiteDown = isUserPlayingW;
+	
 	
 	GameDataNode._initDefault();
+	
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
 	
@@ -361,14 +364,12 @@ func _on_undo_pressed():
 	if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
 		var newPos = activePieces[sideToUndo][uType][uIndex];
 		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
-		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos)));
+		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
 	else: 
 		print("Undo Promotion")
-		print("Promote Ignore Moving Promoted");
-		
 		var pType = GameDataNode._getUnpromoteType(); # promoted type
 		var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
-		var newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex];
+		var newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex] ;
 		
 		var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 		var refChildCount = ref.get_child_count(false);
@@ -429,6 +430,14 @@ func _selectSide_OnItemSelect(index:int) -> void:
 		SideSelect._setSelected(selectedSide);
 		return; 
 	selectedSide = index;
+	
+	var isUserPlayingW = (selectedSide == 0);
+	BoardControler.checkAndFlipBoard(isUserPlayingW);
+	isRotatedWhiteDown = isUserPlayingW;
+	
+	GameDataNode._setEnemy(GameDataNode._getEnemyType(), selectedSide != 0);
+	#print("Type: ", GameDataNode._getEnemyType());
+	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
 	return;
 
 ##
@@ -437,10 +446,11 @@ func _on_enemy_select_item_selected(index:int) -> void:
 		# TODO: Throw up warning "Game is ALREADY running, cant change enemy during game "
 		EnemySelect._setSelected(GameDataNode._getEnemyType());
 		return; 
-	
-	GameDataNode._setEnemy(index);
-	print("Selected Enemy: ", GameDataNode._getEnemyType());
-	
+		
+	var type = index - 1 if (index > 1) else index;
+	GameDataNode._setEnemy(type, selectedSide != 0);
+	#print("Type: ", GameDataNode._getEnemyType());
+	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
 	return;
 
 
@@ -451,6 +461,4 @@ func _on_enemy_select_item_selected(index:int) -> void:
 func _ready():
 	selectedSide = 0;
 	connectResizeToRoot();
-	
-	
 	return;

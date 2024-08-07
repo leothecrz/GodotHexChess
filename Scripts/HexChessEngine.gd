@@ -122,6 +122,7 @@ var EnPassantCordsValid : bool = false;
 # Enemy
 var EnemyType:EnemyTypes = EnemyTypes.PlayerTwo;
 var EnemyIsAI = false;
+var EnemyPlaysWhite = false;
 
 # History
 var moveHistory : Array = [];
@@ -1404,9 +1405,6 @@ func debugPrintTwo(run:bool) -> void:
 ## initiate the engine with a new game
 func __init(FEN_STRING) -> bool:
 	HexBoard = fillBoardwithFEN(FEN_STRING);
-	
-	
-	
 	if HexBoard == {}:
 		print("Invalid FEN");
 		return false;
@@ -1431,11 +1429,6 @@ func __init(FEN_STRING) -> bool:
 
 	activePieces = findPieces(HexBoard);
 	findLegalMovesFor(activePieces);
-	
-	if (EnemyType != EnemyTypes.PlayerTwo):
-		pass;
-	
-	
 	return true;
 
 
@@ -1446,6 +1439,14 @@ func __init(FEN_STRING) -> bool:
 ##
 func _getEnemyType() -> EnemyTypes:
 	return EnemyType;
+
+##
+func _getEnemyIsWhite() -> bool:
+	return EnemyPlaysWhite;
+
+##
+func _getIsEnemyAI() -> bool:
+	return EnemyIsAI;
 
 ## Get Is Game Over
 func _getGameOverStatus() -> bool:
@@ -1510,13 +1511,15 @@ func _getUndoIndex() -> int:
 
 # NON-GETTER FUNCTIONS
 
-##
-func _setEnemy(type:EnemyTypes) -> void:
+
+## Enemy is shorter than opponent
+func _setEnemy(type:EnemyTypes, isWhite:bool) -> void:
 	EnemyType = type;
 	if(EnemyType < EnemyTypes.Random):
 		EnemyIsAI = false;
 	else:
 		EnemyIsAI = true;
+	EnemyPlaysWhite = isWhite;
 	return;
 
 ## MAKE MOVE PUBLIC CALL
@@ -1533,6 +1536,11 @@ func _makeMove(cords:Vector2i, moveType:String, moveIndex:int, promoteTo:PIECES)
 	
 	debugPrintOne(false)
 	debugPrintTwo(true);
+	
+	return;
+
+## Pass To AI
+func _passToAI() -> void:
 	
 	return;
 
