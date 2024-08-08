@@ -258,26 +258,48 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 			GameDataNode.MOVE_TYPES.ENPASSANT: 		spawnMove(moves[key], Color.SEA_GREEN, key, cords);
 	return;
 
+##
+func allowAITurn():
+	if(  not GameDataNode._getIsEnemyAI() ):
+		return;
+	
+	if(GameDataNode._getGameOverStatus()):
+		return
+	
+	GameDataNode._passToAI();
+	
+	var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
+	var j:int =  GameDataNode._getEnemyChoiceType() - 1;
+	
+	ChessPiecesNode.get_child(i).get_child(j).\
+	get_child(GameDataNode._getEnemyChoiceIndex()).\
+	_setPieceCords(GameDataNode._getEnemyTo(),\
+	 VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(GameDataNode._getEnemyTo())));
+		
+	activePieces = GameDataNode._getActivePieces()
+	currentLegalsMoves = GameDataNode._getMoves()
+	
+	if(GameDataNode._getCaptureValid()):
+		handleMoveCapture();		
+	updateGUI_Elements();
+	return;
 
 ## CLICK AND DRAG (MOUSE) API
 
 
 ## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
-	
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
 		node.queue_free();
 	
-	if(index >= 0):
-		submitMove(cords, key, index);
-		
-		if( GameDataNode._getIsEnemyAI()):
-			GameDataNode._passToAI();
-			
 	if(key != GameDataNode.MOVE_TYPES.PROMOTE):
 		emit_signal("pieceUnselectedUnlockOthers");
 	
+	if(index >= 0):
+		submitMove(cords, key, index);
+		allowAITurn()
+		
 	return;
 
 ## Lock Other Pieces

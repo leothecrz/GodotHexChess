@@ -1,18 +1,26 @@
 class_name HexEngine
 extends Node
 
-## Hexagonal Chess Engine
+### Hexagonal Chess Engine
 ##
 ## Purpose:
 ## Holds Game State
 ## Computes Game Logic
-## Genarates Moves
+## Generates Moves
+## Initiates AI Opponent
 ##
+
+## USAGE
+# Set Opponent
+# If (AI): Set Type
+# While(Not GameIsOver)
+# 	Make Move
+#	If (AI): passToAI
 
 ##TODO:
 # FEN1 - Starting from a fen string requires that attack boards be created before anybody can go.
 # FEN2 - Make it possible to start from fen string
-# PlayerAction - Move Undo
+# PlayerAction - Move Undo - Finished Untested.
 # Test - Add tests
 # AI1 - Random AI
 # AI2 - MinMax AI
@@ -49,7 +57,6 @@ const BLOCKING_TEST = '6/7/8/9/10/kr7NK/10/9/8/7/6 w - 1';
 const UNDO_TEST_ONE   = '6/7/8/9/10/4p6/k2p2P2K/9/8/7/6 w - 1';
 const UNDO_TEST_TWO   = '6/7/8/9/1P7/11/3p2P2K/9/8/7/k5 w - 1';
 const UNDO_TEST_THREE   = '6/7/8/9/2R6/11/k2p2P2K/9/8/7/6 w - 1';
-									
 	#Piece Tests
 const PAWN_TEST   = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
 const KNIGHT_TEST = '6/7/8/9/10/5N5/10/9/8/7/6 w - 1';
@@ -124,9 +131,13 @@ var EnemyType:ENEMY_TYPES = ENEMY_TYPES.PLAYER_TWO;
 var EnemyIsAI = false;
 var EnemyPlaysWhite = false;
 var EnemyAI;
+var EnemyChoiceType;
+var EnemyChoiceIndex;
+var EnemyTo;
 
 # History
 var moveHistory : Array = [];
+
 
 ### Board State
 
@@ -253,7 +264,8 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	if(fenSections[2] != '-'):
 		EnPassantCords = decodeEnPassantFEN(fenSections[2]);
 		EnPassantCordsValid = true;
-		#findEnPassantTarget();
+		# TODO: findEnPassantTarget();
+		EnPassantTarget = Vector2i(-5,-5);
 	else:
 		EnPassantCords = Vector2i(-5,-5);
 		EnPassantTarget = Vector2i(-5,-5);
@@ -359,7 +371,6 @@ func getPieceType(id:int) -> PIECES:
 		push_error("Invalid Type");
 	@warning_ignore("int_as_enum_without_cast")
 	return res;
-	
 
 
 ### ENPASSANT
@@ -1046,10 +1057,8 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 	var pieceVal:int = HexBoard[cords.x][cords.y]
 	var previousPieceVal = pieceVal;
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
-
 	var pieceType:PIECES = getPieceType(pieceVal);
 	var moveTo = legalMoves[cords][moveType][moveIndex];
-
 	var moveHistMod = "";
 
 	HexBoard[cords.x][cords.y] = PIECES.ZERO;
@@ -1399,6 +1408,15 @@ func debugPrintTwo(run:bool) -> void:
 	print("\n\n")
 	return;
 
+##
+func debugPrintThree(run:bool) -> void:
+	if(!run):
+		return;
+	print("Moves: \n", legalMoves, "\n");
+	for key in legalMoves.keys():
+		print(key, " : ", legalMoves[key]);
+	print("\n\n")
+	return;
 
 ###
 
@@ -1434,7 +1452,7 @@ func __init(FEN_STRING) -> bool:
 	if(EnemyIsAI):
 		match EnemyType:
 			ENEMY_TYPES.RANDOM:
-				EnemyAI = RandomAI.new();
+				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
 				pass;
 			ENEMY_TYPES.NN:
@@ -1446,6 +1464,18 @@ func __init(FEN_STRING) -> bool:
 ###
 ##  API INTERACTIONS
 ###
+
+##
+func _getEnemyTo():
+	return EnemyTo;
+
+##
+func _getEnemyChoiceType():
+	return EnemyChoiceType;
+
+##
+func _getEnemyChoiceIndex():
+	return EnemyChoiceIndex;
 
 ##
 func _getEnemyType() -> ENEMY_TYPES:
@@ -1536,23 +1566,38 @@ func _setEnemy(type:ENEMY_TYPES, isWhite:bool) -> void:
 ## MAKE MOVE PUBLIC CALL
 func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
 	
-	if(GameIsOver):
+	if(GameIsOver or !legalMoves.has(cords) ):
 		return;
 
-	if(not legalMoves.has(cords)):
-		return;
+	if(EnemyIsAI and EnemyPlaysWhite == isWhiteTurn):
+		print("NOT YOUR TURN")
+		return
 
 	resetFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
 	
 	debugPrintOne(false)
-	debugPrintTwo(true);
+	debugPrintTwo(false);
+	debugPrintThree(true);
 	
 	return;
 
 ## Pass To AI
 func _passToAI() -> void:
-	EnemyAI._makeChoice();
+	EnemyAI._makeChoice(self);
+	EnemyChoiceType = getPieceType(HexBoard[EnemyAI._getCords().x][EnemyAI._getCords().y])
+	EnemyChoiceIndex = 0;
+	for pieceCords in activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][EnemyChoiceType]:
+		if(EnemyAI._getCords() == pieceCords):
+			break;
+		EnemyChoiceIndex +=1;
+	EnemyTo = EnemyAI._getTo();
+	
+	resetFlags();
+	handleMove(EnemyAI._getCords(), EnemyAI._getMoveType(), EnemyAI._getMoveIndex(), EnemyAI._getPromoteTo())
+	
+	debugPrintOne(false)
+	debugPrintTwo(false);
 	return;
 
 ## RESIGN PUBLIC CALL
