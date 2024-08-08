@@ -30,7 +30,7 @@ enum SIDES { BLACK, WHITE };
 enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 enum MATE_STATUS{ NONE, CHECK, OVER }
 
-enum EnemyTypes { PlayerTwo, Random, MinMax, NN }
+enum ENEMY_TYPES { PLAYER_TWO, RANDOM, MIN_MAX, NN }
 	#Defaults
 const HEX_BOARD_RADIUS = 5;
 const KING_INDEX = 0;
@@ -120,9 +120,10 @@ var EnPassantTarget : Vector2i = Vector2i(-5,-5);
 var EnPassantCordsValid : bool = false;
 
 # Enemy
-var EnemyType:EnemyTypes = EnemyTypes.PlayerTwo;
+var EnemyType:ENEMY_TYPES = ENEMY_TYPES.PLAYER_TWO;
 var EnemyIsAI = false;
 var EnemyPlaysWhite = false;
+var EnemyAI;
 
 # History
 var moveHistory : Array = [];
@@ -1429,6 +1430,16 @@ func __init(FEN_STRING) -> bool:
 
 	activePieces = findPieces(HexBoard);
 	findLegalMovesFor(activePieces);
+	
+	if(EnemyIsAI):
+		match EnemyType:
+			ENEMY_TYPES.RANDOM:
+				EnemyAI = RandomAI.new();
+			ENEMY_TYPES.MIN_MAX:
+				pass;
+			ENEMY_TYPES.NN:
+				pass;
+				
 	return true;
 
 
@@ -1437,7 +1448,7 @@ func __init(FEN_STRING) -> bool:
 ###
 
 ##
-func _getEnemyType() -> EnemyTypes:
+func _getEnemyType() -> ENEMY_TYPES:
 	return EnemyType;
 
 ##
@@ -1513,9 +1524,9 @@ func _getUndoIndex() -> int:
 
 
 ## Enemy is shorter than opponent
-func _setEnemy(type:EnemyTypes, isWhite:bool) -> void:
+func _setEnemy(type:ENEMY_TYPES, isWhite:bool) -> void:
 	EnemyType = type;
-	if(EnemyType < EnemyTypes.Random):
+	if(EnemyType < ENEMY_TYPES.RANDOM):
 		EnemyIsAI = false;
 	else:
 		EnemyIsAI = true;
@@ -1541,7 +1552,7 @@ func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> voi
 
 ## Pass To AI
 func _passToAI() -> void:
-	
+	EnemyAI._makeChoice();
 	return;
 
 ## RESIGN PUBLIC CALL

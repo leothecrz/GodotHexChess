@@ -265,16 +265,16 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 ## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 	
-	if(index >= 0):
-		submitMove(cords, key, index);
-		
-		if( GameDataNode._getIsEnemyAI()):
-			pass;
-
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
 		node.queue_free();
 	
+	if(index >= 0):
+		submitMove(cords, key, index);
+		
+		if( GameDataNode._getIsEnemyAI()):
+			GameDataNode._passToAI();
+			
 	if(key != GameDataNode.MOVE_TYPES.PROMOTE):
 		emit_signal("pieceUnselectedUnlockOthers");
 	
