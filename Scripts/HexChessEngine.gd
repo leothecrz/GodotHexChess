@@ -1182,9 +1182,7 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 		
 		GameIsOver = true;
 	
-	print("Available Move Count: ", moveCount);
 	moveHistory.append("%s %s" % [historyPreview, mateStatus])
-	
 	return;
 
 
@@ -1412,17 +1410,15 @@ func debugPrintTwo(run:bool) -> void:
 func debugPrintThree(run:bool) -> void:
 	if(!run):
 		return;
-	print("Moves: \n", legalMoves, "\n");
+	print("Moves:")
 	for key in legalMoves.keys():
 		print(key, " : ", legalMoves[key]);
 	print("\n\n")
 	return;
 
-###
-
 
 ## initiate the engine with a new game
-func __init(FEN_STRING) -> bool:
+func initiateEngine(FEN_STRING) -> bool:
 	HexBoard = fillBoardwithFEN(FEN_STRING);
 	if HexBoard == {}:
 		print("Invalid FEN");
@@ -1435,17 +1431,19 @@ func __init(FEN_STRING) -> bool:
 	whiteCaptures.clear();
 	legalMoves.clear();
 	blockingPieces.clear();
-
-	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 	GameInCheckMoves.clear();
+
 	GameIsOver = false;
 	GameInCheck = false;
 	captureValid = false;
+	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 	
+	### Should be removed when 'fillBoardwithFEN' can find TARGET
 	EnPassantCordsValid = false;
 	EnPassantCords = Vector2i(-5,-5);
 	EnPassantTarget = Vector2i(-5,-5);
-
+	###Should be removed when 'fillBoardwithFEN' can find TARGET
+	
 	activePieces = findPieces(HexBoard);
 	findLegalMovesFor(activePieces);
 	
@@ -1464,6 +1462,118 @@ func __init(FEN_STRING) -> bool:
 ###
 ##  API INTERACTIONS
 ###
+
+
+# NON-GETTER FUNCTIONS
+
+
+## Enemy is shorter than opponent
+func _setEnemy(type:ENEMY_TYPES, isWhite:bool) -> void:
+	EnemyType = type;
+	if(EnemyType < ENEMY_TYPES.RANDOM):
+		EnemyIsAI = false;
+	else:
+		EnemyIsAI = true;
+	EnemyPlaysWhite = isWhite;
+	return;
+
+## MAKE MOVE PUBLIC CALL
+func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
+	
+	if(GameIsOver or !legalMoves.has(cords) ):
+		return;
+
+	if(EnemyIsAI and EnemyPlaysWhite == isWhiteTurn):
+		print("NOT YOUR TURN")
+		return
+
+	resetFlags();
+	handleMove(cords, moveType, moveIndex, promoteTo);
+	
+	debugPrintOne(false)
+	debugPrintTwo(false);
+	debugPrintThree(false);
+	
+	return;
+
+## Pass To AI
+func _passToAI() -> void:
+	EnemyAI._makeChoice(self);
+	EnemyChoiceType = getPieceType(HexBoard[EnemyAI._getCords().x][EnemyAI._getCords().y])
+	EnemyChoiceIndex = 0;
+	for pieceCords in activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][EnemyChoiceType]:
+		if(EnemyAI._getCords() == pieceCords):
+			break;
+		EnemyChoiceIndex += 1;
+	EnemyTo = EnemyAI._getTo();
+	
+	resetFlags();
+	handleMove(EnemyAI._getCords(), EnemyAI._getMoveType(), EnemyAI._getMoveIndex(), EnemyAI._getPromoteTo())
+	
+	debugPrintOne(false)
+	debugPrintTwo(false);
+	debugPrintThree(true);
+	
+	return;
+
+## RESIGN PUBLIC CALL
+func _resign():
+	
+	GameIsOver = true;
+	print("%s WINS BY RESIGN" % ("White" if isWhiteTurn else "Black"));
+	
+	return
+
+## Undo Move PUBLIC CALL
+func _undoLastMove() -> bool:
+	
+	if(moveHistory.size() < 1):
+		print("No move history");
+		return false;
+	
+	uncaptureValid = false;
+	unpromoteValid = false;
+	
+	var currentMove:String = moveHistory.pop_back();
+	var splits:PackedStringArray = currentMove.split(" ");
+	
+	var pieceVal:int = int(splits[0]);
+	var newTo:Vector2i = decodeEnPassantFEN(splits[1]);
+	var newFrom:Vector2i = decodeEnPassantFEN(splits[2]);
+	
+	var pieceType = getPieceType(pieceVal);
+	var selfColor = SIDES.WHITE if !isWhiteTurn else SIDES.BLACK;
+	var index:int = 0;
+	
+	##Default Undo
+	HexBoard[newTo.x][newTo.y] = pieceVal;
+	HexBoard[newFrom.x][newFrom.y] = PIECES.ZERO;
+	
+	for pieceCords in activePieces[selfColor][pieceType]:
+		if(pieceCords == newFrom):
+			break;
+		index += 1;
+	
+	if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
+		activePieces[selfColor][pieceType][index] = newTo;
+	
+	undoType = pieceType;
+	undoIndex = index;
+	undoSubCleanFlags(splits, newTo, newFrom);
+	undoSubFixState();
+	decrementTurnNumber();
+	swapPlayerTurn();
+	generateNextLegalMoves();
+
+	return true;
+
+## START DEFAULT GAME PUBLIC CALL
+func _initDefault() -> bool:
+	return initiateEngine(DEFAULT_FEN_STRING);
+
+
+# GETTERS
+
 
 ##
 func _getEnemyTo():
@@ -1548,110 +1658,3 @@ func _getUndoType() -> PIECES:
 ## Get Undo Index
 func _getUndoIndex() -> int:
 	return undoIndex;
-
-
-# NON-GETTER FUNCTIONS
-
-
-## Enemy is shorter than opponent
-func _setEnemy(type:ENEMY_TYPES, isWhite:bool) -> void:
-	EnemyType = type;
-	if(EnemyType < ENEMY_TYPES.RANDOM):
-		EnemyIsAI = false;
-	else:
-		EnemyIsAI = true;
-	EnemyPlaysWhite = isWhite;
-	return;
-
-## MAKE MOVE PUBLIC CALL
-func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
-	
-	if(GameIsOver or !legalMoves.has(cords) ):
-		return;
-
-	if(EnemyIsAI and EnemyPlaysWhite == isWhiteTurn):
-		print("NOT YOUR TURN")
-		return
-
-	resetFlags();
-	handleMove(cords, moveType, moveIndex, promoteTo);
-	
-	debugPrintOne(false)
-	debugPrintTwo(false);
-	debugPrintThree(true);
-	
-	return;
-
-## Pass To AI
-func _passToAI() -> void:
-	EnemyAI._makeChoice(self);
-	EnemyChoiceType = getPieceType(HexBoard[EnemyAI._getCords().x][EnemyAI._getCords().y])
-	EnemyChoiceIndex = 0;
-	for pieceCords in activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][EnemyChoiceType]:
-		if(EnemyAI._getCords() == pieceCords):
-			break;
-		EnemyChoiceIndex +=1;
-	EnemyTo = EnemyAI._getTo();
-	
-	resetFlags();
-	handleMove(EnemyAI._getCords(), EnemyAI._getMoveType(), EnemyAI._getMoveIndex(), EnemyAI._getPromoteTo())
-	
-	debugPrintOne(false)
-	debugPrintTwo(false);
-	return;
-
-## RESIGN PUBLIC CALL
-func _resign():
-	
-	GameIsOver = true;
-	print("%s WINS BY RESIGN" % ("White" if isWhiteTurn else "Black"));
-	
-	return
-
-## Undo Move PUBLIC CALL
-func _undoLastMove() -> bool:
-	
-	if(moveHistory.size() < 1):
-		print("No move history");
-		return false;
-	
-	uncaptureValid = false;
-	unpromoteValid = false;
-	
-	var currentMove:String = moveHistory.pop_back();
-	var splits:PackedStringArray = currentMove.split(" ");
-	
-	var pieceVal:int = int(splits[0]);
-	var newTo:Vector2i = decodeEnPassantFEN(splits[1]);
-	var newFrom:Vector2i = decodeEnPassantFEN(splits[2]);
-	
-	var pieceType = getPieceType(pieceVal);
-	var selfColor = SIDES.WHITE if !isWhiteTurn else SIDES.BLACK;
-	var index:int = 0;
-	
-	##Default Undo
-	HexBoard[newTo.x][newTo.y] = pieceVal;
-	HexBoard[newFrom.x][newFrom.y] = PIECES.ZERO;
-	
-	for pieceCords in activePieces[selfColor][pieceType]:
-		if(pieceCords == newFrom):
-			break;
-		index += 1;
-	
-	if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
-		activePieces[selfColor][pieceType][index] = newTo;
-	
-	undoType = pieceType;
-	undoIndex = index;
-	undoSubCleanFlags(splits, newTo, newFrom);
-	undoSubFixState();
-	decrementTurnNumber();
-	swapPlayerTurn();
-	generateNextLegalMoves();
-
-	return true;
-
-## START DEFAULT GAME PUBLIC CALL
-func _initDefault() -> bool:
-	return __init(DEFAULT_FEN_STRING);
-	

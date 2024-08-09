@@ -7,7 +7,7 @@ enum RETURNS {ZERO, ONE, KNIGHT, ROOK, BISHOP, QUEEN}
 @onready var CHOICE:RETURNS = RETURNS.QUEEN;
 
 var cords:Vector2i;
-var key:String;
+var key:int;
 var index:int;
 
 ###

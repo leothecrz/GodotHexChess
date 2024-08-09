@@ -151,13 +151,16 @@ func handleMoveCapture() -> void:
 	var i:int = GameDataNode.SIDES.WHITE if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
 	var j:int =  GameDataNode._getCaptureType() - 1;
 	
-	ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex()).queue_free();
+	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex())
+	ref.get_parent().remove_child(ref); ## 
+	ref.queue_free();
+	
 	return;
 
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
-func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
+func promotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
 	var ref:Node;
-	var i:int = GameDataNode.SIDES.BLACK if (GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
+	var i:int = GameDataNode.SIDES.WHITE if (GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
 	for pawnIndex in range( activePieces[i][GameDataNode.PIECES.PAWN].size() ):
 		if (activePieces[i][GameDataNode.PIECES.PAWN][pawnIndex] == cords):
 			ref = ChessPiecesNode.get_child(i).get_child(GameDataNode.PIECES.PAWN-1).get_child(pawnIndex);
@@ -169,8 +172,9 @@ func promotionInterupt(cords:Vector2i, key:String, index:int, pTo) -> void:
 	
 	submitMove(cords, key, index, pTo, false);
 	emit_signal("pieceUnselectedUnlockOthers");
-	
 	get_child(get_child_count() - 1).queue_free();
+	
+	allowAITurn();
 	return;
 
 ## Get new state data from engine
@@ -208,15 +212,20 @@ func submitMoveInterupt(cords, moveType, moveIndex) -> void:
 
 ## Sumbit a move to the engine and update state
 func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
-
+	
+	
 	if(moveType == GameDataNode.MOVE_TYPES.PROMOTE and passInterupt):
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
-
 	GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
+	postMove();
+	return;
+
+
+## Handle post move gui updates
+func postMove() -> void:
 	activePieces = GameDataNode._getActivePieces()
 	currentLegalsMoves = GameDataNode._getMoves()
-	
 	if(GameDataNode._getCaptureValid()):
 		handleMoveCapture();
 	
@@ -262,26 +271,34 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 func allowAITurn():
 	if(  not GameDataNode._getIsEnemyAI() ):
 		return;
-	
-	if(GameDataNode._getGameOverStatus()):
+	if( GameDataNode._getGameOverStatus() ): ##TODO Handle AI GAME END
 		return
 	
 	GameDataNode._passToAI();
 	
 	var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
 	var j:int =  GameDataNode._getEnemyChoiceType() - 1;
+	var k:int = GameDataNode._getEnemyChoiceIndex();
+	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(k);
+	var to:Vector2i = GameDataNode._getEnemyTo();
 	
-	ChessPiecesNode.get_child(i).get_child(j).\
-	get_child(GameDataNode._getEnemyChoiceIndex()).\
-	_setPieceCords(GameDataNode._getEnemyTo(),\
-	 VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(GameDataNode._getEnemyTo())));
-		
-	activePieces = GameDataNode._getActivePieces()
-	currentLegalsMoves = GameDataNode._getMoves()
+	print("Side: " , i);
+	print("PieceType: ", j+1);
+	print("Index: " , k);
+	print("Ref Pre-Cords: ", ref.pieceCords);
+	print("To Cords: ", to);
 	
-	if(GameDataNode._getCaptureValid()):
-		handleMoveCapture();		
-	updateGUI_Elements();
+	for p in activePieces[i][j+1]:
+		print(p);
+	
+	print("\n")
+	
+	for n in ChessPiecesNode.get_child(i).get_child(j).get_children():
+		print(n.pieceCords)
+	
+	ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to)));
+	
+	postMove();
 	return;
 
 ## CLICK AND DRAG (MOUSE) API
@@ -289,17 +306,17 @@ func allowAITurn():
 
 ## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
+	var PromoteMove = key != GameDataNode.MOVE_TYPES.PROMOTE;
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
 		node.queue_free();
-	
-	if(key != GameDataNode.MOVE_TYPES.PROMOTE):
+	if(PromoteMove):
 		emit_signal("pieceUnselectedUnlockOthers");
 	
 	if(index >= 0):
 		submitMove(cords, key, index);
-		allowAITurn()
-		
+		if(PromoteMove):
+			allowAITurn();
 	return;
 
 ## Lock Other Pieces
