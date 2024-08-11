@@ -144,17 +144,12 @@ func spawnPieces() -> void:
 
 
 ## Destroy gui element of captured piece
-func handleMoveCapture() -> void:
-
-	print("Type: ",GameDataNode._getCaptureType(), ". Index: ", GameDataNode._getCaptureIndex());
-	
+func handleMoveCapture() -> void:	
 	var i:int = GameDataNode.SIDES.WHITE if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
 	var j:int =  GameDataNode._getCaptureType() - 1;
-	
 	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex())
 	ref.get_parent().remove_child(ref); ## 
 	ref.queue_free();
-	
 	return;
 
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
@@ -235,7 +230,6 @@ func postMove() -> void:
 
 ## Setup and display a legal move on GUI
 func spawnMove(moves:Array, color:Color, key, cords):
-	
 	for i in range(moves.size()):
 		var move = moves[i];
 		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
@@ -306,31 +300,28 @@ func allowAITurn():
 
 ## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
-	var PromoteMove = key != GameDataNode.MOVE_TYPES.PROMOTE;
+	var isNotPromoteMove = key != GameDataNode.MOVE_TYPES.PROMOTE;
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
 		node.queue_free();
-	if(PromoteMove):
-		emit_signal("pieceUnselectedUnlockOthers");
+		
+	if (isNotPromoteMove): emit_signal("pieceUnselectedUnlockOthers");
 	
-	if(index >= 0):
+	if (index >= 0):
 		submitMove(cords, key, index);
-		if(PromoteMove):
+		if(isNotPromoteMove):
 			allowAITurn();
 	return;
 
 ## Lock Other Pieces
 ## Sub :: Spawn Piece's Moves 
 func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
-	
 	emit_signal("pieceSelectedLockOthers");
 	
 	var thisPiecesMoves = {};
 	for key in currentLegalsMoves[CORDS].keys():
 		thisPiecesMoves[key] = currentLegalsMoves[CORDS][key];
-	
 	spawnMoves(thisPiecesMoves, CORDS);
-	
 	return;
 
 
@@ -343,37 +334,23 @@ func _newGame_OnButtonPress() -> void:
 	if(activePieces):
 		# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
 		return; 
-	
-	if(!GameDataNode):
-		push_error("GUI HAS NO GAME DATA - ON READY FAIL");
-		get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST);
-		get_tree().quit(1);
-		return;
 
-	
-	
-	GameDataNode._initDefault();
-	
+	GameDataNode._initDefault();	
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
-	
 	spawnPieces();
-
 	emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
-
-	GameStartTime = Time.get_ticks_msec();
 	
+	GameStartTime = Time.get_ticks_msec();
 	return;
 
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
-	
 	print(GameDataNode.moveHistory)
 	
 	GameDataNode._resign();
 	activePieces.clear();
 	currentLegalsMoves.clear();
-	
 	BoardControler.setSignalWhite();
 	
 	for colorNodes in ChessPiecesNode.get_children():
@@ -383,7 +360,6 @@ func _resign_OnButtonPress() -> void:
 	
 	if(LeftPanel._getLabelState()):
 		LeftPanel._swapLabelState();
-	
 	return;
 
 ## Undo Button Pressed
@@ -463,6 +439,10 @@ func _on_run_test_pressed():
 	runEngineTest();
 	return;
 
+##
+func _on_settings_pressed():
+	pass # Replace with function body.
+
 
 ## MENUS
 
@@ -506,3 +486,5 @@ func _ready():
 	selectedSide = 0;
 	connectResizeToRoot();
 	return;
+
+
