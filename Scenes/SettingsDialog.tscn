@@ -1,0 +1,144 @@
+[gd_scene load_steps=2 format=3 uid="uid://wk4h8xfbxice"]
+
+[ext_resource type="Script" path="res://Scripts/SettingsDialog.gd" id="1_ay072"]
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ay072")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -237.5
+offset_top = -300.0
+offset_right = 237.5
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.921569)
+
+[node name="CloseButton" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -91.0
+offset_top = 50.0
+offset_right = -50.0
+offset_bottom = 81.0
+grow_horizontal = 0
+text = "
+-   CLOSE   -
+
+"
+
+[node name="ColorSchemeOptions" type="OptionButton" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -39.0
+offset_top = -100.0
+offset_right = 79.0
+offset_bottom = -69.0
+grow_horizontal = 2
+grow_vertical = 2
+item_count = 1
+selected = 0
+popup/item_0/text = "Default"
+popup/item_0/id = 0
+
+[node name="CSO-Label" type="Label" parent="ColorRect/ColorSchemeOptions"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -159.0
+offset_top = -11.5
+offset_right = -76.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Color Scheme
+"
+
+[node name="ResolutionOptions" type="OptionButton" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -39.0
+offset_top = -165.5
+offset_right = 79.0
+offset_bottom = -134.5
+grow_horizontal = 2
+grow_vertical = 2
+item_count = 1
+selected = 0
+popup/item_0/text = "1152x648"
+popup/item_0/id = 0
+
+[node name="RO-Label" type="Label" parent="ColorRect/ResolutionOptions"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -159.0
+offset_top = -11.5
+offset_right = -76.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Resolution
+"
+
+[node name="ToggleMusic" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -127.0
+offset_top = 184.5
+offset_right = -73.0
+offset_bottom = 215.5
+grow_horizontal = 2
+grow_vertical = 2
+toggle_mode = true
+text = "BG Music"
+
+[node name="ToggleSound" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 73.0
+offset_top = 184.5
+offset_right = 127.0
+offset_bottom = 215.5
+grow_horizontal = 2
+grow_vertical = 2
+toggle_mode = true
+text = "Sound"
+
+[connection signal="pressed" from="ColorRect/CloseButton" to="." method="_on_close_button_pressed"]

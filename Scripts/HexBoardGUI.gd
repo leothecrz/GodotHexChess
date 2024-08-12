@@ -25,17 +25,15 @@ const yScale = 0.9395;
 
 	# Node Ref
 @onready var GameDataNode:HexEngine = $ChessEngine;
+@onready var MoveGUI = $MoveGUI;
+@onready var ChessPiecesNode = $PiecesContainer;
+@onready var LeftPanel = $LeftPanel;
+@onready var SettingsDialog = $SettingsDialog;
 
 @onready var BoardControler = $Background/Central;
 
-@onready var MoveGUI = $MoveGUI;
-@onready var ChessPiecesNode = $PiecesContainer;
-
 @onready var SideSelect = $PlayerColumn/ColumnBack/GameButtons/SideSelect;
 @onready var EnemySelect = $PlayerColumn/ColumnBack/GameButtons/EnemySelect;
-
-@onready var LeftPanel = $LeftPanel;
-
 
 	# State
 @onready var errorAttempts:int = 0;
@@ -281,7 +279,7 @@ func allowAITurn():
 		ref.queue_free();
 		pass;
 	else:
-		ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to)));
+		ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to*(1 if isRotatedWhiteDown else -1))));
 	
 	postMove();
 	return;
@@ -333,6 +331,11 @@ func _newGame_OnButtonPress() -> void:
 	emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
 	
 	GameStartTime = Time.get_ticks_msec();
+	
+	if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
+		allowAITurn();
+		pass;
+	
 	return;
 
 ## Resign Button Pressed.
@@ -430,7 +433,8 @@ func _on_run_test_pressed():
 
 ##
 func _on_settings_pressed():
-	pass # Replace with function body.
+	SettingsDialog.visible = true;
+	return;
 
 
 ## MENUS

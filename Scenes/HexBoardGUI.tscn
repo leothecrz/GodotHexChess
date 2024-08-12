@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=11 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://Scripts/SideSelect.gd" id="5_ref6b"]
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Script" path="res://Scripts/HexChessEngine.gd" id="7_uqrw5"]
+[ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_poe7d"]
 texture = ExtResource("4_p44o5")
@@ -376,6 +377,10 @@ History
 
 [node name="ChessEngine" type="Node" parent="."]
 script = ExtResource("7_uqrw5")
+
+[node name="SettingsDialog" parent="." instance=ExtResource("8_avrf3")]
+visible = false
+layout_mode = 1
 
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/RUN_TEST" to="." method="_on_run_test_pressed"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Undo" to="." method="_on_undo_pressed"]
