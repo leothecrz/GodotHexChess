@@ -141,4 +141,97 @@ grow_vertical = 2
 toggle_mode = true
 text = "Sound"
 
+[node name="MasterVolume" type="HSlider" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -57.5
+offset_top = -25.0
+offset_right = 142.5
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 100.0
+
+[node name="MV_Label" type="Label" parent="ColorRect/MasterVolume"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -11.5
+offset_right = -127.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Master Vol
+"
+
+[node name="SoundSlider" type="HSlider" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -57.5
+offset_top = 25.0
+offset_right = 142.5
+offset_bottom = 41.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 100.0
+
+[node name="MV_Label" type="Label" parent="ColorRect/SoundSlider"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -11.5
+offset_right = -127.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Sound
+"
+
+[node name="Music" type="HSlider" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -57.5
+offset_top = 75.0
+offset_right = 142.5
+offset_bottom = 91.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 100.0
+
+[node name="MV_Label" type="Label" parent="ColorRect/Music"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -11.5
+offset_right = -127.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Music
+"
+
 [connection signal="pressed" from="ColorRect/CloseButton" to="." method="_on_close_button_pressed"]
