@@ -127,13 +127,19 @@ var EnPassantTarget : Vector2i = Vector2i(-5,-5);
 var EnPassantCordsValid : bool = false;
 
 # Enemy
+var EnemyAI;
 var EnemyType:ENEMY_TYPES = ENEMY_TYPES.PLAYER_TWO;
+var EnemyPromotedTo:PIECES = PIECES.ZERO;
+
 var EnemyIsAI = false;
 var EnemyPlaysWhite = false;
-var EnemyAI;
+var EnemyPromoted =  false;
+
 var EnemyChoiceType;
 var EnemyChoiceIndex;
 var EnemyTo;
+
+
 
 # History
 var moveHistory : Array = [];
@@ -1076,12 +1082,11 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 					break;
 				i = i+1;
 			
+			activePieces[selfColor][pieceType].remove_at(i);
 			pieceType = getPieceType(promoteTo);
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
-			
 			activePieces[selfColor][pieceType].push_back(moveTo);
-			activePieces[selfColor][pieceType].remove_at(i);
-			
+
 			moveHistMod = moveHistMod + ("+%s,%d" % [pieceType, i]);
 			pass;
 
@@ -1479,7 +1484,7 @@ func _setEnemy(type:ENEMY_TYPES, isWhite:bool) -> void:
 
 ## MAKE MOVE PUBLIC CALL
 func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
-	
+	# TODO:: HANDLE INPROPER INPUT FEEDBACK
 	if(GameIsOver or !legalMoves.has(cords) ):
 		return;
 
@@ -1493,27 +1498,31 @@ func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> voi
 	debugPrintOne(false)
 	debugPrintTwo(false);
 	debugPrintThree(false);
-	
 	return;
 
 ## Pass To AI
 func _passToAI() -> void:
+	if(GameIsOver):
+		return;
+	
 	EnemyAI._makeChoice(self);
+	
 	EnemyChoiceType = getPieceType(HexBoard[EnemyAI._getCords().x][EnemyAI._getCords().y])
 	EnemyChoiceIndex = 0;
 	for pieceCords in activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][EnemyChoiceType]:
-		if(EnemyAI._getCords() == pieceCords):
-			break;
+		if(pieceCords == EnemyAI._getCords()): break;
 		EnemyChoiceIndex += 1;
+	
 	EnemyTo = EnemyAI._getTo();
+	EnemyPromoted = EnemyAI._getMoveType() == MOVE_TYPES.PROMOTE;
+	EnemyPromotedTo = EnemyAI._getPromoteTo();
 	
 	resetFlags();
 	handleMove(EnemyAI._getCords(), EnemyAI._getMoveType(), EnemyAI._getMoveIndex(), EnemyAI._getPromoteTo())
 	
 	debugPrintOne(false)
 	debugPrintTwo(false);
-	debugPrintThree(true);
-	
+	debugPrintThree(false);
 	return;
 
 ## RESIGN PUBLIC CALL
@@ -1598,6 +1607,14 @@ func _getEnemyIsWhite() -> bool:
 ##
 func _getIsEnemyAI() -> bool:
 	return EnemyIsAI;
+
+##
+func _getEnemyPromoted() -> bool:
+	return EnemyPromoted;
+
+##
+func _getEnemyPTo() -> PIECES:
+	return EnemyPromotedTo;
 
 ## Get Is Game Over
 func _getGameOverStatus() -> bool:

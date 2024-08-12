@@ -24,7 +24,7 @@ const yScale = 0.9395;
 @onready var PIXEL_OFFSET = 35;
 
 	# Node Ref
-@onready var GameDataNode = $ChessEngine;
+@onready var GameDataNode:HexEngine = $ChessEngine;
 
 @onready var BoardControler = $Background/Central;
 
@@ -194,6 +194,17 @@ func updateGUI_Elements() -> void:
 	return;
 
 
+## Handle post move gui updates
+func postMove() -> void:
+	activePieces = GameDataNode._getActivePieces()
+	currentLegalsMoves = GameDataNode._getMoves()
+	
+	if(GameDataNode._getCaptureValid()):
+		handleMoveCapture();
+	
+	updateGUI_Elements();
+	return;
+
 ## Interupt a promotion submission to get promotion type
 func submitMoveInterupt(cords, moveType, moveIndex) -> void:
 	var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
@@ -215,18 +226,6 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	postMove();
 	return;
-
-
-## Handle post move gui updates
-func postMove() -> void:
-	activePieces = GameDataNode._getActivePieces()
-	currentLegalsMoves = GameDataNode._getMoves()
-	if(GameDataNode._getCaptureValid()):
-		handleMoveCapture();
-	
-	updateGUI_Elements();
-	return;
-
 
 ## Setup and display a legal move on GUI
 func spawnMove(moves:Array, color:Color, key, cords):
@@ -276,21 +275,13 @@ func allowAITurn():
 	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(k);
 	var to:Vector2i = GameDataNode._getEnemyTo();
 	
-	print("Side: " , i);
-	print("PieceType: ", j+1);
-	print("Index: " , k);
-	print("Ref Pre-Cords: ", ref.pieceCords);
-	print("To Cords: ", to);
-	
-	for p in activePieces[i][j+1]:
-		print(p);
-	
-	print("\n")
-	
-	for n in ChessPiecesNode.get_child(i).get_child(j).get_children():
-		print(n.pieceCords)
-	
-	ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to)));
+	if (GameDataNode._getEnemyPromoted()):
+		spawnPiecesSubRoutine(i,GameDataNode._getEnemyPTo()-1, GameDataNode._getEnemyPTo(), to);
+		ref.get_parent().remove_child(ref);
+		ref.queue_free();
+		pass;
+	else:
+		ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to)));
 	
 	postMove();
 	return;
@@ -335,7 +326,7 @@ func _newGame_OnButtonPress() -> void:
 		# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
 		return; 
 
-	GameDataNode._initDefault();	
+	GameDataNode._initDefault();
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
 	spawnPieces();
@@ -346,8 +337,6 @@ func _newGame_OnButtonPress() -> void:
 
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
-	print(GameDataNode.moveHistory)
-	
 	GameDataNode._resign();
 	activePieces.clear();
 	currentLegalsMoves.clear();
