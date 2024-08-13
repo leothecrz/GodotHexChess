@@ -316,14 +316,18 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 
 ## BUTTONS
 
+func killDialog():
+	get_child(get_child_count()-1).queue_free();
+	return;
 
-## New Game Button Pressed.
-# Sub : Calls Spawn Pieces
-func _newGame_OnButtonPress() -> void:
-	if(activePieces):
-		# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
-		return; 
+##
+func forceNewGame():
+	_resign_OnButtonPress();
+	startGame();
+	return;
 
+##
+func startGame() -> void:
 	GameDataNode._initDefault();
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
@@ -335,7 +339,23 @@ func _newGame_OnButtonPress() -> void:
 	if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
 		allowAITurn();
 		pass;
-	
+	return;
+
+## New Game Button Pressed.
+# Sub : Calls Spawn Pieces
+func _newGame_OnButtonPress() -> void:
+	if(activePieces):
+		var dialog = ConfirmationDialog.new();
+		add_child(dialog);
+		dialog.visible = true;
+		dialog.dialog_text = "There is a game already running. Start Another?"
+		dialog.move_to_center();
+		dialog.canceled.connect(killDialog);
+		dialog.confirmed.connect(forceNewGame);
+		# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
+		return; 
+
+	startGame();
 	return;
 
 ## Resign Button Pressed.
