@@ -45,7 +45,7 @@ var activePieces:Array;
 var currentLegalsMoves:Dictionary;
 var isUndoing = false;
 
-var tempDialog:ConfirmationDialog;
+var tempDialog:AcceptDialog;
 
 ### Signals
 
@@ -187,8 +187,22 @@ func updateGUI_Elements() -> void:
 			LeftPanel._swapLabelState();
 		if(GameDataNode._getGameInCheck()):
 			LeftPanel._setCheckMateText(GameDataNode._getIsBlackTurn());
+			tempDialog = AcceptDialog.new();
+			tempDialog.confirmed.connect(killDialog);
+			tempDialog.canceled.connect(killDialog);
+			tempDialog.dialog_text = "%s has won by CheckMate." % ["White" if GameDataNode._getIsBlackTurn() else "Black"]
+			add_child(tempDialog)
+			tempDialog.move_to_center();
+			tempDialog.visible = true;
 		else:
 			LeftPanel._setStaleMateText();
+			tempDialog = AcceptDialog.new();
+			tempDialog.confirmed.connect(killDialog);
+			tempDialog.canceled.connect(killDialog);
+			tempDialog.dialog_text = "StaleMate. Game ends in a draw."
+			add_child(tempDialog)
+			tempDialog.move_to_center();
+			tempDialog.visible = true;
 	return;
 
 
@@ -319,6 +333,7 @@ func killDialog():
 
 ##
 func forceNewGame():
+	killDialog();
 	_resign_OnButtonPress();
 	startGame();
 	return;

@@ -294,13 +294,13 @@ offset_bottom = 648.0
 color = Color(1, 1, 1, 0.0588235)
 
 [node name="InCheck" type="Control" parent="LeftPanel/ColumnBack"]
-visible = false
 layout_mode = 1
 anchors_preset = 0
 offset_right = 230.0
 offset_bottom = 322.0
 
 [node name="CheckLabel" type="RichTextLabel" parent="LeftPanel/ColumnBack/InCheck"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
