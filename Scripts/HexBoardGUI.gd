@@ -9,25 +9,22 @@ extends Control
 
 
 ### Const
-
-
 const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
-const xScale = 1.4;
-const yScale = 0.9395;
 
 
 ### State
-
-
 	# Position References
 @onready var VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @onready var PIXEL_OFFSET = 35;
+@onready var AXIAL_X_SCALE = 1.4;
+@onready var AXIAL_Y_SCALE = 0.9395;
 
 	# Node Ref
 @onready var GameDataNode:HexEngine = $ChessEngine;
 @onready var MoveGUI = $MoveGUI;
 @onready var ChessPiecesNode = $PiecesContainer;
 @onready var LeftPanel = $LeftPanel;
+@onready var TAndFrom = $ToAndFromGUI;
 @onready var SettingsDialog = $SettingsDialog;
 
 @onready var BoardControler = $Background/Central;
@@ -47,6 +44,8 @@ var isRotatedWhiteDown:bool = true;
 var activePieces:Array;
 var currentLegalsMoves:Dictionary;
 var isUndoing = false;
+
+var tempDialog:ConfirmationDialog;
 
 ### Signals
 
@@ -75,8 +74,8 @@ func onResize() ->void:
 ##	j=(x-(y/sqrt(3)))/s*sqrt(3);
 func axial_to_pixel(axial: Vector2i) -> Vector2:
 	
-	var x = float(axial.x) * xScale;
-	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * yScale;
+	var x = float(axial.x) * AXIAL_X_SCALE;
+	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	
 	return Vector2(x, y);
 
@@ -121,19 +120,19 @@ func preloadChessPiece(side:int, pieceType, piece:Vector2i) -> Node:
 	return newPieceScene;
 
 ## Hand piece data to new scene. Connect scene to piece controller. Add to container.
-func spawnPiecesSubRoutine(side:int, typeindex:int, pieceType, piece:Vector2i) -> void:
+func prepareChessPieceNode(side:int, typeindex:int, pieceType, piece:Vector2i) -> void:
 	var newPieceScene = preloadChessPiece(side, pieceType, piece);
 	ChessPiecesNode.get_child(side).get_child(typeindex).add_child(newPieceScene,);
 	connectPieceToSignals(newPieceScene);
 	return;
 
 ## Spawn all the pieces in 'activePieces' at their positions.
-func spawnPieces() -> void:
+func spawnActivePieces() -> void:
 	for side:int in range(activePieces.size()):
 		var index:int = 0;
 		for pieceType in activePieces[side]:
 			for piece in activePieces[side][pieceType]:
-				spawnPiecesSubRoutine(side, index, pieceType, piece);
+				prepareChessPieceNode(side, index, pieceType, piece);
 			index += 1;
 	return;
 
@@ -159,14 +158,15 @@ func promotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
 			ref = ChessPiecesNode.get_child(i).get_child(GameDataNode.PIECES.PAWN-1).get_child(pawnIndex);
 			break;
 	
-	spawnPiecesSubRoutine(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords);
-	
+	prepareChessPieceNode(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords);
+
+	ref.get_parent().remove_child(ref);	
 	ref.queue_free();
-	
+
 	submitMove(cords, key, index, pTo, false);
 	emit_signal("pieceUnselectedUnlockOthers");
-	get_child(get_child_count() - 1).queue_free();
 	
+	get_child(get_child_count() - 1).queue_free();
 	allowAITurn();
 	return;
 
@@ -193,13 +193,11 @@ func updateGUI_Elements() -> void:
 
 
 ## Handle post move gui updates
-func postMove() -> void:
+func syncToEngine() -> void:
 	activePieces = GameDataNode._getActivePieces()
 	currentLegalsMoves = GameDataNode._getMoves()
-	
 	if(GameDataNode._getCaptureValid()):
 		handleMoveCapture();
-	
 	updateGUI_Elements();
 	return;
 
@@ -216,13 +214,11 @@ func submitMoveInterupt(cords, moveType, moveIndex) -> void:
 
 ## Sumbit a move to the engine and update state
 func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
-	
-	
 	if(moveType == GameDataNode.MOVE_TYPES.PROMOTE and passInterupt):
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
 	GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
-	postMove();
+	syncToEngine();
 	return;
 
 ## Setup and display a legal move on GUI
@@ -264,7 +260,6 @@ func allowAITurn():
 		return;
 	if( GameDataNode._getGameOverStatus() ): ##TODO Handle AI GAME END
 		return
-	
 	GameDataNode._passToAI();
 	
 	var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
@@ -274,14 +269,14 @@ func allowAITurn():
 	var to:Vector2i = GameDataNode._getEnemyTo();
 	
 	if (GameDataNode._getEnemyPromoted()):
-		spawnPiecesSubRoutine(i,GameDataNode._getEnemyPTo()-1, GameDataNode._getEnemyPTo(), to);
+		prepareChessPieceNode(i,GameDataNode._getEnemyPTo()-1, GameDataNode._getEnemyPTo(), to);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 		pass;
 	else:
 		ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to*(1 if isRotatedWhiteDown else -1))));
 	
-	postMove();
+	syncToEngine();
 	return;
 
 ## CLICK AND DRAG (MOUSE) API
@@ -317,7 +312,9 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 ## BUTTONS
 
 func killDialog():
-	get_child(get_child_count()-1).queue_free();
+	if(tempDialog):
+		tempDialog.queue_free()
+		tempDialog = null;
 	return;
 
 ##
@@ -331,9 +328,9 @@ func startGame() -> void:
 	GameDataNode._initDefault();
 	activePieces = GameDataNode._getActivePieces();
 	currentLegalsMoves = GameDataNode._getMoves();
-	spawnPieces();
-	emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
+	spawnActivePieces();
 	
+	emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
 	GameStartTime = Time.get_ticks_msec();
 	
 	if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
@@ -341,20 +338,24 @@ func startGame() -> void:
 		pass;
 	return;
 
+##
+# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
+func forcedNewGameDialog():
+	tempDialog = ConfirmationDialog.new();
+	tempDialog.dialog_text = "There is a game already running. Start Another?"
+	add_child(tempDialog);
+	tempDialog.canceled.connect(killDialog);
+	tempDialog.confirmed.connect(forceNewGame);
+	tempDialog.move_to_center();
+	tempDialog.visible = true;
+	return;
+
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
 	if(activePieces):
-		var dialog = ConfirmationDialog.new();
-		add_child(dialog);
-		dialog.visible = true;
-		dialog.dialog_text = "There is a game already running. Start Another?"
-		dialog.move_to_center();
-		dialog.canceled.connect(killDialog);
-		dialog.confirmed.connect(forceNewGame);
-		# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
-		return; 
-
+		forcedNewGameDialog();
+		return;
 	startGame();
 	return;
 
