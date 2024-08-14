@@ -1,7 +1,8 @@
-[gd_scene load_steps=11 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=12 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
+[ext_resource type="AudioStream" uid="uid://b2uth8bje7icq" path="res://Music/MorningRoutine.mp3" id="2_tr416"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scripts/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/SideSelect.gd" id="5_ref6b"]
@@ -383,6 +384,10 @@ script = ExtResource("7_uqrw5")
 [node name="SettingsDialog" parent="." instance=ExtResource("8_avrf3")]
 visible = false
 layout_mode = 1
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_tr416")
+autoplay = true
 
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/RUN_TEST" to="." method="_on_run_test_pressed"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Undo" to="." method="_on_undo_pressed"]

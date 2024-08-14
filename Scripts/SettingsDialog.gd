@@ -42,3 +42,7 @@ func _on_sound_slider_drag_ended(value_changed):
 ##
 func _on_music_drag_ended(value_changed):
 	pass # Replace with function body.
+
+##
+func _on_credits_button_pressed():
+	pass # Replace with function body.
