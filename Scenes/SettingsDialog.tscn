@@ -168,8 +168,7 @@ offset_right = 142.5
 offset_bottom = -9.0
 grow_horizontal = 2
 grow_vertical = 2
-min_value = -80.0
-max_value = 6.0
+value = 80.0
 
 [node name="MV_Label" type="Label" parent="ColorRect/MasterVolume"]
 layout_mode = 1
@@ -200,8 +199,7 @@ offset_right = 142.5
 offset_bottom = 41.0
 grow_horizontal = 2
 grow_vertical = 2
-min_value = -80.0
-max_value = 6.0
+value = 90.0
 
 [node name="MV_Label" type="Label" parent="ColorRect/SoundSlider"]
 layout_mode = 1
@@ -232,8 +230,7 @@ offset_right = 142.5
 offset_bottom = 91.0
 grow_horizontal = 2
 grow_vertical = 2
-min_value = -80.0
-max_value = 6.0
+value = 90.0
 
 [node name="MV_Label" type="Label" parent="ColorRect/Music"]
 layout_mode = 1
@@ -257,6 +254,6 @@ text = "Music
 [connection signal="item_selected" from="ColorRect/ColorSchemeOptions" to="." method="_on_color_scheme_options_item_selected"]
 [connection signal="toggled" from="ColorRect/ToggleMusic" to="." method="_on_toggle_music_toggled"]
 [connection signal="toggled" from="ColorRect/ToggleSound" to="." method="_on_toggle_sound_toggled"]
-[connection signal="drag_ended" from="ColorRect/MasterVolume" to="." method="_on_master_volume_drag_ended"]
-[connection signal="drag_ended" from="ColorRect/SoundSlider" to="." method="_on_sound_slider_drag_ended"]
-[connection signal="drag_ended" from="ColorRect/Music" to="." method="_on_music_drag_ended"]
+[connection signal="value_changed" from="ColorRect/MasterVolume" to="." method="_on_master_volume_value_changed"]
+[connection signal="value_changed" from="ColorRect/SoundSlider" to="." method="_on_sound_slider_value_changed"]
+[connection signal="value_changed" from="ColorRect/Music" to="." method="_on_music_value_changed"]

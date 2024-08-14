@@ -1,13 +1,38 @@
 extends Control
 
-@onready var BGRect:ColorRect = $ColorRect;
+const control_sensitivity = 0.8;
 
+@onready var BGRect:ColorRect = $ColorRect;
 
 @onready var MSlider = $ColorRect/MasterVolume;
 @onready var SoSlider = $ColorRect/SoundSlider;
 @onready var MuSlider = $ColorRect/Music;
 
+@export var debounce_timer: Timer
+
+var can_execute = true
+
+func linear_to_db(linear_value: float) -> float:
+	var min_dB = -80
+	var max_dB = 6
+	var normalized_value = linear_value ** control_sensitivity
+	print(normalized_value);
+	return min_dB + normalized_value * (max_dB - min_dB)
+
+func _on_debounce_timer_timeout():
+	can_execute = true
+	return;
+
+func _exit_tree():
+	debounce_timer.queue_free();
+	return;
+
 func _ready():
+	debounce_timer = Timer.new();
+	add_child(debounce_timer);
+	debounce_timer.timeout.connect(_on_debounce_timer_timeout)
+	debounce_timer.one_shot = true;
+	debounce_timer.wait_time = 0.1
 	## SETUP MENU OPTIONS
 	pass;
 
@@ -47,23 +72,29 @@ func _on_toggle_sound_toggled(toggled_on):
 	return;
 
 ##
-func _on_master_volume_drag_ended(value_changed):
-	if(value_changed):
-		settingsUpdated.emit(4, MSlider.value);
-	return;
-
-##
-func _on_music_drag_ended(value_changed):
-	if(value_changed):
-		settingsUpdated.emit(5, MuSlider.value);
-	return;
-	
-##
-func _on_sound_slider_drag_ended(value_changed):
-	if(value_changed):
-		settingsUpdated.emit(6, SoSlider.value);
-	return;
-
-##
 func _on_credits_button_pressed():
 	pass # Replace with function body.
+
+##
+func _on_master_volume_value_changed(value):
+	if can_execute:
+		settingsUpdated.emit(4, linear_to_db(value/100.0));
+		can_execute = false;
+		debounce_timer.start();
+
+##
+func _on_music_value_changed(value):
+	if can_execute:
+		print(value/100.0)
+		var test = linear_to_db(value/100.0);
+		print(test);
+		settingsUpdated.emit(5, test);
+		can_execute = false;
+		debounce_timer.start();
+
+##
+func _on_sound_slider_value_changed(value):
+	if can_execute:
+		settingsUpdated.emit(6, linear_to_db(value/100.0));
+		can_execute = false;
+		debounce_timer.start();
