@@ -1,7 +1,5 @@
 extends Control
 
-const control_sensitivity = 0.8;
-
 @onready var BGRect:ColorRect = $ColorRect;
 
 @onready var MSlider = $ColorRect/MasterVolume;
@@ -11,13 +9,6 @@ const control_sensitivity = 0.8;
 @export var debounce_timer: Timer
 
 var can_execute = true
-
-func linear_to_db(linear_value: float) -> float:
-	var min_dB = -80
-	var max_dB = 6
-	var normalized_value = linear_value ** control_sensitivity
-	print(normalized_value);
-	return min_dB + normalized_value * (max_dB - min_dB)
 
 func _on_debounce_timer_timeout():
 	can_execute = true
@@ -75,6 +66,8 @@ func _on_toggle_sound_toggled(toggled_on):
 func _on_credits_button_pressed():
 	pass # Replace with function body.
 
+
+
 ##
 func _on_master_volume_value_changed(value):
 	if can_execute:
@@ -85,9 +78,7 @@ func _on_master_volume_value_changed(value):
 ##
 func _on_music_value_changed(value):
 	if can_execute:
-		print(value/100.0)
 		var test = linear_to_db(value/100.0);
-		print(test);
 		settingsUpdated.emit(5, test);
 		can_execute = false;
 		debounce_timer.start();

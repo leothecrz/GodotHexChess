@@ -2,6 +2,7 @@ extends Node;
 class_name MinMaxAI;
 
 var side:int;
+var maxDepth;
 var rng:RandomNumberGenerator;
 
 var TO:Vector2i;
@@ -12,8 +13,9 @@ var PROMOTETO:int;
 
 var engineRef;
 ##
-func _init(playswhite:bool):
+func _init(playswhite:bool, max_Depth:int):
 	side = 1 if playswhite else 0;
+	maxDepth = max_Depth
 	return
 
 ### GETTER
@@ -62,6 +64,10 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine) -> int:
 ##
 func _makeChoice(hexEngine:HexEngine):
 	engineRef = hexEngine;
+	var BestMove = Vector2i(-1,-1);
+	var BestValue = INF if side == 0 else -INF;
+	var legalmoves:Dictionary = hexEngine._getMoves();
+	
 	
 	#minimax()
 	return
