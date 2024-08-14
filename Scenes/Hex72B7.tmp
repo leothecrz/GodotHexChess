@@ -2,13 +2,13 @@
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Central.gd" id="2_tcmm4"]
+[ext_resource type="AudioStream" uid="uid://b2uth8bje7icq" path="res://Music/MorningRoutine.mp3" id="2_tr416"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scripts/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/SideSelect.gd" id="5_ref6b"]
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Script" path="res://Scripts/HexChessEngine.gd" id="7_uqrw5"]
 [ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
-[ext_resource type="Script" path="res://Scripts/BGMusic.gd" id="10_5jr73"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_poe7d"]
 texture = ExtResource("4_p44o5")
@@ -37,16 +37,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dl4cn")
-
-[node name="ChessEngine" type="Node" parent="."]
-script = ExtResource("7_uqrw5")
-
-[node name="BGMusic" type="AudioStreamPlayer" parent="."]
-bus = &"Music"
-script = ExtResource("10_5jr73")
-
-[node name="SoundSource" type="AudioStreamPlayer" parent="."]
-bus = &"Sound"
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -386,13 +376,19 @@ History
 
 [node name="King" type="Node" parent="PiecesContainer/White"]
 
+[node name="ChessEngine" type="Node" parent="."]
+script = ExtResource("7_uqrw5")
+
 [node name="ToAndFromGUI" type="Node" parent="."]
 
 [node name="SettingsDialog" parent="." instance=ExtResource("8_avrf3")]
 visible = false
 layout_mode = 1
 
-[connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_tr416")
+autoplay = true
+
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/RUN_TEST" to="." method="_on_run_test_pressed"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Undo" to="." method="_on_undo_pressed"]
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
@@ -400,4 +396,3 @@ layout_mode = 1
 [connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Settings" to="." method="_on_settings_pressed"]
 [connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/EnemySelect" to="." method="_on_enemy_select_item_selected"]
-[connection signal="settingsUpdated" from="SettingsDialog" to="." method="_on_settings_dialog_settings_updated"]

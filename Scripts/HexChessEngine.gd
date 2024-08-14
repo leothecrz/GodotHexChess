@@ -1459,6 +1459,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.MIN_MAX:
 				pass;
 			ENEMY_TYPES.NN:
+				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
 				
 	return true;
@@ -1527,17 +1528,17 @@ func _passToAI() -> void:
 
 ## RESIGN PUBLIC CALL
 func _resign():
-	
+	if(GameIsOver):
+		return;
+		
 	GameIsOver = true;
-	print("%s WINS BY RESIGN" % ("White" if isWhiteTurn else "Black"));
+	print("%s WINS BY RESIGN" % ("White" if not isWhiteTurn else "Black"));
 	
 	return
 
 ## Undo Move PUBLIC CALL
 func _undoLastMove() -> bool:
-	
 	if(moveHistory.size() < 1):
-		print("No move history");
 		return false;
 	
 	uncaptureValid = false;
@@ -1675,3 +1676,7 @@ func _getUndoType() -> PIECES:
 ## Get Undo Index
 func _getUndoIndex() -> int:
 	return undoIndex;
+
+##
+func _getMoveHistorySize() -> int:
+	return moveHistory.size();

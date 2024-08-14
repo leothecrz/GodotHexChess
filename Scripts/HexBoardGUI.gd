@@ -1,8 +1,6 @@
 extends Control
 
-##
 # Entry Point of Game
-##
 
 ## Error Codes
 ## 1 No Game Data Node
@@ -26,6 +24,7 @@ const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 @onready var LeftPanel = $LeftPanel;
 @onready var TAndFrom = $ToAndFromGUI;
 @onready var SettingsDialog = $SettingsDialog;
+@onready var BGMusicPlayer = $BGMusic;
 
 @onready var BoardControler = $Background/Central;
 
@@ -33,8 +32,10 @@ const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 @onready var EnemySelect = $PlayerColumn/ColumnBack/GameButtons/EnemySelect;
 
 	# State
-@onready var errorAttempts:int = 0;
-@onready var GameStartTime = 0;
+var GameStartTime = 0;
+var minHistSize = 1;
+
+var tempDialog:AcceptDialog;
 
 	# Board Setup
 var selectedSide:int;
@@ -43,9 +44,7 @@ var isRotatedWhiteDown:bool = true;
 	# Temp State
 var activePieces:Array;
 var currentLegalsMoves:Dictionary;
-var isUndoing = false;
 
-var tempDialog:AcceptDialog;
 
 ### Signals
 
@@ -183,26 +182,15 @@ func updateGUI_Elements() -> void:
 		BoardControler.setSignalBlack();
 
 	if(GameDataNode._getGameOverStatus()):
-		if(GameDataNode._getGameOverStatus() != LeftPanel._getLabelState()):
-			LeftPanel._swapLabelState();
 		if(GameDataNode._getGameInCheck()):
-			LeftPanel._setCheckMateText(GameDataNode._getIsBlackTurn());
-			tempDialog = AcceptDialog.new();
-			tempDialog.confirmed.connect(killDialog);
-			tempDialog.canceled.connect(killDialog);
-			tempDialog.dialog_text = "%s has won by CheckMate." % ["White" if GameDataNode._getIsBlackTurn() else "Black"]
-			add_child(tempDialog)
-			tempDialog.move_to_center();
-			tempDialog.visible = true;
+			setConfirmTempDialog(AcceptDialog.new(),\
+			"%s has won by CheckMate." % ["White" if GameDataNode._getIsBlackTurn() else "Black"],\
+			 killDialog);
 		else:
-			LeftPanel._setStaleMateText();
-			tempDialog = AcceptDialog.new();
-			tempDialog.confirmed.connect(killDialog);
-			tempDialog.canceled.connect(killDialog);
-			tempDialog.dialog_text = "StaleMate. Game ends in a draw."
-			add_child(tempDialog)
-			tempDialog.move_to_center();
-			tempDialog.visible = true;
+			setConfirmTempDialog(AcceptDialog.new(),\
+			 "StaleMate. Game ends in a draw.",\
+			 killDialog);
+		
 	return;
 
 
@@ -293,6 +281,7 @@ func allowAITurn():
 	syncToEngine();
 	return;
 
+
 ## CLICK AND DRAG (MOUSE) API
 
 
@@ -323,8 +312,21 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	return;
 
 
-## BUTTONS
+## DIALOGS
 
+
+##
+func setConfirmTempDialog(type:AcceptDialog, input:String,method:Callable):
+	tempDialog = type;
+	tempDialog.confirmed.connect(method);
+	tempDialog.canceled.connect(killDialog);
+	add_child(tempDialog)
+	tempDialog.dialog_text = input;
+	tempDialog.move_to_center();
+	tempDialog.visible = true;
+	return;
+
+##
 func killDialog():
 	if(tempDialog):
 		tempDialog.queue_free()
@@ -337,6 +339,33 @@ func forceNewGame():
 	_resign_OnButtonPress();
 	startGame();
 	return;
+
+## Throw up warning "Game is ALREADY running, end and start another?(y/n)"
+func forcedNewGameDialog():
+	setConfirmTempDialog(ConfirmationDialog.new(),\
+	"There is a game already running. Start Another?",\
+	forceNewGame);
+	return;
+
+##
+func resignCleanUp():
+	GameDataNode._resign();
+	activePieces.clear();
+	currentLegalsMoves.clear();
+	BoardControler.setSignalWhite();
+	
+	for colorNodes in ChessPiecesNode.get_children():
+		for pieceNodes in colorNodes.get_children():
+			for piece in pieceNodes.get_children():
+				piece.queue_free();
+	
+	if(LeftPanel._getLabelState()):
+		LeftPanel._swapLabelState();
+	return;
+
+
+## BUTTONS
+
 
 ##
 func startGame() -> void:
@@ -354,16 +383,78 @@ func startGame() -> void:
 	return;
 
 ##
-# TODO: Throw up warning "Game is ALREADY running, end and start another?(y/n)"
-func forcedNewGameDialog():
-	tempDialog = ConfirmationDialog.new();
-	tempDialog.dialog_text = "There is a game already running. Start Another?"
-	add_child(tempDialog);
-	tempDialog.canceled.connect(killDialog);
-	tempDialog.confirmed.connect(forceNewGame);
-	tempDialog.move_to_center();
-	tempDialog.visible = true;
+func undoCapture():
+	if( not GameDataNode._getUncaptureValid() ):
+		return;
+	##Undo Uncapture
+	var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
+	var cType = GameDataNode._getCaptureType();
+	var cIndex = GameDataNode._getCaptureIndex();
+	var newPos = activePieces[captureSideToUndo][cType][cIndex];
+	
+	var newPieceScene = preloadChessPiece(captureSideToUndo, cType, newPos);
+	connectPieceToSignals(newPieceScene);
+
+	var ref  = ChessPiecesNode\
+	.get_child(captureSideToUndo)\
+	.get_child(cType-1);
+	
+	## respawn captured piece
+	if( ref.get_child_count(false) > 0):
+		if (cIndex == 0):
+			ref.add_child(newPieceScene);
+			ref.move_child(newPieceScene, 0);
+		else:
+			ref.get_child(cIndex-1)\
+			.add_sibling(newPieceScene);
+	else:
+		ref.add_child(newPieceScene);
+	## ID which piece needs to be moved
 	return;
+
+##
+func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
+	if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
+		var newPos = activePieces[sideToUndo][uType][uIndex];
+		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
+		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
+		return;
+	##Undo Promotion
+	var pType = GameDataNode._getUnpromoteType(); # promoted type
+	var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
+	var newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex] ;
+	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
+	var refChildCount = ref.get_child_count(false);
+	ref.get_child(refChildCount-1).queue_free();
+	
+	var newPieceScene = preloadChessPiece(sideToUndo, GameDataNode.PIECES.PAWN, newPos);
+	connectPieceToSignals(newPieceScene);
+	ref = ChessPiecesNode.get_child(sideToUndo).get_child(GameDataNode.PIECES.PAWN-1)
+	ref.add_child(newPieceScene);
+	ref.move_child(newPieceScene,pIndex);
+	return;
+
+##
+func syncUndo():
+	var uType:int = GameDataNode._getUndoType();
+	var uIndex:int = GameDataNode._getUndoIndex();
+	var sideToUndo:int = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
+	
+	activePieces = GameDataNode._getActivePieces();
+	currentLegalsMoves = GameDataNode._getMoves();
+	
+	undoPromoteOrDefault(uType, uIndex, sideToUndo);
+	undoCapture();
+	updateGUI_Elements();
+	return;
+
+##
+func undoAI():
+	if(not GameDataNode._getIsEnemyAI()):
+		return;
+	GameDataNode._undoLastMove();
+	syncUndo();
+	return
 
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
@@ -376,90 +467,20 @@ func _newGame_OnButtonPress() -> void:
 
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
-	GameDataNode._resign();
-	activePieces.clear();
-	currentLegalsMoves.clear();
-	BoardControler.setSignalWhite();
-	
-	for colorNodes in ChessPiecesNode.get_children():
-		for pieceNodes in colorNodes.get_children():
-			for piece in pieceNodes.get_children():
-				piece.queue_free();
-	
-	if(LeftPanel._getLabelState()):
-		LeftPanel._swapLabelState();
+	if(GameDataNode._getGameOverStatus()):
+		resignCleanUp();
+		return;
+	setConfirmTempDialog(ConfirmationDialog.new(), "Resign the match?", resignCleanUp);
 	return;
 
 ## Undo Button Pressed
 func _on_undo_pressed():
-	if(not GameDataNode._undoLastMove()):
-		print("Undo Failed");
-		## TODO ALERT THAT UNDO IMPOSSIBLE
+	if(GameDataNode._getMoveHistorySize() < minHistSize):
+		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
 		return;
-	
-	if(isUndoing):
-		return;
-	isUndoing = true;
-	
-	var uType = GameDataNode._getUndoType();
-	var uIndex = GameDataNode._getUndoIndex();
-	var sideToUndo = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
-	
-	activePieces = GameDataNode._getActivePieces();
-	currentLegalsMoves = GameDataNode._getMoves();
-	
-	if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
-		var newPos = activePieces[sideToUndo][uType][uIndex];
-		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
-		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
-	else: 
-		print("Undo Promotion")
-		var pType = GameDataNode._getUnpromoteType(); # promoted type
-		var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
-		var newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex] ;
-		
-		var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
-		var refChildCount = ref.get_child_count(false);
-		ref.get_child(refChildCount-1).queue_free();
-		
-		var newPieceScene = preloadChessPiece(sideToUndo, GameDataNode.PIECES.PAWN, newPos);
-		connectPieceToSignals(newPieceScene);
-		ref = ChessPiecesNode.get_child(sideToUndo).get_child(GameDataNode.PIECES.PAWN-1)
-		ref.add_child(newPieceScene);
-		ref.move_child(newPieceScene,pIndex);
-		
-		
-		
-	if(GameDataNode._getUncaptureValid()):
-		print("Undo Uncapture")
-		var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
-		var cType = GameDataNode._getCaptureType();
-		var cIndex = GameDataNode._getCaptureIndex();
-		
-		var newPos = activePieces[captureSideToUndo][cType][cIndex];
-		
-		var newPieceScene = preloadChessPiece(captureSideToUndo, cType, newPos);
-		connectPieceToSignals(newPieceScene);
-	
-		var ref  = ChessPiecesNode\
-		.get_child(captureSideToUndo)\
-		.get_child(cType-1);
-		
-		## respawn captured piece
-		if( ref.get_child_count(false) > 0):
-			if (cIndex == 0):
-				ref.add_child(newPieceScene);
-				ref.move_child(newPieceScene, 0);
-			else:
-				ref.get_child(cIndex-1)\
-				.add_sibling(newPieceScene);
-		else:
-			ref.add_child(newPieceScene);
-	## ID which piece needs to be moved
-	
-	updateGUI_Elements();
-	
-	isUndoing = false;
+	GameDataNode._undoLastMove();
+	syncUndo();
+	undoAI();
 	return;
 
 ## RUN TEST DEBUG FUNCTION
@@ -496,14 +517,45 @@ func _selectSide_OnItemSelect(index:int) -> void:
 ##
 func _on_enemy_select_item_selected(index:int) -> void:
 	if(activePieces):
-		# TODO: Throw up warning "Game is ALREADY running, cant change enemy during game "
 		EnemySelect._setSelected(GameDataNode._getEnemyType());
 		return; 
 		
 	var type = index - 1 if (index > 1) else index;
 	GameDataNode._setEnemy(type, selectedSide != 0);
-	#print("Type: ", GameDataNode._getEnemyType());
-	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
+	minHistSize = 1 if(type == 0) else 2;
+	return;
+
+
+## SETTINGS
+
+##
+func toggleMusic(choice):
+	if choice == 1:
+		BGMusicPlayer._stopPlaying();
+		return;
+	BGMusicPlayer._continuePlaying();
+	return;
+	
+##
+func toggleSound(choice):
+	return;
+
+##
+func updateSoundBus(bus,choice):
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(bus), choice);
+	return;
+
+
+##
+func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
+	match settingIndex:
+		0:pass;
+		1:pass;
+		2:toggleMusic(choice);
+		3:toggleSound(choice);
+		4:updateSoundBus("Master", choice)
+		5:updateSoundBus("Music", choice)
+		6:updateSoundBus("Sound", choice);
 	return;
 
 
@@ -514,6 +566,9 @@ func _on_enemy_select_item_selected(index:int) -> void:
 func _ready():
 	selectedSide = 0;
 	connectResizeToRoot();
+	
+	#SET The default settings
+	#Find Possible Resolutions Give to Settings
+	#Find ColorSchemes
+	
 	return;
-
-

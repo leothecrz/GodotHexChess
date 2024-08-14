@@ -168,7 +168,8 @@ offset_right = 142.5
 offset_bottom = -9.0
 grow_horizontal = 2
 grow_vertical = 2
-value = 100.0
+min_value = -80.0
+max_value = 6.0
 
 [node name="MV_Label" type="Label" parent="ColorRect/MasterVolume"]
 layout_mode = 1
@@ -199,7 +200,8 @@ offset_right = 142.5
 offset_bottom = 41.0
 grow_horizontal = 2
 grow_vertical = 2
-value = 100.0
+min_value = -80.0
+max_value = 6.0
 
 [node name="MV_Label" type="Label" parent="ColorRect/SoundSlider"]
 layout_mode = 1
@@ -230,7 +232,8 @@ offset_right = 142.5
 offset_bottom = 91.0
 grow_horizontal = 2
 grow_vertical = 2
-value = 100.0
+min_value = -80.0
+max_value = 6.0
 
 [node name="MV_Label" type="Label" parent="ColorRect/Music"]
 layout_mode = 1
