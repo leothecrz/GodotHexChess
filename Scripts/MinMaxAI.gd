@@ -128,7 +128,6 @@ func _makeChoice(hexEngine:HexEngine):
 	var BestValue = INF if not isMaxPlayer else -INF;
 	var function:Callable = lessThan if isMaxPlayer else greaterThan;
 	var legalmoves:Dictionary = hexEngine._getMoves().duplicate(true);
-	print(legalmoves);
 	var start = Time.get_unix_time_from_system();
 	counter = 0;
 	for piece in legalmoves.keys():
@@ -151,6 +150,5 @@ func _makeChoice(hexEngine:HexEngine):
 	
 	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_unix_time_from_system() - start]);
 	print("Moves Checked: ", counter);
-	print(hexEngine._getMoves());
 	hexEngine._enableAIMoveLock();
 	return

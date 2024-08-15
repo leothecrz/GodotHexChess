@@ -262,6 +262,7 @@ func allowAITurn():
 		return;
 	if( GameDataNode._getGameOverStatus() ): ##TODO Handle AI GAME END
 		return
+	pieceSelectedLockOthers.emit();
 	GameDataNode._passToAI();
 	
 	var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
@@ -279,6 +280,7 @@ func allowAITurn():
 		ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to*(1 if isRotatedWhiteDown else -1))));
 	
 	syncToEngine();
+	pieceUnselectedUnlockOthers.emit();
 	return;
 
 

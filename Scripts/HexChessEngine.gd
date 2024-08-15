@@ -57,6 +57,7 @@ const BLOCKING_TEST = '6/7/8/9/10/kr7NK/10/9/8/7/6 w - 1';
 const UNDO_TEST_ONE   = '6/7/8/9/10/4p6/k2p2P2K/9/8/7/6 w - 1';
 const UNDO_TEST_TWO   = '6/7/8/9/1P7/11/3p2P2K/9/8/7/k5 w - 1';
 const UNDO_TEST_THREE   = '6/7/8/9/2R6/11/k2p2P2K/9/8/7/6 w - 1';
+const KING_INTERACTION_TEST = '5P/7/8/9/10/k9K/10/9/8/7/p5 w - 1';
 	#Piece Tests
 const PAWN_TEST   = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
 const KNIGHT_TEST = '6/7/8/9/10/5N5/10/9/8/7/6 w - 1';
@@ -726,6 +727,7 @@ func findMovesForKing(KingArray:Array) -> void:
 			var checkingR:int = king.y + activeVector.y;
 			
 			if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
+				updateAttackBoard(checkingQ, checkingR, 1);
 				if(isWhiteTurn):
 					if((BlackAttackBoard[checkingQ][checkingR] > 0)):
 						continue;
@@ -738,8 +740,6 @@ func findMovesForKing(KingArray:Array) -> void:
 
 				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
 					legalMoves[king][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
-				
-				updateAttackBoard(checkingQ, checkingR, 1);
 		
 		## Not Efficient FIX LATER
 		if( GameInCheck ):
@@ -777,6 +777,10 @@ func checkIFCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 		for move in enemyMoves[piece][MOVE_TYPES.CAPTURE]:
 			if(move == Cords):
 				return true;
+		if(enemyMoves[piece].size() == 4):
+			for move in enemyMoves[piece][MOVE_TYPES.PROMOTE]:
+				if(move == Cords):
+					return true;
 	return false;
 	
 ## Check what piece contains in their capture moves the cords piece.
@@ -1484,7 +1488,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 10);
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 20);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
@@ -1568,7 +1572,7 @@ func _resign():
 		
 	GameIsOver = true;
 	print("%s WINS BY RESIGN" % ("White" if not isWhiteTurn else "Black"));
-	
+	print(moveHistory);
 	return
 
 ## Undo Move PUBLIC CALL
