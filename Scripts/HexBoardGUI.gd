@@ -303,7 +303,8 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 ## Lock Other Pieces
 ## Sub :: Spawn Piece's Moves 
 func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
-	emit_signal("pieceSelectedLockOthers");
+	#emit_signal("pieceSelectedLockOthers");
+	pieceSelectedLockOthers.emit();
 	
 	var thisPiecesMoves = {};
 	for key in currentLegalsMoves[CORDS].keys():
@@ -492,6 +493,9 @@ func _on_run_test_pressed():
 ##
 func _on_settings_pressed():
 	SettingsDialog.visible = true;
+	SettingsDialog.z_index = 1;
+	if(activePieces):
+		pieceSelectedLockOthers.emit();
 	return;
 
 
@@ -546,6 +550,11 @@ func updateSoundBus(bus,choice):
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(bus), choice);
 	return;
 
+func closeSettingsDialog():
+	SettingsDialog.visible = false;
+	if(activePieces):
+		pieceUnselectedUnlockOthers.emit();
+	return
 
 ##
 func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
@@ -557,6 +566,7 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 		4:updateSoundBus("Master", choice)
 		5:updateSoundBus("Music", choice)
 		6:updateSoundBus("Sound", choice);
+		7:closeSettingsDialog();
 	return;
 
 

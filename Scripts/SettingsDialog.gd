@@ -37,10 +37,7 @@ func _input(event:InputEvent):
 
 signal settingsUpdated(settingIndex:int, Choice:int);
 
-##
-func _on_close_button_pressed():
-	visible = false;
-	return;
+
 
 ##
 func _on_resolution_options_item_selected(index):
@@ -89,3 +86,9 @@ func _on_sound_slider_value_changed(value):
 		settingsUpdated.emit(6, linear_to_db(value/100.0));
 		can_execute = false;
 		debounce_timer.start();
+
+##
+func _on_close_button_pressed():
+	settingsUpdated.emit(7, 0);
+	visible = false;
+	return;

@@ -11,6 +11,17 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_ay072")
 
+[node name="ColorRect2" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.113
+anchor_bottom = 0.281
+offset_right = 1021.82
+offset_bottom = 465.912
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0)
+
 [node name="ColorRect" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 8

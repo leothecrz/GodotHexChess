@@ -65,34 +65,35 @@ func Hueristic(hexEngine:HexEngine) -> int:
 
 ###
 
+	
+
 func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine) -> int:
 	if(depth == 0 or hexEngine._getGameOverStatus()):
 			return Hueristic(hexEngine);
 	
-	var legalmoves = hexEngine._getMoves();
-	
+	var legalmoves = hexEngine._getMoves().duplicate(true);
 	if(isMaxPlayer):
 		var value = -INF;
 		for piece in legalmoves.keys():
 			for movetype in legalmoves[piece]:
 				var index:int = 0;
 				for move in legalmoves[piece][movetype]:
+					var state = hexEngine._getFrozenState();
 					hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 					value = max(minimax(depth-1,false,hexEngine), value)
-					hexEngine._undoLastMove();
-		## for each move:
-		#value = max(value, minimax(depth-1, false, move, hexEngine));
+					hexEngine._undoLastMove(false);
+					hexEngine._restoreFrozenState(state,legalmoves)
 		return value;
 	var value = INF;
 	for piece in legalmoves.keys():
 		for movetype in legalmoves[piece]:
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
+				var state = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 				value = min(minimax(depth-1,true,hexEngine), value)
-				hexEngine._undoLastMove();
-	## for each move:
-	#value = min(value, minimax(depth-1, false, move, hexEngine));
+				hexEngine._undoLastMove(false);
+				hexEngine._restoreFrozenState(state,legalmoves)
 	return value;
 
 
@@ -103,12 +104,16 @@ func _makeChoice(hexEngine:HexEngine):
 	CORDS = Vector2i()
 	var BestValue = INF if side == hexEngine.SIDES.WHITE else -INF;
 	var isMaxPlayer = side == hexEngine.SIDES.BLACK;
-	var legalmoves:Dictionary = hexEngine._getMoves();
+	
+	var legalmoves:Dictionary = hexEngine._getMoves().duplicate(true);
+	
+	var start = Time.get_unix_time_from_system();
 	
 	for piece in legalmoves.keys():
 		for movetype in legalmoves[piece]:
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
+				var state = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 				var val = minimax(maxDepth,isMaxPlayer,hexEngine)
 				print("MinMaxValue: ", val);
@@ -118,8 +123,11 @@ func _makeChoice(hexEngine:HexEngine):
 					CORDS = piece;
 					MOVETYPE = movetype;
 					MOVEINDEX = index;
-				hexEngine._undoLastMove();
+					TO = move;
+				hexEngine._undoLastMove(false);
+				hexEngine._restoreFrozenState(state,legalmoves)
 	
-	TO = legalmoves[CORDS][MOVETYPE][MOVEINDEX];
+	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_unix_time_from_system() - start]);
+	
 	hexEngine._enableAIMoveLock();
 	return

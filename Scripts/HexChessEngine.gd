@@ -662,7 +662,7 @@ func findMovesForBishop(BishopArray:Array) -> void:
 					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KING):
 						checkingQ += activeVector.x;
 						checkingR += activeVector.y;
-						print("King Escape %d %d" % [checkingQ, checkingR]);
+						#print("King Escape %d %d" % [checkingQ, checkingR]);
 						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
 							updateAttackBoard(checkingQ, checkingR, 1);
 					
@@ -1125,6 +1125,18 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 
 	return;
 
+func _restoreFrozenState(state:FrozenState, moves:Dictionary):
+	WhiteAttackBoard = state.WABoard.duplicate(true);
+	BlackAttackBoard = state.BABoard.duplicate(true);
+	blockingPieces = state.BPieces.duplicate(true);
+	influencedPieces = state.IPieces.duplicate(true);
+	legalMoves = moves.duplicate(true);
+	return;
+	
+##
+func _getFrozenState():
+	return FrozenState.new(WhiteAttackBoard,BlackAttackBoard,blockingPieces,influencedPieces);
+
 ## SUB Routine
 func generateNextLegalMoves():
 	if(isWhiteTurn):
@@ -1171,8 +1183,8 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 		mateStatus = "C"
 		fillInCheckMoves(pieceType, cords, kingCords, true);
 		
-		print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
-		print("Game In Check Moves: ", GameInCheckMoves);
+		#print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
+		#print("Game In Check Moves: ", GameInCheckMoves);
 
 	incrementTurnNumber();
 	swapPlayerTurn();
@@ -1183,9 +1195,11 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 	if( moveCount <= 0):
 		mateStatus = "O"
 		if(GameInCheck):
-			print("Check Mate")
+			#print("Check Mate")
+			pass;
 		else:
-			print("Stale Mate")
+			#print("Stale Mate")
+			pass;
 		
 		GameIsOver = true;
 	
@@ -1203,7 +1217,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 	while (i < splits.size()):
 		var flag:String = splits[i];
 		
-		print(flag);
+		#print(flag);
 		 
 		match flag:
 			"":
@@ -1224,7 +1238,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				var index = int(idAndIndex[1]);
 				
 				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, !isWhiteTurn) ;
-				print("Captured Returned: ", HexBoard[newFrom.x][newFrom.y]);
+				#print("Captured Returned: ", HexBoard[newFrom.x][newFrom.y]);
 				
 				activePieces\
 				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
@@ -1244,7 +1258,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				print("Top Sneak Returned: ", id);
+				#print("Top Sneak Returned: ", id);
 				
 				newFrom.y += -1 if isWhiteTurn else 1;
 				
@@ -1267,7 +1281,7 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				print("Promotion: ", id);
+				#print("Promotion: ", id);
 				
 				HexBoard[newTo.x][newTo.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
 				
@@ -1310,7 +1324,7 @@ func undoSubFixState():
 				pass;
 				
 			"E":
-				print("Undo onto EnPassant")
+				#print("Undo onto EnPassant")
 				EnPassantCordsValid = true;
 				# GET EnPASSANT DATA
 				var from:Vector2i = decodeEnPassantFEN(splits[1]);
@@ -1461,7 +1475,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 4);
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
@@ -1538,7 +1552,7 @@ func _passToAI() -> void:
 	debugPrintThree(false);
 	return;
 
-## RESIGN PUBLIC CALL
+## RESIGN PUBLIC 
 func _resign():
 	if(GameIsOver):
 		return;
@@ -1549,7 +1563,7 @@ func _resign():
 	return
 
 ## Undo Move PUBLIC CALL
-func _undoLastMove() -> bool:
+func _undoLastMove(genMoves:bool=true) -> bool:
 	if(moveHistory.size() < 1):
 		return false;
 	
@@ -1585,8 +1599,8 @@ func _undoLastMove() -> bool:
 	undoSubFixState();
 	decrementTurnNumber();
 	swapPlayerTurn();
-	generateNextLegalMoves();
-
+	if(genMoves):
+		generateNextLegalMoves();
 	return true;
 
 ## START DEFAULT GAME PUBLIC CALL
