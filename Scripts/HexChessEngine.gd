@@ -134,6 +134,8 @@ var EnemyPromotedTo:PIECES = PIECES.ZERO;
 var EnemyIsAI = false;
 var EnemyPlaysWhite = false;
 var EnemyPromoted =  false;
+var bypassMoveLock = false;
+
 
 var EnemyChoiceType;
 var EnemyChoiceIndex;
@@ -1429,6 +1431,8 @@ func initiateEngine(FEN_STRING) -> bool:
 		print("Invalid FEN");
 		return false;
 	
+	bypassMoveLock = false;
+	
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 
@@ -1457,7 +1461,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				pass;
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 4);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
@@ -1483,13 +1487,21 @@ func _setEnemy(type:ENEMY_TYPES, isWhite:bool) -> void:
 	EnemyPlaysWhite = isWhite;
 	return;
 
+func _disableAIMoveLock():
+	bypassMoveLock = false;
+	return;
+	
+func _enableAIMoveLock():
+	bypassMoveLock = true;
+	return;
+
 ## MAKE MOVE PUBLIC CALL
 func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
 	# TODO:: HANDLE INPROPER INPUT FEEDBACK
 	if(GameIsOver or !legalMoves.has(cords) ):
 		return;
 
-	if(EnemyIsAI and EnemyPlaysWhite == isWhiteTurn):
+	if(EnemyIsAI and ((EnemyPlaysWhite == isWhiteTurn) and bypassMoveLock)):
 		print("NOT YOUR TURN")
 		return
 

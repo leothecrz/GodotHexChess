@@ -414,15 +414,16 @@ func undoCapture():
 
 ##
 func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
+	var newPos;
 	if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
-		var newPos = activePieces[sideToUndo][uType][uIndex];
+		newPos = activePieces[sideToUndo][uType][uIndex];
 		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
 		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
 		return;
 	##Undo Promotion
 	var pType = GameDataNode._getUnpromoteType(); # promoted type
 	var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
-	var newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex] ;
+	newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex] ;
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
 	ref.get_child(refChildCount-1).queue_free();
@@ -537,7 +538,7 @@ func toggleMusic(choice):
 	return;
 	
 ##
-func toggleSound(choice):
+func toggleSound(_choice):
 	return;
 
 ##
