@@ -16,7 +16,7 @@ config/tags=PackedStringArray("hexchess")
 run/main_scene="res://Scenes/HexBoardGUI.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 boot_splash/image="res://Images/HexChessLogo3.png"
-config/icon="res://Images/hexchess.png"
+config/icon="res://Images/Logo3.png"
 
 [display]
 
