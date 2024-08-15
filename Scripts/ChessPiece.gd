@@ -117,9 +117,9 @@ func pressedAndNotDragging(eventPos):
 
 #
 func notPressedAndDragging():
-	print(hexTile);
+	#print(hexTile);
 	if(hexTile):
-		print("\nSuccess\n")
+		#print("\nSuccess\n")
 		
 		moveTo(hexTile.transform.origin);
 		pieceCords = hexTile.hexMove;
@@ -127,7 +127,7 @@ func notPressedAndDragging():
 		emit_signal("pieceDeselected", hexTile.hexCords, hexTile.hexKey, hexTile.hexIndex);
 		
 	else:
-		print("\nCanceled\n")
+		#print("\nCanceled\n")
 		moveTo(preDragPosition);
 		emit_signal("pieceDeselected", Vector2i(), 0, -1);
 		

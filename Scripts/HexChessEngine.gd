@@ -1190,6 +1190,15 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 	swapPlayerTurn();
 	generateNextLegalMoves()
 
+	var pieceCount = 0; 
+	for side in activePieces:
+		for type in side.keys():
+			for piece in side[type]:
+				pieceCount+=1;
+				
+	if(pieceCount <= 2):
+		GameIsOver = true;
+
 	## Check For Mate and Stale Mate	
 	var moveCount = countMoves(legalMoves);
 	if( moveCount <= 0):
@@ -1475,7 +1484,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 10);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;

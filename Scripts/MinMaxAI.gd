@@ -13,6 +13,8 @@ var PROMOTETO:int;
 
 const PIECE_VALUES = [0, 10, 50, 100, 75, 500, 0]
 
+var counter = 0;
+
 ##
 func _init(playswhite:bool, max_Depth:int):
 	side = 1 if playswhite else 0;
@@ -51,15 +53,16 @@ func Hueristic(hexEngine:HexEngine) -> int:
 			else: return -INF;
 		else: return 0; # StaleMate
 	
-	var value = 0;		
-	
+	var value = 0;
 	for piecetype in hexEngine._getActivePieces()[hexEngine.SIDES.BLACK]:
 		for piece in hexEngine._getActivePieces()[hexEngine.SIDES.BLACK][piecetype]:
 			value += PIECE_VALUES[piecetype];
-	
 	for piecetype in hexEngine._getActivePieces()[hexEngine.SIDES.WHITE]:
 		for piece in hexEngine._getActivePieces()[hexEngine.SIDES.WHITE][piecetype]:
 			value -= PIECE_VALUES[piecetype];
+	if(hexEngine._getGameInCheck()):
+		if(hexEngine._getIsWhiteTurn()): value += 1000 ;
+		else: value -= 1000 ;
 	
 	return value;
 
@@ -67,58 +70,77 @@ func Hueristic(hexEngine:HexEngine) -> int:
 
 	
 
-func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine) -> int:
+func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:int) -> int:
 	if(depth == 0 or hexEngine._getGameOverStatus()):
 			return Hueristic(hexEngine);
-	
+	counter +=1;
 	var legalmoves = hexEngine._getMoves().duplicate(true);
+	var escapeLoop = false;
 	if(isMaxPlayer):
 		var value = -INF;
+		
 		for piece in legalmoves.keys():
+			if (escapeLoop): break
 			for movetype in legalmoves[piece]:
+				if (escapeLoop): break
 				var index:int = 0;
 				for move in legalmoves[piece][movetype]:
 					var state = hexEngine._getFrozenState();
 					hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
-					value = max(minimax(depth-1,false,hexEngine), value)
+					value = max(minimax(depth-1,false,hexEngine, alpha, beta), value);
+					alpha = max(alpha, value);
 					hexEngine._undoLastMove(false);
-					hexEngine._restoreFrozenState(state,legalmoves)
+					hexEngine._restoreFrozenState(state,legalmoves);
+					if(beta <= alpha):
+						escapeLoop = true;
+						break;
 		return value;
 	var value = INF;
 	for piece in legalmoves.keys():
+		if (escapeLoop): break
 		for movetype in legalmoves[piece]:
+			if (escapeLoop): break
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
 				var state = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
-				value = min(minimax(depth-1,true,hexEngine), value)
+				value = min(minimax(depth-1,true,hexEngine, alpha, beta), value);
+				beta = min(alpha, value);
 				hexEngine._undoLastMove(false);
-				hexEngine._restoreFrozenState(state,legalmoves)
+				hexEngine._restoreFrozenState(state,legalmoves);
+				if(beta <= alpha):
+					escapeLoop = true;
+					break;
 	return value;
 
+
+func lessThan(a,b):
+	return a<b;
+func greaterThan(a,b):
+	return a>b;
 
 ##
 func _makeChoice(hexEngine:HexEngine):
 	if(hexEngine._getGameOverStatus()): return;
 	hexEngine._disableAIMoveLock();
 	CORDS = Vector2i()
-	var BestValue = INF if side == hexEngine.SIDES.WHITE else -INF;
 	var isMaxPlayer = side == hexEngine.SIDES.BLACK;
-	
+	var BestValue = INF if not isMaxPlayer else -INF;
+	var function:Callable = lessThan if isMaxPlayer else greaterThan;
 	var legalmoves:Dictionary = hexEngine._getMoves().duplicate(true);
-	
+	print(legalmoves);
 	var start = Time.get_unix_time_from_system();
-	
+	counter = 0;
 	for piece in legalmoves.keys():
 		for movetype in legalmoves[piece]:
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
 				var state = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
-				var val = minimax(maxDepth,isMaxPlayer,hexEngine)
-				print("MinMaxValue: ", val);
-				print("MoveID: ", piece, " ", movetype, " ", index, "\n");
-				if (BestValue < val):
+				var val = minimax(maxDepth,isMaxPlayer,hexEngine, -INF, INF);
+				#print("MinMaxValue: ", val);
+				#print("MoveID: ", piece, " ", movetype, " ", index, "\n");
+				if (function.call(BestValue,val)):
 					BestValue = val;
 					CORDS = piece;
 					MOVETYPE = movetype;
@@ -128,6 +150,7 @@ func _makeChoice(hexEngine:HexEngine):
 				hexEngine._restoreFrozenState(state,legalmoves)
 	
 	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_unix_time_from_system() - start]);
-	
+	print("Moves Checked: ", counter);
+	print(hexEngine._getMoves());
 	hexEngine._enableAIMoveLock();
 	return
