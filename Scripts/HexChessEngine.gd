@@ -75,7 +75,7 @@ const KING_VECTORS   = { 'foward':Vector2i(0,-1), 'lFoward':Vector2i(-1,0,), 'rF
 const KNIGHT_VECTORS = { 'left':Vector2i(-1,-2), 'lRight':Vector2i(1,-3), 'rRight':Vector2i(2,-3),}
 
 const DEFAULT_MOVE_TEMPLATE : Dictionary = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[],  };
-const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[], MOVE_TYPES.PROMOTE:[], MOVE_TYPES.ENPASSANT:[] };
+const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[], MOVE_TYPES.ENPASSANT:[], MOVE_TYPES.PROMOTE:[], };
 
 
 ### State
@@ -1225,13 +1225,10 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 
 ##
 # SUB Routine
-func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2i):
+func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 	var i = 3;
 	while (i < splits.size()):
 		var flag:String = splits[i];
-		
-		#print(flag);
-		 
 		match flag:
 			"":
 				i += 1;
@@ -1246,23 +1243,19 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 			_ when flag[0] == '/':
 				var cleanFlag:String = flag.get_slice('/', 1);
 				var idAndIndex = cleanFlag.split(',');
-				
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, !isWhiteTurn) ;
-				#print("Captured Returned: ", HexBoard[newFrom.x][newFrom.y]);
-				
+				HexBoard[to.x][to.y] = getPieceInt(id, isWhiteTurn) ;
 				activePieces\
-				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
+				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[id]\
-				.insert( index, Vector2i(newFrom) );
+				.insert( index, Vector2i(to) );
 
 				uncaptureValid = true;
 				@warning_ignore("int_as_enum_without_cast")
 				captureType = id;
 				captureIndex = index;
-				#signal gui // finished?
 
 			_ when flag[0] == '-':
 				var cleanFlag:String = flag.get_slice('-', 1);
@@ -1270,17 +1263,14 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
+			
+				to.y += 1 if isWhiteTurn else -1;
 				
-				#print("Top Sneak Returned: ", id);
-				
-				newFrom.y += -1 if isWhiteTurn else 1;
-				
-				HexBoard[newFrom.x][newFrom.y] = getPieceInt(id, !isWhiteTurn);
-				
+				HexBoard[to.x][to.y] = getPieceInt(id, isWhiteTurn);
 				activePieces\
-				[SIDES.WHITE if isWhiteTurn else SIDES.BLACK]\
+				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[id]\
-				.insert( index, Vector2i(newFrom) );
+				.insert( index, Vector2i(to) );
 
 				uncaptureValid = true;
 				@warning_ignore("int_as_enum_without_cast")
@@ -1294,12 +1284,10 @@ func undoSubCleanFlags(splits:PackedStringArray, newTo:Vector2i, newFrom:Vector2
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				#print("Promotion: ", id);
+				HexBoard[from.x][from.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
 				
-				HexBoard[newTo.x][newTo.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
-				
-				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][id].pop_back();
-				activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.PAWN].insert( index, Vector2i(newTo) );
+				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][id].pop_back(); ## WILL MAYBE FAIL IF MULTIPLE PROMOTIONS HAPPEN
+				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.PAWN].insert( index, Vector2i(from) );
 				unpromoteValid = true;
 				@warning_ignore("int_as_enum_without_cast")
 				unpromoteType = id;
@@ -1323,8 +1311,8 @@ func undoSubFixState():
 		match flag:
 			"C":
 				# GET IN CHECK DATA
-				var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][KING_INDEX];
-				var attacker = searchForMyAttackers(kingCords, !isWhiteTurn);
+				var kingCords:Vector2i = activePieces[SIDES.BLACK if !isWhiteTurn else SIDES.WHITE][PIECES.KING][KING_INDEX];
+				var attacker = searchForMyAttackers(kingCords, isWhiteTurn);
 				
 				GameInCheckMoves.clear();
 				GameInCheck = true;
@@ -1532,6 +1520,10 @@ func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> voi
 		print("NOT YOUR TURN")
 		return
 
+	#for key in legalMoves.keys():
+	#	print(key, legalMoves[key]);
+	#print("")
+
 	resetFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
 	
@@ -1582,36 +1574,37 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 	
 	uncaptureValid = false;
 	unpromoteValid = false;
+	decrementTurnNumber();
+	swapPlayerTurn();
 	
 	var currentMove:String = moveHistory.pop_back();
 	var splits:PackedStringArray = currentMove.split(" ");
 	
 	var pieceVal:int = int(splits[0]);
-	var newTo:Vector2i = decodeEnPassantFEN(splits[1]);
-	var newFrom:Vector2i = decodeEnPassantFEN(splits[2]);
+	var UndoNewFrom:Vector2i = decodeEnPassantFEN(splits[1]);
+	var UndoNewTo:Vector2i = decodeEnPassantFEN(splits[2]);
 	
 	var pieceType = getPieceType(pieceVal);
-	var selfColor = SIDES.WHITE if !isWhiteTurn else SIDES.BLACK;
+	var selfColor = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
 	var index:int = 0;
 	
 	##Default Undo
-	HexBoard[newTo.x][newTo.y] = pieceVal;
-	HexBoard[newFrom.x][newFrom.y] = PIECES.ZERO;
+	HexBoard[UndoNewFrom.x][UndoNewFrom.y] = pieceVal;
+	HexBoard[UndoNewTo.x][UndoNewTo.y] = PIECES.ZERO;
 	
 	for pieceCords in activePieces[selfColor][pieceType]:
-		if(pieceCords == newFrom):
+		if(pieceCords == UndoNewTo):
+			activePieces[selfColor][pieceType][index] = UndoNewFrom;
 			break;
 		index += 1;
 	
-	if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
-		activePieces[selfColor][pieceType][index] = newTo;
-	
+	#if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
+
 	undoType = pieceType;
 	undoIndex = index;
-	undoSubCleanFlags(splits, newTo, newFrom);
+	undoSubCleanFlags(splits, UndoNewFrom, UndoNewTo);
 	undoSubFixState();
-	decrementTurnNumber();
-	swapPlayerTurn();
+	
 	if(genMoves):
 		generateNextLegalMoves();
 	return true;
