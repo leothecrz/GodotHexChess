@@ -1,17 +1,20 @@
 extends Node;
 class_name MinMaxAI;
 
+const DIST_VALUE = 100;
+const CHECK_VAL = 10000;
+#skip ZERO and ignore king *(its always present) 
+const PIECE_VALUES = [0, 100, 500, 1000, 750, 5000, 0]
+
+
 var side:int;
-var maxDepth;
-var rng:RandomNumberGenerator;
+var maxDepth:int;
 
 var TO:Vector2i;
 var CORDS:Vector2i;
 var MOVETYPE:int;
 var MOVEINDEX:int;
 var PROMOTETO:int;
-
-const PIECE_VALUES = [0, 10, 50, 100, 75, 500, 0]
 
 var counter = 0;
 
@@ -45,14 +48,17 @@ func _getPromoteTo():
 func _getTo():
 	return TO;
 
+enum test {zero,one}
+
 ##
 func Hueristic(hexEngine:HexEngine) -> int:
+	#ENDSTATE
 	if(hexEngine._getGameOverStatus()):
 		if(hexEngine._getGameInCheck()):
 			if(hexEngine._getIsWhiteTurn()): return INF;
 			else: return -INF;
 		else: return 0; # StaleMate
-	
+	#Piece Comparison
 	var value = 0;
 	for piecetype in hexEngine._getActivePieces()[hexEngine.SIDES.BLACK]:
 		for piece in hexEngine._getActivePieces()[hexEngine.SIDES.BLACK][piecetype]:
@@ -60,16 +66,29 @@ func Hueristic(hexEngine:HexEngine) -> int:
 	for piecetype in hexEngine._getActivePieces()[hexEngine.SIDES.WHITE]:
 		for piece in hexEngine._getActivePieces()[hexEngine.SIDES.WHITE][piecetype]:
 			value -= PIECE_VALUES[piecetype];
+	#Check
 	if(hexEngine._getGameInCheck()):
-		if(hexEngine._getIsWhiteTurn()): value += 1000 ;
-		else: value -= 1000 ;
+		if(hexEngine._getIsWhiteTurn()): 
+			value += CHECK_VAL;
+		else: 
+			value -= CHECK_VAL;
+	#Push King
+	var WhiteKing:Vector2i = hexEngine._getActivePieces()[hexEngine.SIDES.WHITE][hexEngine.PIECES.KING][0];
+	var BlackKing:Vector2i = hexEngine._getActivePieces()[hexEngine.SIDES.BLACK][hexEngine.PIECES.KING][0];
+	var dist = hexEngine.getAxialCordDist(WhiteKing,Vector2i(0,0));
+	value += dist * DIST_VALUE;
+	dist = hexEngine.getAxialCordDist(BlackKing,Vector2i(0,0));
+	value -= dist * DIST_VALUE;
+	#PromotePawns
+	
+	
+	for i in range(2):
+		pass;
+	
 	
 	return value;
 
-###
-
-	
-
+##
 func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:int) -> int:
 	if(depth == 0 or hexEngine._getGameOverStatus()):
 			return Hueristic(hexEngine);
@@ -114,12 +133,15 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 				index += 1;
 	return value;
 
-
+##
 func lessThan(a,b):
 	return a<b;
+
+##
 func greaterThan(a,b):
 	return a>b;
 
+##
 func selectBestMove(piece:Vector2i, movetype:int, index:int, move:Vector2i):
 	CORDS = piece;
 	MOVETYPE = movetype;

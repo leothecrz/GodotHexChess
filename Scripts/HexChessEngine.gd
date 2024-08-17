@@ -1349,6 +1349,14 @@ func undoSubFixState():
 
 
 ##
+func getSAxialCordFrom(cords:Vector2i) -> int:
+	return (-1 * cords.x) - cords.y;
+
+func getAxialCordDist(from:Vector2i,to:Vector2i):
+	var dif = Vector3i(from.x-to.x, from.y-to.y, getSAxialCordFrom(from)-getSAxialCordFrom(to));
+	return max(abs(dif.x),abs(dif.y),abs(dif.z));
+
+##
 func printActivePieces():
 	for side in activePieces.size():
 		print(SIDES.find_key(side))
@@ -1480,7 +1488,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 1);
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 100);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
