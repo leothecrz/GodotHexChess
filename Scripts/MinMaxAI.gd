@@ -1,6 +1,9 @@
 extends Node;
 class_name MinMaxAI;
 
+const MIN_INT = -9223372036854775808;
+const MAX_INT = 9223372036854775807;
+
 const DIST_VALUE = 100;
 const CHECK_VAL = 10000;
 #skip ZERO and ignore king *(its always present) 
@@ -79,11 +82,19 @@ func Hueristic(hexEngine:HexEngine) -> int:
 	value += dist * DIST_VALUE;
 	dist = hexEngine.getAxialCordDist(BlackKing,Vector2i(0,0));
 	value -= dist * DIST_VALUE;
-	#PromotePawns
+	#Push Pawns
+	for pawn:Vector2i in hexEngine._getActivePieces()[hexEngine.SIDES.WHITE][hexEngine.PIECES.PAWN]:
+		if(pawn.x >= 0):
+			value -= DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, -1*hexEngine.HEX_BOARD_RADIUS))
+		else:
+			value -= DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, (-1*hexEngine.HEX_BOARD_RADIUS)-pawn.x));
+	for pawn:Vector2i in hexEngine._getActivePieces()[hexEngine.SIDES.BLACK][hexEngine.PIECES.PAWN]:
+		if(pawn.x <= 0):
+			## axial dist is negative
+			value -= DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS))
+		else:
+			value -= DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS-pawn.x));
 	
-	
-	for i in range(2):
-		pass;
 	
 	
 	return value;
@@ -96,37 +107,39 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 	var legalmoves = hexEngine._getMoves().duplicate(true);
 	var escapeLoop = false;
 	if(isMaxPlayer):
-		var value = -INF;
+		var value = MIN_INT;
 		for piece in legalmoves.keys():
 			if (escapeLoop): break
 			for movetype in legalmoves[piece]:
 				if (escapeLoop): break
 				var index:int = 0;
 				for move in legalmoves[piece][movetype]:
-					var state = hexEngine._getFrozenState();
+					var state:FrozenState = hexEngine._getFrozenState();
 					hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 					value = max(minimax(depth-1,false,hexEngine, alpha, beta), value);
 					alpha = max(alpha, value);
 					hexEngine._undoLastMove(false);
 					hexEngine._restoreFrozenState(state,legalmoves);
+					state.queue_free();
 					if(beta <= alpha):
 						escapeLoop = true;
 						break;
 					index += 1;
 		return value;
-	var value = INF;
+	var value = MAX_INT;
 	for piece in legalmoves.keys():
 		if (escapeLoop): break
 		for movetype in legalmoves[piece]:
 			if (escapeLoop): break
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
-				var state = hexEngine._getFrozenState();
+				var state:FrozenState = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 				value = min(minimax(depth-1,true,hexEngine, alpha, beta), value);
 				beta = min(beta, value);
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreFrozenState(state,legalmoves);
+				state.queue_free();
 				if(beta <= alpha):
 					escapeLoop = true;
 					break;
@@ -154,9 +167,9 @@ func _makeChoice(hexEngine:HexEngine):
 	if(hexEngine._getGameOverStatus()): return;
 	hexEngine._disableAIMoveLock();
 	CORDS = Vector2i()
-	var isMaxPlayer = side == hexEngine.SIDES.BLACK;
-	var BestValue = INF if not isMaxPlayer else -INF;
-	var function:Callable = lessThan if isMaxPlayer else greaterThan;
+	var isMaxPlayer = side != hexEngine.SIDES.BLACK;
+	var BestValue:int = MAX_INT if isMaxPlayer else MIN_INT;
+	var function:Callable = lessThan if not isMaxPlayer else greaterThan;
 	var legalmoves:Dictionary = hexEngine._getMoves().duplicate(true);
 	var start = Time.get_ticks_msec();
 	counter = 0;
@@ -164,14 +177,15 @@ func _makeChoice(hexEngine:HexEngine):
 		for movetype in legalmoves[piece]:
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
-				var state = hexEngine._getFrozenState();
+				var state:FrozenState = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
-				var val = minimax(maxDepth,isMaxPlayer,hexEngine, -INF, INF);
+				var val = minimax(maxDepth,isMaxPlayer,hexEngine, MIN_INT, MAX_INT);
 				if (function.call(BestValue,val)):
 					BestValue = val;
 					selectBestMove(piece,movetype,index,move);
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreFrozenState(state,legalmoves)
+				state.queue_free();
 	
 	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
 	print("Moves Checked: ", counter);

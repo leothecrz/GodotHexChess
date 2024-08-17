@@ -66,8 +66,8 @@ const ROOK_TEST   = '6/7/8/9/10/5R5/10/9/8/7/6 w - 1';
 const QUEEN_TEST  = '6/7/8/9/10/5Q5/10/9/8/7/6 w - 1';
 const KING_TEST   = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1';
 	#CheckMate Test:
-const CHECK_IN_ONE = '6/7/8/9/k9/2QK7/10/9/8/7/6 w - 1';
-const CHECK_IN_TWO = '2B3/7/8/9/10/R10/10/9/8/2p4/2k1K1 w - 1';
+const CHECK_TEST_ONE   = 'q6/7/8/9/10/k8K1/10/9/8/7/q5 w - 20';
+const CHECK_TEST_TWO   = '6/7/8/9/10/11/10/9/8/7/6 w - 1';
 
 const ROOK_VECTORS   = { 'foward':Vector2i(0,-1), 'lFoward':Vector2i(-1,0,), 'rFoward':Vector2i(1,-1), 'backward':Vector2i(0,1), 'lBackward':Vector2i(-1,1), 'rBackward':Vector2i(1,0) };
 const BISHOP_VECTORS = { 'lfoward':Vector2i(-2,1), 'rFoward':Vector2i(-1,-1), 'left':Vector2i(-1,2), 'lbackward':Vector2i(1,1), 'rBackward':Vector2i(2,-1), 'right':Vector2i(1,-2) };
@@ -1488,7 +1488,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 100);
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 3);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
@@ -1623,7 +1623,7 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> bool:
-	return initiateEngine(DEFAULT_FEN_STRING);
+	return initiateEngine(CHECK_TEST_ONE);
 
 
 # GETTERS
