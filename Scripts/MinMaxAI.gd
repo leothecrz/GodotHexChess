@@ -78,7 +78,6 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 	var escapeLoop = false;
 	if(isMaxPlayer):
 		var value = -INF;
-		
 		for piece in legalmoves.keys():
 			if (escapeLoop): break
 			for movetype in legalmoves[piece]:
@@ -94,6 +93,7 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 					if(beta <= alpha):
 						escapeLoop = true;
 						break;
+					index += 1;
 		return value;
 	var value = INF;
 	for piece in legalmoves.keys():
@@ -105,12 +105,13 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 				var state = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 				value = min(minimax(depth-1,true,hexEngine, alpha, beta), value);
-				beta = min(alpha, value);
+				beta = min(beta, value);
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreFrozenState(state,legalmoves);
 				if(beta <= alpha):
 					escapeLoop = true;
 					break;
+				index += 1;
 	return value;
 
 
@@ -118,6 +119,13 @@ func lessThan(a,b):
 	return a<b;
 func greaterThan(a,b):
 	return a>b;
+
+func selectBestMove(piece:Vector2i, movetype:int, index:int, move:Vector2i):
+	CORDS = piece;
+	MOVETYPE = movetype;
+	MOVEINDEX = index;
+	TO = move;
+	return
 
 ##
 func _makeChoice(hexEngine:HexEngine):
@@ -128,7 +136,7 @@ func _makeChoice(hexEngine:HexEngine):
 	var BestValue = INF if not isMaxPlayer else -INF;
 	var function:Callable = lessThan if isMaxPlayer else greaterThan;
 	var legalmoves:Dictionary = hexEngine._getMoves().duplicate(true);
-	var start = Time.get_unix_time_from_system();
+	var start = Time.get_ticks_msec();
 	counter = 0;
 	for piece in legalmoves.keys():
 		for movetype in legalmoves[piece]:
@@ -137,18 +145,14 @@ func _makeChoice(hexEngine:HexEngine):
 				var state = hexEngine._getFrozenState();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 				var val = minimax(maxDepth,isMaxPlayer,hexEngine, -INF, INF);
-				#print("MinMaxValue: ", val);
-				#print("MoveID: ", piece, " ", movetype, " ", index, "\n");
 				if (function.call(BestValue,val)):
 					BestValue = val;
-					CORDS = piece;
-					MOVETYPE = movetype;
-					MOVEINDEX = index;
-					TO = move;
+					selectBestMove(piece,movetype,index,move);
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreFrozenState(state,legalmoves)
 	
-	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_unix_time_from_system() - start]);
+	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
 	print("Moves Checked: ", counter);
+	print("Best Value: ", BestValue);
 	hexEngine._enableAIMoveLock();
 	return

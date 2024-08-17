@@ -800,7 +800,7 @@ func searchForPawnsAtk(pos:Vector2i, isWTurn:bool) -> Array:
 	var lst:Array = [];
 	if( HexBoard.has(qpos) && HexBoard[qpos].has(leftCaptureR)):
 		if(!isPieceFriendly(HexBoard[qpos][leftCaptureR], isWTurn)):
-			if(getPieceType(HexBoard[qpos][rightCaptureR]) == PIECES.PAWN):
+			if(getPieceType(HexBoard[qpos][leftCaptureR]) == PIECES.PAWN):
 				lst.append(Vector2i(qpos, leftCaptureR));
 	qpos = pos.x + 1;
 	if( HexBoard.has(qpos) && HexBoard[qpos].has(rightCaptureR)):
@@ -1093,7 +1093,7 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
 			activePieces[selfColor][pieceType].push_back(moveTo);
 
-			moveHistMod = moveHistMod + ("+%s,%d" % [pieceType, i]);
+			moveHistMod = moveHistMod + (" +%s,%d" % [pieceType, i]);
 			pass;
 
 		MOVE_TYPES.ENPASSANT:
@@ -1245,13 +1245,17 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				var idAndIndex = cleanFlag.split(',');
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
-				
+				if(index > 20):
+					print();
+					pass;
 				HexBoard[to.x][to.y] = getPieceInt(id, isWhiteTurn) ;
-				activePieces\
+				if (OK != activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[id]\
-				.insert( index, Vector2i(to) );
-
+				.insert( index, Vector2i(to) )):
+					print("0Failed TO Insert: ", index, " size:", activePieces\
+				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
+				[id].size());
 				uncaptureValid = true;
 				@warning_ignore("int_as_enum_without_cast")
 				captureType = id;
@@ -1287,7 +1291,7 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				HexBoard[from.x][from.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
 				
 				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][id].pop_back(); ## WILL MAYBE FAIL IF MULTIPLE PROMOTIONS HAPPEN
-				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.PAWN].insert( index, Vector2i(from) );
+				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.PAWN].insert( index, Vector2i(from) )
 				unpromoteValid = true;
 				@warning_ignore("int_as_enum_without_cast")
 				unpromoteType = id;
@@ -1476,7 +1480,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 20);
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 1);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
