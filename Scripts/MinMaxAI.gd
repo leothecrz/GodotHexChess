@@ -111,13 +111,18 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 				if (escapeLoop): break
 				var index:int = 0;
 				for move in legalmoves[piece][movetype]:
-					var state:FrozenState = hexEngine._getFrozenState();
+					#var state:FrozenState = hexEngine._getFrozenState();
+					var WAB = hexEngine._duplicateWAB();
+					var BAB = hexEngine._duplicateBAB();
+					var BP = hexEngine._duplicateBP();
+					var IP = hexEngine._duplicateIP();
 					hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 					value = max(minimax(depth-1,false,hexEngine, alpha, beta), value);
 					alpha = max(alpha, value);
 					hexEngine._undoLastMove(false);
-					hexEngine._restoreFrozenState(state,legalmoves);
-					state.queue_free();
+					#hexEngine._restoreFrozenState(state,legalmoves);
+					#state.queue_free();
+					hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
 					if(beta <= alpha):
 						escapeLoop = true;
 						break;
@@ -130,13 +135,18 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 			if (escapeLoop): break
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
-				var state:FrozenState = hexEngine._getFrozenState();
+				#var state:FrozenState = hexEngine._getFrozenState();
+				var WAB = hexEngine._duplicateWAB();
+				var BAB = hexEngine._duplicateBAB();
+				var BP = hexEngine._duplicateBP();
+				var IP = hexEngine._duplicateIP();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 				value = min(minimax(depth-1,true,hexEngine, alpha, beta), value);
 				beta = min(beta, value);
 				hexEngine._undoLastMove(false);
-				hexEngine._restoreFrozenState(state,legalmoves);
-				state.queue_free();
+				hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
+				#hexEngine._restoreFrozenState(state,legalmoves);
+				#state.queue_free();
 				if(beta <= alpha):
 					escapeLoop = true;
 					break;
@@ -174,15 +184,20 @@ func _makeChoice(hexEngine:HexEngine):
 		for movetype in legalmoves[piece]:
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
-				var state:FrozenState = hexEngine._getFrozenState();
+				#var state:FrozenState = hexEngine._getFrozenState();
+				var WAB = hexEngine._duplicateWAB();
+				var BAB = hexEngine._duplicateBAB();
+				var BP = hexEngine._duplicateBP();
+				var IP = hexEngine._duplicateIP();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 				var val = minimax(maxDepth,isMaxPlayer,hexEngine, MIN_INT, MAX_INT);
 				if (function.call(BestValue,val)):
 					BestValue = val;
 					selectBestMove(piece,movetype,index,move);
 				hexEngine._undoLastMove(false);
-				hexEngine._restoreFrozenState(state,legalmoves)
-				state.queue_free();
+				hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
+				#hexEngine._restoreFrozenState(state,legalmoves)
+				#state.queue_free();
 	
 	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
 	print("Moves Checked: ", counter);

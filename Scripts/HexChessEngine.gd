@@ -78,6 +78,8 @@ const DEFAULT_MOVE_TEMPLATE : Dictionary = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAP
 const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[], MOVE_TYPES.ENPASSANT:[], MOVE_TYPES.PROMOTE:[], };
 
 const DECODE_FEN_OFFSET = 70;
+# ~( 0b1000 );
+const TYPE_MASK = 0b0111;
 ### State
 
 
@@ -370,10 +372,7 @@ func getPieceInt(piece : PIECES, isBlack: bool) -> int:
 
 ## Strip the color bit information and find what piece is in use.
 func getPieceType(id:int) -> PIECES:
-	var mask = ~( 0b1000 );
-	var res = (id & mask);
-	if(res > PIECES.KING):
-		push_error("Invalid Type");
+	var res = (id & TYPE_MASK);
 	@warning_ignore("int_as_enum_without_cast")
 	return res;
 
@@ -1128,10 +1127,33 @@ func _restoreFrozenState(state:FrozenState, moves:Dictionary):
 	influencedPieces = state.IPieces.duplicate(true);
 	legalMoves = moves.duplicate(true);
 	return;
-	
+
+func _restoreState(WABoard:Dictionary, BABoard:Dictionary, BPieces:Dictionary, IPieces:Dictionary, moves:Dictionary):
+	WhiteAttackBoard = WABoard.duplicate(true);
+	BlackAttackBoard = BABoard.duplicate(true);
+	blockingPieces = BPieces.duplicate(true);
+	influencedPieces = IPieces.duplicate(true);
+	legalMoves = moves.duplicate(true);
+	return;
+
 ##
 func _getFrozenState():
 	return FrozenState.new(WhiteAttackBoard,BlackAttackBoard,blockingPieces,influencedPieces);
+##
+func _duplicateWAB():
+	return WhiteAttackBoard.duplicate(true);
+
+##
+func _duplicateBAB():
+	return BlackAttackBoard.duplicate(true);
+	
+##
+func _duplicateBP():
+	return blockingPieces.duplicate(true);
+	
+##
+func _duplicateIP():
+	return influencedPieces.duplicate(true);
 
 ## SUB Routine
 func generateNextLegalMoves():
