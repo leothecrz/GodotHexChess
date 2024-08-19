@@ -77,7 +77,7 @@ const KNIGHT_VECTORS = { 'left':Vector2i(-1,-2), 'lRight':Vector2i(1,-3), 'rRigh
 const DEFAULT_MOVE_TEMPLATE : Dictionary = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[],  };
 const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[], MOVE_TYPES.ENPASSANT:[], MOVE_TYPES.PROMOTE:[], };
 
-
+const DECODE_FEN_OFFSET = 70;
 ### State
 
 
@@ -391,14 +391,9 @@ func encodeEnPassantFEN(q:int, r:int) -> String:
 
 ## Turn a string represenation of board postiion to a vector2i.
 func decodeEnPassantFEN(s:String) -> Vector2i:
-
-	if(s.length() < 2):
-		return Vector2i();
-
-	var qStr:int = s.unicode_at(0) - "A".unicode_at(0) - 5;
+	var qStr:int = s.unicode_at(0) - DECODE_FEN_OFFSET; #"A".unicode_at(0) - 5;
 	var rStr:int = int(s.substr(1,-1))
 	rStr += 6-(2*rStr);
-
 	return Vector2i(qStr, rStr);
 
 
@@ -1093,7 +1088,8 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 			pass;
 
 		MOVE_TYPES.ENPASSANT:
-			EnPassantCords = legalMoves[cords][MOVE_TYPES.MOVES][0];
+			var newECords = legalMoves[cords][MOVE_TYPES.ENPASSANT][0];
+			EnPassantCords = Vector2i(newECords.x,newECords.y + (1 if isWhiteTurn else -1));
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
 			
@@ -1484,7 +1480,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.RANDOM:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 3);
+				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
 			ENEMY_TYPES.NN:
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;

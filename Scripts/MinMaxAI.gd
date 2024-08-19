@@ -7,7 +7,7 @@ const MAX_INT = 9223372036854775807;
 const DIST_VALUE = 100;
 const CHECK_VAL = 10000;
 #skip ZERO and ignore king *(its always present) 
-const PIECE_VALUES = [0, 100, 500, 1000, 750, 5000, 0]
+const PIECE_VALUES = [0, 1000, 5000, 10000, 7500, 50000, 0]
 
 
 var side:int;
@@ -91,12 +91,9 @@ func Hueristic(hexEngine:HexEngine) -> int:
 	for pawn:Vector2i in hexEngine._getActivePieces()[hexEngine.SIDES.BLACK][hexEngine.PIECES.PAWN]:
 		if(pawn.x <= 0):
 			## axial dist is negative
-			value -= DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS))
+			value += DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS));
 		else:
-			value -= DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS-pawn.x));
-	
-	
-	
+			value += DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS-pawn.x));;
 	return value;
 
 ##
