@@ -181,7 +181,7 @@ func findPieces(board:Dictionary) -> Array:
 			
 			var pieceType:PIECES = getPieceType(val);
 			var pos:Vector2i = Vector2i(q,r);
-			var side = SIDES.BLACK if isPieceBlack(val) else SIDES.WHITE;
+			var side = SIDES.WHITE if isPieceWhite(val) else SIDES.BLACK;
 			
 			pieceCords[side][pieceType].append(pos);
 			
@@ -297,13 +297,9 @@ func isPieceWhite(id: int) -> bool:
 		return true;
 	return false;
 
-## Checks if the fourth bit is fliped.
-func isPieceBlack(id: int) -> bool:
-	return !isPieceWhite(id);
-
 ## Given the int value of a chess piece and the current turn determine if friendly.
 func isPieceFriendly(val,isWhiteTrn) -> bool:
-	return (isWhiteTrn != isPieceBlack(val));
+	return (isWhiteTrn == isPieceWhite(val));
 
 ## Given the int value of a chess piece determine if the piece is a king.
 func isPieceKing(id:int) -> bool:
@@ -431,7 +427,7 @@ func swapPlayerTurn():
 ##Blocking Piece Search Logic
 func checkForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
 	
-	var isWhiteTrn:bool = !isPieceBlack(HexBoard[cords.x][cords.y]);
+	var isWhiteTrn:bool = isPieceWhite(HexBoard[cords.x][cords.y]);
 	
 	for direction in dirSet.keys():
 		var activeVector:Vector2i = dirSet[direction];
@@ -1623,7 +1619,7 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> bool:
-	return initiateEngine(CHECK_TEST_ONE);
+	return initiateEngine(DEFAULT_FEN_STRING);
 
 
 # GETTERS
