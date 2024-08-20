@@ -83,13 +83,6 @@ func runEngineTest() -> void:
 	var Tester = EngineTest.new();
 	Tester.runSweep(GameDataNode);
 	Tester.queue_free();
-	
-	for q in range(-5, 5+1):
-		var r1:int = max(-5, -q-5);
-		var r2:int = min(5, -q+5);
-		for r in range(r1,r2):
-			print(GameDataNode.QRToIndex(q,r));
-	
 	return;
 
 

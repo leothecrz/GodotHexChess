@@ -201,7 +201,7 @@ func getBlackPiecesBitBoard() -> BitBoard:
 	
 	return returnBoard;
 
-
+##
 func QRToIndex(q:int, r:int) -> int:
 	var normalq = q + 5;
 	var i = 0;
@@ -209,24 +209,64 @@ func QRToIndex(q:int, r:int) -> int:
 	for size in BitBoard.COLUMN_SIZES:
 		if (normalq == i):
 			break; 
-		index += BitBoard.COLUMN_SIZES[i]
+		index += size;
 		i += 1;
 	
 	if(q <= 0):
-		index += (r * -1) + 5;
-		if(r <= 0):
-			index += 1;
+		index += 5 - r;
 	else:
-		index += (r * -1) + (BitBoard.COLUMN_SIZES[normalq]-5);
-		if(r <= 0):
-			index -= 1;
+		index += (BitBoard.COLUMN_SIZES[normalq]-6) - r;
 			
 	return index;
 
+func get2PowerN(n:int) -> int:
+	return 1 << n;
+
 ##
-func addPieceToBitBoards(q:int, r:int, char:String) -> void:
-	var x = q+5;
-	var index
+func add_IPieceToBitBoards(q:int, r:int, piece:PIECES) -> void:
+	var index = QRToIndex(q,r);
+	var type = getPieceType(piece);
+	
+	var front = 0;
+	if(index > BitBoard.INDEX_TRANSITION):
+		front = get2PowerN( index - BitBoard.INDEX_OFFSET );
+		index = 0;
+	var back = get2PowerN( index );
+	var insert = BitBoard.new(front,back);
+	
+	if(isPieceWhite(piece)):
+		var temp = WHITE_BB[type-1].OR(insert);
+		WHITE_BB[type-1].free();
+		WHITE_BB[type-1] = temp;
+	else:
+		var temp = BLACK_BB[type-1].OR(insert);
+		BLACK_BB[type-1].free();
+		BLACK_BB[type-1] = temp;
+	insert.free();
+	
+	print(index);
+	for bb in WHITE_BB:
+		print(bb);
+	print(" ");
+	for bb in BLACK_BB:
+		print(bb);
+	return;
+
+##
+func addS_PieceToBitBoards(q:int, r:int, char:String) -> void:
+	var isBlack = true;
+	if(char == char.to_upper()):
+		isBlack = false;
+		char = char.to_lower();
+	var piece = PIECES.ZERO;
+	match char:
+		"p": piece = PIECES.PAWN;
+		"n": piece = PIECES.KNIGHT;
+		"r": piece = PIECES.ROOK;
+		"b": piece = PIECES.BISHOP;
+		"q": piece = PIECES.QUEEN;
+		"k": piece = PIECES.KING;
+	add_IPieceToBitBoards(q,r, getPieceInt(piece, isBlack));
 	return;
 
 ### Board State
@@ -340,7 +380,7 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 			else:
 				if(r1 <= r2):
 					addPieceToBoardAt(q,r1,activeChar,Board);
-					addPieceToBitBoards(q,r1,activeChar);
+					addS_PieceToBitBoards(q,r1,activeChar);
 					r1 +=1 ;
 				else:
 					push_error("R1 Greater Than Max");
@@ -366,6 +406,8 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	turnNumber = fenSections[3].to_int()
 	if(turnNumber < 1):
 		turnNumber = 1;
+
+	
 
 	return Board;
 
