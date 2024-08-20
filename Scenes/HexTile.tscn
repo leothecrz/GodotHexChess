@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://cyn02tn0ccbul"]
 
-[ext_resource type="Script" path="res://Scripts/HexTile.gd" id="1_3ns5h"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/HexTile.gd" id="1_3ns5h"]
 [ext_resource type="Texture2D" uid="uid://cipx21qse2nws" path="res://Images/hexagon-svgrepo-com.svg" id="1_67bqj"]
 
 [node name="Node2D" type="Node2D"]

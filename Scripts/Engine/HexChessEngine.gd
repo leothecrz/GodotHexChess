@@ -88,6 +88,23 @@ var HexBoard : Dictionary         = {};
 var WhiteAttackBoard : Dictionary = {};
 var BlackAttackBoard : Dictionary = {};
 
+#### 
+#BitBoard Testing
+var WHITE_PAWN_BB:BitBoard;
+var WHITE_KNIGHT_BB:BitBoard;
+var WHITE_ROOK_BB:BitBoard;
+var WHITE_BISHOP_BB:BitBoard;
+var WHITE_QUEEN_BB:BitBoard;
+var WHITE_KING_BB:BitBoard;
+
+var BLACK_PAWN_BB:BitBoard;
+var BLACK_KNIGHT_BB:BitBoard;
+var BLACK_ROOK_BB:BitBoard;
+var BLACK_BISHOP_BB:BitBoard;
+var BLACK_QUEEN_BB:BitBoard;
+var BLACK_KING_BB:BitBoard;
+####
+
 # Game Turn
 var isWhiteTurn : bool = true;
 var turnNumber : int   = 1;
@@ -149,6 +166,107 @@ var EnemyTo;
 # History
 var moveHistory : Array = [];
 
+### BITBOARD
+
+##
+func createBitBoards() -> void:
+	WHITE_PAWN_BB = BitBoard.new(0,0);
+	WHITE_KNIGHT_BB = BitBoard.new(0,0);
+	WHITE_ROOK_BB = BitBoard.new(0,0);
+	WHITE_BISHOP_BB = BitBoard.new(0,0);
+	WHITE_QUEEN_BB = BitBoard.new(0,0);
+	WHITE_KING_BB = BitBoard.new(0,0);
+
+	BLACK_PAWN_BB = BitBoard.new(0,0);
+	BLACK_KNIGHT_BB = BitBoard.new(0,0);
+	BLACK_ROOK_BB = BitBoard.new(0,0);
+	BLACK_BISHOP_BB = BitBoard.new(0,0);
+	BLACK_QUEEN_BB = BitBoard.new(0,0);
+	BLACK_KING_BB = BitBoard.new(0,0);
+	return;
+
+##
+func destroyBitBoards() -> void:
+	WHITE_PAWN_BB.free()
+	WHITE_KNIGHT_BB.free()
+	WHITE_ROOK_BB.free()
+	WHITE_BISHOP_BB.free()
+	WHITE_QUEEN_BB.free()
+	WHITE_KING_BB.free()
+
+	BLACK_PAWN_BB.free()
+	BLACK_KNIGHT_BB.free()
+	BLACK_ROOK_BB.free()
+	BLACK_BISHOP_BB.free()
+	BLACK_QUEEN_BB.free()
+	BLACK_KING_BB.free()
+	return;
+
+##
+func getWhitePiecesBitBoard() -> BitBoard:
+	var returnBoard = BitBoard.new(0,0);
+	var tempBoard;
+	
+	tempBoard = returnBoard.OR(WHITE_PAWN_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(WHITE_KNIGHT_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(WHITE_ROOK_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(WHITE_BISHOP_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(WHITE_QUEEN_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(WHITE_KING_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	return returnBoard;
+
+##
+func getBlackPiecesBitBoard() -> BitBoard:
+	var returnBoard = BitBoard.new(0,0);
+	var tempBoard;
+	
+	tempBoard = returnBoard.OR(BLACK_PAWN_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(BLACK_KNIGHT_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(BLACK_ROOK_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(BLACK_BISHOP_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(BLACK_QUEEN_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	
+	tempBoard = returnBoard.OR(BLACK_KING_BB);
+	returnBoard.free();
+	returnBoard = tempBoard;
+	return returnBoard;
+
+
+##
+func addPieceToBitBoards(q:int, r:int, char:String) -> void:
+	
+	return;
 
 ### Board State
 
@@ -218,7 +336,9 @@ func addPieceToBoardAt( q:int, r:int, val:String, board:Dictionary) -> void:
 ## Fill The Board by translating a fen string. DOES NOT FULLY VERIFY FEN STRING 
 ## (W I P)
 func fillBoardwithFEN(fenString: String) -> Dictionary:
+	
 	var Board : Dictionary = createBoard(HEX_BOARD_RADIUS);
+	createBitBoards();
 	
 	var fenSections : PackedStringArray = fenString.split(" ");
 	if (fenSections.size() != 4):
@@ -260,7 +380,6 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 				if(r1 <= r2):
 					addPieceToBoardAt(q,r1,activeChar,Board);
 					r1 +=1 ;
-
 				else:
 					push_error("R1 Greater Than Max");
 					return {};
@@ -1585,6 +1704,7 @@ func _passToAI() -> void:
 
 ## RESIGN PUBLIC 
 func _resign():
+	destroyBitBoards();
 	if(GameIsOver):
 		return;
 		
