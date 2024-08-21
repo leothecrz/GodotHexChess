@@ -223,15 +223,14 @@ func get2PowerN(n:int) -> int:
 	return 1 << n;
 
 ##
-func add_IPieceToBitBoards(q:int, r:int, piece:PIECES) -> void:
+func add_IPieceToBitBoards(q:int, r:int, piece:int) -> void:
 	var index = QRToIndex(q,r);
 	var type = getPieceType(piece);
-	
+	var back = get2PowerN( index );
 	var front = 0;
 	if(index > BitBoard.INDEX_TRANSITION):
 		front = get2PowerN( index - BitBoard.INDEX_OFFSET );
-		index = 0;
-	var back = get2PowerN( index );
+		back = 0;
 	var insert = BitBoard.new(front,back);
 	
 	if(isPieceWhite(piece)):
@@ -243,13 +242,6 @@ func add_IPieceToBitBoards(q:int, r:int, piece:PIECES) -> void:
 		BLACK_BB[type-1].free();
 		BLACK_BB[type-1] = temp;
 	insert.free();
-	
-	print(index);
-	for bb in WHITE_BB:
-		print(bb);
-	print(" ");
-	for bb in BLACK_BB:
-		print(bb);
 	return;
 
 ##
@@ -407,7 +399,13 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	if(turnNumber < 1):
 		turnNumber = 1;
 
-	
+	print("White:");
+	for bb in WHITE_BB:
+		print(bb);
+	print("Black:");
+	for bb in BLACK_BB:
+		print(bb);
+	print("")
 
 	return Board;
 

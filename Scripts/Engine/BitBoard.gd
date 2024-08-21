@@ -12,8 +12,8 @@ const BLACK_CORNER =  1125899906842624;
 const WHITE_CORNER =  1099511627776;
 const CENTER = 35184372088832;
 
-const INDEX_TRANSITION = 63;
-const INDEX_OFFSET = 64;
+const INDEX_TRANSITION = 62;
+const INDEX_OFFSET = 63;
 
 var Front:int;
 var Back:int;
@@ -53,4 +53,4 @@ func IS_EMPTY() -> bool:
 	return (Back == 0) and (Front == 0);
 
 func _to_string():
-	return "%s%s" % [String.num_int64(Front,2), String.num_int64(Back,2)];
+	return "%s %s" % [String.num_int64(Front,2).pad_zeros(32), String.num_int64(Back,2).pad_zeros(63)];
