@@ -20,6 +20,9 @@ const INDEX_OFFSET = 63;
 var Front:int;
 var Back:int;
 
+static func inBitBoardRange(qpos:int, rpos:int):
+	return ( (-5 <= qpos) && (qpos <= 5) && (BitBoard.COLUMN_MIN_R[qpos + 5] <= rpos) && (rpos <= BitBoard.COLUMN_MAX_R[qpos + 5] ) )
+
 ##
 func _init(front:int=0, back:int=0):
 	Front = front;
