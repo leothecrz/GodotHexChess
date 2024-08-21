@@ -23,6 +23,9 @@ var Back:int;
 static func inBitBoardRange(qpos:int, rpos:int):
 	return ( (-5 <= qpos) && (qpos <= 5) && (BitBoard.COLUMN_MIN_R[qpos + 5] <= rpos) && (rpos <= BitBoard.COLUMN_MAX_R[qpos + 5] ) )
 
+static func CREATE_FULL_MASK() -> BitBoard:
+	return BitBoard.new(MinMaxAI.MAX_INT, MinMaxAI.MAX_INT);
+
 ##
 func _init(front:int=0, back:int=0):
 	Front = front;

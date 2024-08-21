@@ -308,6 +308,11 @@ func calculateCombinedBIT() -> void:
 
 	print("White BB: ", BIT_WHITE);
 	print("Black BB: ", BIT_BLACK);
+	
+	var test = BitBoard.CREATE_FULL_MASK();
+	print("MASK: ", test);
+	test.free();
+	
 	return;
 
 ## Assumes that a piece exist in the given index
@@ -894,38 +899,32 @@ func bbfindMovesForRook(RookArray:Array) -> void:
 	for i in range(RookArray.size()):
 		var rook = RookArray[i];
 		legalMoves[rook] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
-		
 		for dir in ROOK_VECTORS.keys():
 			var activeVector:Vector2i = ROOK_VECTORS[dir];
 			var checkingQ:int = rook.x + activeVector.x;
-			var checkingR:int = rook.y + activeVector.y;
-			
-			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
-				
-				if( HexBoard[checkingQ][checkingR] == 0):
+			var checkingR:int = rook.y + activeVector.y;			
+			while (BitBoard.inBitBoardRange(checkingQ,checkingR)):
+				var index = QRToIndex(checkingQ,checkingR);
+				if( bbIsIndexEmpty(index) ):
 					legalMoves[rook][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
-
-				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
+				
+				elif( isPieceWhite(index) != isWhiteTurn ): #Enemy
 					legalMoves[rook][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
-					
 					#King Escape Fix
-					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KING):
+					if( bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING ):
 						checkingQ += activeVector.x;
 						checkingR += activeVector.y;
-						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+						if(BitBoard.inBitBoardRange(checkingQ, checkingR)):
 							updateAttackBoard(checkingQ, checkingR, 1);
-					
 					break;
-				else:
-					
+				else: ## TODO :: INFLUENCED PIECES CAN BE A BIT BOARD
 					var pos = Vector2i(checkingQ,checkingR);
 					if(influencedPieces.has(pos)):
 						influencedPieces[pos].append(rook);
 					else:
 						influencedPieces[pos] = [rook];
-						
 					updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				
@@ -945,7 +944,6 @@ func bbfindMovesForRook(RookArray:Array) -> void:
 				legalMoves[rook][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[rook][moveType]);
 		
 	return;
-
 
 ## Calculate Rook Moves
 func findMovesForRook(RookArray:Array) -> void:
@@ -1006,6 +1004,57 @@ func findMovesForRook(RookArray:Array) -> void:
 
 
 ## Calculate Bishop Moves
+func bbfindMovesForBishop(BishopArray:Array) -> void:
+	for i in range(BishopArray.size()):
+		var bishop = BishopArray[i];
+		legalMoves[bishop] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
+		for dir in BISHOP_VECTORS.keys():
+			var activeVector:Vector2i = BISHOP_VECTORS[dir];
+			var checkingQ:int = bishop.x + activeVector.x;
+			var checkingR:int = bishop.y + activeVector.y;
+			while ( BitBoard.inBitBoardRange(checkingQ,checkingR) ):
+				var index = QRToIndex(checkingQ,checkingR);
+				if( bbIsIndexEmpty(index) ):
+					legalMoves[bishop][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
+					updateAttackBoard(checkingQ, checkingR, 1);
+				
+				elif( bbIsPieceWhite(index) != isWhiteTurn ):
+					legalMoves[bishop][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
+					updateAttackBoard(checkingQ, checkingR, 1);
+					#King Escape Fix
+					if(bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING):
+						checkingQ += activeVector.x;
+						checkingR += activeVector.y;
+						if( BitBoard.inBitBoardRange(checkingQ,checkingR) ):
+							updateAttackBoard(checkingQ, checkingR, 1);
+					break;
+				else:
+					var pos = Vector2i(checkingQ,checkingR);
+					if(influencedPieces.has(pos)):
+						influencedPieces[pos].append(bishop);
+					else:
+						influencedPieces[pos] = [bishop];
+					updateAttackBoard(checkingQ, checkingR, 1);
+					break;
+				
+				checkingQ += activeVector.x;
+				checkingR += activeVector.y;
+				##END WHILE	
+	
+		## Not Efficient FIX LATER
+		if(  blockingPieces.has(bishop) ):
+			var newLegalmoves = blockingPieces[bishop];
+			for moveType in legalMoves[bishop].keys():
+				legalMoves[bishop][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[bishop][moveType]);
+		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in legalMoves[bishop].keys():
+				legalMoves[bishop][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[bishop][moveType]);
+
+	return;
+
+## Calculate Bishop Moves
 func findMovesForBishop(BishopArray:Array) -> void:
 	for i in range(BishopArray.size()):
 		var bishop = BishopArray[i];
@@ -1064,6 +1113,7 @@ func findMovesForBishop(BishopArray:Array) -> void:
 
 	return;
 
+
 ## Calculate Queen Moves
 func findMovesForQueen(QueenArray:Array) -> void:
 	
@@ -1082,6 +1132,43 @@ func findMovesForQueen(QueenArray:Array) -> void:
 			for move in tempMoves[queen][moveType]:
 				legalMoves[queen][moveType].append(move);
 	return;
+
+
+## Calculate King Moves
+func bbfindMovesForKing(KingArray:Array) -> void:
+	for i in range(KingArray.size()):
+		var king = KingArray[i];
+		legalMoves[king] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
+
+		for dir in KING_VECTORS.keys():
+			var activeVector:Vector2i = KING_VECTORS[dir];
+			var checkingQ:int = king.x + activeVector.x;
+			var checkingR:int = king.y + activeVector.y;
+			
+			if(BitBoard.inBitBoardRange(checkingQ,checkingR)):
+				updateAttackBoard(checkingQ, checkingR, 1);
+				if(isWhiteTurn):
+					if((BlackAttackBoard[checkingQ][checkingR] > 0)):
+						continue;
+				else:
+					if((WhiteAttackBoard[checkingQ][checkingR] > 0)):
+						continue;
+				var index = QRToIndex(checkingQ,checkingR);
+				if( bbIsIndexEmpty(index) ):
+					legalMoves[king][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
+
+				elif( bbIsPieceWhite(index) != isWhiteTurn ):
+					legalMoves[king][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
+		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			legalMoves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[king][MOVE_TYPES.CAPTURE]);
+			for moveType in legalMoves[king]:
+				if(moveType == MOVE_TYPES.CAPTURE): continue;
+				legalMoves[king][moveType] = differenceOfTwoArrays(legalMoves[king][moveType], GameInCheckMoves);
+
+	return;
+
 
 ## Calculate King Moves
 func findMovesForKing(KingArray:Array) -> void:
