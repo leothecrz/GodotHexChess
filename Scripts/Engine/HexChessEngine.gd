@@ -68,18 +68,21 @@ const KING_TEST   = '6/7/8/9/10/5K5/10/9/8/7/6 w - 1';
 	#CheckMate Test:
 const CHECK_TEST_ONE   = 'q6/7/8/9/10/k8K1/10/9/8/7/q5 w - 20';
 const CHECK_TEST_TWO   = '6/7/8/9/10/11/10/9/8/7/6 w - 1';
-
+	#Vectors
 const ROOK_VECTORS   = { 'foward':Vector2i(0,-1), 'lFoward':Vector2i(-1,0,), 'rFoward':Vector2i(1,-1), 'backward':Vector2i(0,1), 'lBackward':Vector2i(-1,1), 'rBackward':Vector2i(1,0) };
 const BISHOP_VECTORS = { 'lfoward':Vector2i(-2,1), 'rFoward':Vector2i(-1,-1), 'left':Vector2i(-1,2), 'lbackward':Vector2i(1,1), 'rBackward':Vector2i(2,-1), 'right':Vector2i(1,-2) };
 const KING_VECTORS   = { 'foward':Vector2i(0,-1), 'lFoward':Vector2i(-1,0,), 'rFoward':Vector2i(1,-1), 'backward':Vector2i(0,1), 'lBackward':Vector2i(-1,1), 'rBackward':Vector2i(1,0), 'dlfoward':Vector2i(-2,1), 'drFoward':Vector2i(-1,-1), 'left':Vector2i(-1,2), 'dlbackward':Vector2i(1,1), 'drBackward':Vector2i(2,-1), 'right':Vector2i(1,-2) };
 const KNIGHT_VECTORS = { 'left':Vector2i(-1,-2), 'lRight':Vector2i(1,-3), 'rRight':Vector2i(2,-3),}
-
+	#Templates
 const DEFAULT_MOVE_TEMPLATE : Dictionary = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[],  };
 const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAPTURE:[], MOVE_TYPES.ENPASSANT:[], MOVE_TYPES.PROMOTE:[], };
-
+	#UNSET
 const DECODE_FEN_OFFSET = 70;
-# ~( 0b1000 );
 const TYPE_MASK = 0b0111;
+const PAWN_QS_START = [-4,-3,-2,-1,0,1,2,3,4,5];
+const PAWN_QS_PROMOTE = [-4,-3,-2,-1,0,1,2,3,4,5];
+
+
 ### State
 
 
@@ -92,6 +95,9 @@ var BlackAttackBoard : Dictionary = {};
 #BitBoard Testing
 var WHITE_BB:Array;
 var BLACK_BB:Array;
+var BIT_WHITE:BitBoard;
+var BIT_BLACK:BitBoard;
+var BIT_ALL:BitBoard;
 ####
 
 # Game Turn
@@ -145,7 +151,6 @@ var EnemyPlaysWhite = false;
 var EnemyPromoted =  false;
 var bypassMoveLock = false;
 
-
 var EnemyChoiceType;
 var EnemyChoiceIndex;
 var EnemyTo;
@@ -175,6 +180,9 @@ func destroyBitBoards() -> void:
 		BB.free();
 	for BB in BLACK_BB:
 		BB.free();
+	BIT_BLACK.free();
+	BIT_WHITE.free();
+	BIT_ALL.free();
 	return;
 
 ##
@@ -202,6 +210,22 @@ func getBlackPiecesBitBoard() -> BitBoard:
 	return returnBoard;
 
 ##
+func getAllPiecesBitBoard() -> BitBoard:
+	var returnBoard = BitBoard.new(0,0);
+	var tempBoard;
+	
+	for BB in BLACK_BB:
+		tempBoard = returnBoard.OR(BB);
+		returnBoard.free();
+		returnBoard = tempBoard;
+		
+	for BB in WHITE_BB:
+		tempBoard = returnBoard.OR(BB);
+		returnBoard.free();
+		returnBoard = tempBoard;
+	return returnBoard;
+
+## Get the index of (q,r)
 func QRToIndex(q:int, r:int) -> int:
 	var normalq = q + 5;
 	var i = 0;
@@ -219,6 +243,7 @@ func QRToIndex(q:int, r:int) -> int:
 			
 	return index;
 
+## QUICK Powers of 2
 func get2PowerN(n:int) -> int:
 	return 1 << n;
 
@@ -226,12 +251,7 @@ func get2PowerN(n:int) -> int:
 func add_IPieceToBitBoards(q:int, r:int, piece:int) -> void:
 	var index = QRToIndex(q,r);
 	var type = getPieceType(piece);
-	var back = get2PowerN( index );
-	var front = 0;
-	if(index > BitBoard.INDEX_TRANSITION):
-		front = get2PowerN( index - BitBoard.INDEX_OFFSET );
-		back = 0;
-	var insert = BitBoard.new(front,back);
+	var insert = createSinglePieceBB(index);
 	
 	if(isPieceWhite(piece)):
 		var temp = WHITE_BB[type-1].OR(insert);
@@ -261,6 +281,70 @@ func addS_PieceToBitBoards(q:int, r:int, char:String) -> void:
 	add_IPieceToBitBoards(q,r, getPieceInt(piece, isBlack));
 	return;
 
+##
+func createSinglePieceBB(index:int) -> BitBoard:
+	var back = 0;
+	var front = 0;
+	if(index > BitBoard.INDEX_TRANSITION):
+		front = get2PowerN( index - BitBoard.INDEX_OFFSET );
+		back = 0;
+	else:
+		back = get2PowerN( index );
+	return BitBoard.new(front,back);
+
+##
+func calculateCombinedBIT() -> void:
+	BIT_WHITE = getWhitePiecesBitBoard();
+	BIT_BLACK = getBlackPiecesBitBoard();
+	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
+	
+	print("White:");
+	for bb in WHITE_BB:
+		print(bb);
+	print("Black:");
+	for bb in BLACK_BB:
+		print(bb);
+	print("")
+
+	print("White BB: ", BIT_WHITE);
+	print("Black BB: ", BIT_BLACK);
+	return;
+
+## Assumes that a piece exist in the given index
+func bbIsPieceWhite(index:int) -> bool:
+	var check = createSinglePieceBB(index);
+	var result = BIT_WHITE.AND(check);
+	var status = result.IS_EMPTY();
+	result.free();
+	check.free();
+	if(status):
+		return false;
+	return true;
+
+##
+func bbIsIndexEmpty(index:int) -> bool:
+	var temp:BitBoard = createSinglePieceBB(index);
+	var result:BitBoard = temp.AND(BIT_ALL);
+	var status:bool = result.IS_EMPTY();
+	result.free();
+	temp.free();
+	return status;
+
+## Assumes Piece Exists
+func bbPieceTypeOf(index:int, isWhiteTrn:bool) -> PIECES:
+	var i = 0;
+	var temp:BitBoard = createSinglePieceBB(index);
+	var opponentBitBoards:Array = BLACK_BB if isWhiteTrn else WHITE_BB;
+
+	for bb:BitBoard in opponentBitBoards:
+		i += 1
+		var result:BitBoard = temp.AND(bb);
+		var status = result.IS_EMPTY();
+		result.free();
+		if (not status) : break;
+	
+	temp.free();
+	return i;
 ### Board State
 
 
@@ -378,6 +462,8 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 					push_error("R1 Greater Than Max");
 					return {};
 	
+	calculateCombinedBIT();
+	
 	if(fenSections[1] == 'w'):
 		isWhiteTurn = true;
 	elif (fenSections[1] == 'b'):
@@ -399,13 +485,7 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	if(turnNumber < 1):
 		turnNumber = 1;
 
-	print("White:");
-	for bb in WHITE_BB:
-		print(bb);
-	print("Black:");
-	for bb in BLACK_BB:
-		print(bb);
-	print("")
+
 
 	return Board;
 
@@ -436,7 +516,8 @@ func isPieceKing(id:int) -> bool:
 ## (-4, -1) (-3,-1) (-2,-1) (-1,-1) (0, -1) (1, -2) (2, -3) (3, -4) (4, -5)
 func isBlackPawnStart(cords:Vector2i) -> bool:
 	var r:int = -1;
-	for q:int in range (-4,4+1):
+	#for q:int in range (-4,4+1):
+	for q:int in PAWN_QS_START:
 		if( q > 0 ):
 			r -= 1;
 		if (cords.x == q) && (cords.y == r):
@@ -446,7 +527,8 @@ func isBlackPawnStart(cords:Vector2i) -> bool:
 ## Check if cords are in the white pawn start
 func isWhitePawnStar(cords:Vector2i) ->bool:
 	var r:int = 5;
-	for q:int in range (-4,4+1):
+	#for q:int in range (-4,4+1):
+	for q:int in PAWN_QS_START:
 		if (cords.x == q) && (cords.y == r):
 			return true;
 		if( q < 0 ):
@@ -457,7 +539,7 @@ func isWhitePawnStar(cords:Vector2i) ->bool:
 ##
 func isWhitePawnPromotion(cords:Vector2i)-> bool:
 	var r:int = 0;
-	for q:int in range(-5,5):
+	for q:int in PAWN_QS_PROMOTE:
 		
 		if (cords.x == q) && (cords.y == r):
 			return true;
@@ -470,7 +552,7 @@ func isWhitePawnPromotion(cords:Vector2i)-> bool:
 ##
 func isBlackPawnPromotion(cords:Vector2i) -> bool:
 	var r:int = 5;
-	for q:int in range(-5,5):
+	for q:int in PAWN_QS_PROMOTE:
 		
 		if (cords.x == q) && (cords.y == r):
 			return true;
@@ -505,7 +587,6 @@ func getPieceType(id:int) -> PIECES:
 func encodeEnPassantFEN(q:int, r:int) -> String:
 	var rStr:int = 6 - r;
 	var qStr:int = 5 + q;
-
 	var qLetter = char(65 + qStr);
 	return "%s%d" % [qLetter, rStr];
 
@@ -537,6 +618,45 @@ func swapPlayerTurn():
 
 
 ### MOVE GENERATION
+
+## BB VERSION
+func checkForBlockingOnVectorBB(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
+	var index = QRToIndex(cords.x,cords.y);
+	var isWhiteTrn = bbIsPieceWhite(index);
+	var allPieces = BIT_BLACK.OR(BIT_WHITE);
+	
+	for direction in dirSet.keys():
+		var LegalMoves:Array = [];
+		
+		var dirBlockingPiece:Vector2i;
+		var activeVector:Vector2i = dirSet[direction];
+		
+		var checkingQ:int = cords.x + activeVector.x;
+		var checkingR:int = cords.y + activeVector.y;
+
+		while ( (-5 <= cords.x) && (cords.x <= 5) &&\
+		(BitBoard.COLUMN_MIN_R[cords.x + 5] <= cords.y) && (cords.y <= BitBoard.COLUMN_MAX_R[cords.x + 5] ) ):
+		
+			index = QRToIndex(checkingQ,checkingR);
+			if( bbIsIndexEmpty(index) ):
+				if(dirBlockingPiece):
+					LegalMoves.append(Vector2i(checkingQ,checkingR)); ## Track legal moves for the blocking pieces
+			else:
+				if( bbIsPieceWhite(index) == isWhiteTrn ): # Friend Piece
+					if(dirBlockingPiece): break; ## Two friendly pieces in a row. No Danger
+					else: dirBlockingPiece = Vector2i(checkingQ,checkingR); ## First piece found
+
+				else: ##Unfriendly Piece Found
+					var val = bbPieceTypeOf(index, isWhiteTrn)
+					if ( (val == PIECES.QUEEN) or (val == piece) ):
+						if(dirBlockingPiece):
+							LegalMoves.append(Vector2i(checkingQ,checkingR));
+							bp[dirBlockingPiece] = LegalMoves; ## store blocking piece moves
+					break;
+
+			checkingQ += activeVector.x;
+			checkingR += activeVector.y;
+	return;
 
 
 ##Blocking Piece Search Logic
