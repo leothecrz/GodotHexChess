@@ -160,7 +160,9 @@ var EnemyTo;
 # History
 var moveHistory : Array = [];
 
+
 ### BITBOARD
+
 
 ##
 func createBitBoards() -> void:
@@ -248,12 +250,12 @@ func get2PowerN(n:int) -> int:
 	return 1 << n;
 
 ##
-func add_IPieceToBitBoards(q:int, r:int, piece:int) -> void:
+func add_IPieceToBitBoardsOf(q:int, r:int, piece:int, iswhite:bool) -> void:
 	var index = QRToIndex(q,r);
 	var type = getPieceType(piece);
 	var insert = createSinglePieceBB(index);
 	
-	if(isPieceWhite(piece)):
+	if(iswhite):
 		var temp = WHITE_BB[type-1].OR(insert);
 		WHITE_BB[type-1].free();
 		WHITE_BB[type-1] = temp;
@@ -262,6 +264,11 @@ func add_IPieceToBitBoards(q:int, r:int, piece:int) -> void:
 		BLACK_BB[type-1].free();
 		BLACK_BB[type-1] = temp;
 	insert.free();
+	return;
+
+##
+func add_IPieceToBitBoards(q:int, r:int, piece:int) -> void:
+	add_IPieceToBitBoardsOf(q, r, piece, isPieceWhite(piece));
 	return;
 
 ##
@@ -293,26 +300,28 @@ func createSinglePieceBB(index:int) -> BitBoard:
 	return BitBoard.new(front,back);
 
 ##
+func clearCombinedBIT() -> void:
+	BIT_ALL.free();
+	BIT_BLACK.free();
+	BIT_WHITE.free();
+	return;
+
+##
 func calculateCombinedBIT() -> void:
 	BIT_WHITE = getWhitePiecesBitBoard();
 	BIT_BLACK = getBlackPiecesBitBoard();
 	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
 	
+	print("White BB: ", BIT_WHITE);
 	print("White:");
 	for bb in WHITE_BB:
 		print(bb);
+	print(" ")
+	print("Black BB: ", BIT_BLACK);
 	print("Black:");
 	for bb in BLACK_BB:
 		print(bb);
-	print("")
-
-	print("White BB: ", BIT_WHITE);
-	print("Black BB: ", BIT_BLACK);
-	
-	var test = BitBoard.CREATE_FULL_MASK();
-	print("MASK: ", test);
-	test.free();
-	
+	print("\n\n")
 	return;
 
 ## Assumes that a piece exist in the given index
@@ -350,6 +359,29 @@ func bbPieceTypeOf(index:int, isWhiteTrn:bool) -> PIECES:
 	
 	temp.free();
 	return i;
+
+##
+func bbClearIndexFrom(index:int, isWhite:bool):
+	var type:PIECES = bbPieceTypeOf(index, !isWhite);
+	var activeBoard:Array = WHITE_BB if isWhite else BLACK_BB;
+	var mask = createSinglePieceBB(index);
+	var result = activeBoard[type-1].XOR(mask);
+	mask.free();
+	activeBoard[type-1].free();
+	activeBoard[type-1] = result;
+	return;
+
+##
+func bbClearIndexOf(index:int, isWhite:bool, type:PIECES):
+	var activeBoard:Array = WHITE_BB if isWhite else BLACK_BB;
+	var mask = createSinglePieceBB(index);
+	var result = activeBoard[type-1].XOR(mask);
+	mask.free();
+	activeBoard[type-1].free();
+	activeBoard[type-1] = result;
+	return;
+
+
 ### Board State
 
 
@@ -1394,10 +1426,12 @@ func removePawnAttacks(cords:Vector2i) -> void:
 	var rightCaptureR = cords.y-1 if isWhiteTurn else cords.y;
 	
 	##Left Capture
-	if( HexBoard.has(cords.x-1) && HexBoard[cords.x-1].has(leftCaptureR)):
+	if( BitBoard.inBitBoardRange(cords.x-1, leftCaptureR) ):
+	#if( HexBoard.has(cords.x-1) && HexBoard[cords.x-1].has(leftCaptureR)):
 		updateAttackBoard(cords.x-1, leftCaptureR, -1);
 	##Right Capture
-	if( HexBoard.has(cords.x+1) && HexBoard[cords.x+1].has(rightCaptureR)):
+	if( BitBoard.inBitBoardRange(cords.x+1, rightCaptureR) ):
+	#if( HexBoard.has(cords.x+1) && HexBoard[cords.x+1].has(rightCaptureR)):
 		updateAttackBoard(cords.x+1, rightCaptureR, -1);
 	return;
 
@@ -1456,8 +1490,8 @@ func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		GameInCheckMoves.append(moveToCords);
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
-
-		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
+		if( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
+		#if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
 			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
 				break;
 		else: break;
@@ -1488,12 +1522,11 @@ func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 			direction = Vector2i(-1,-1);
 		
 	while( true ):
-
 		GameInCheckMoves.append(moveToCords);
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
-
-		if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
+		if ( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
+		#if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
 			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
 				break;
 		else: break;
@@ -1548,7 +1581,11 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 		captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
 		HexBoard[moveTo.x][moveTo.y] = 0;
 		revertEnPassant = true;
-
+	
+	
+	bbClearIndexOf(QRToIndex(moveTo.x,moveTo.y),!isWhiteTurn,captureType);
+	
+	
 	var i:int = 0;
 	for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
 		if(moveTo == pieceCords):
@@ -1571,6 +1608,7 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 ##
 func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
 	var pieceVal:int = HexBoard[cords.x][cords.y]
+	
 	var previousPieceVal = pieceVal;
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
 	var pieceType:PIECES = getPieceType(pieceVal);
@@ -1578,7 +1616,9 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 	var moveHistMod = "";
 
 	HexBoard[cords.x][cords.y] = PIECES.ZERO;
-
+	var index = QRToIndex(cords.x,cords.y);
+	bbClearIndexFrom(index, isWhiteTurn);
+	
 	match moveType:
 		MOVE_TYPES.PROMOTE:
 			
@@ -1618,7 +1658,10 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 
 		MOVE_TYPES.MOVES: pass;
 
+
 	HexBoard[moveTo.x][moveTo.y] = pieceVal;
+	add_IPieceToBitBoardsOf(moveTo.x,moveTo.y,pieceType,isWhiteTurn)
+
 
 	var histPreview = ("%s %s %s %s" % [pieceVal,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
 	
@@ -1634,6 +1677,7 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 
 	return;
 
+##
 func _restoreFrozenState(state:FrozenState, moves:Dictionary):
 	WhiteAttackBoard = state.WABoard.duplicate(true);
 	BlackAttackBoard = state.BABoard.duplicate(true);
@@ -1642,6 +1686,7 @@ func _restoreFrozenState(state:FrozenState, moves:Dictionary):
 	legalMoves = moves.duplicate(true);
 	return;
 
+##
 func _restoreState(WABoard:Dictionary, BABoard:Dictionary, BPieces:Dictionary, IPieces:Dictionary, moves:Dictionary):
 	WhiteAttackBoard = WABoard.duplicate(true);
 	BlackAttackBoard = BABoard.duplicate(true);
@@ -1653,6 +1698,7 @@ func _restoreState(WABoard:Dictionary, BABoard:Dictionary, BPieces:Dictionary, I
 ##
 func _getFrozenState():
 	return FrozenState.new(WhiteAttackBoard,BlackAttackBoard,blockingPieces,influencedPieces);
+
 ##
 func _duplicateWAB():
 	return WhiteAttackBoard.duplicate(true);
@@ -1717,6 +1763,9 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 		
 		#print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
 		#print("Game In Check Moves: ", GameInCheckMoves);
+	
+	clearCombinedBIT();
+	calculateCombinedBIT();
 
 	incrementTurnNumber();
 	swapPlayerTurn();

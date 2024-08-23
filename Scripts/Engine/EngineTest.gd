@@ -89,5 +89,23 @@ func runSweep(ERef:HexEngine):
 	
 	simpleMoveAndCapTest(ERef);
 	
+	var radius = 5;
+	var failed = false;
+	for q:int in range(-radius, radius+1): #[~r, r]
+		var negativeQ : int = -1 * q;
+		var minRow : int = max(-radius, (negativeQ-radius));
+		var maxRow : int = min( radius, (negativeQ+radius));
+		for r:int in range(minRow, maxRow+1):
+			if(BitBoard.inBitBoardRange(q,r)):
+				pass;
+			else:
+				failed = true;
+			pass;
+	
+	if failed:
+		print ("FAILED RANGE TEST");
+	else:
+		print ("PASSED RANGE TEST");
+	
 	print("Total Time Taken: ", Time.get_ticks_usec() - timeStart, " milliseconds");
 	return;
