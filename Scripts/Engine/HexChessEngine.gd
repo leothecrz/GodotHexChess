@@ -163,6 +163,9 @@ var moveHistory : Array = [];
 
 ### BITBOARD
 
+var startTime;
+var stopTime;
+var useBitboard = false;
 
 ##
 func createBitBoards() -> void:
@@ -312,16 +315,16 @@ func calculateCombinedBIT() -> void:
 	BIT_BLACK = getBlackPiecesBitBoard();
 	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
 	
-	print("White BB: ", BIT_WHITE);
-	print("White:");
-	for bb in WHITE_BB:
-		print(bb);
-	print(" ")
-	print("Black BB: ", BIT_BLACK);
-	print("Black:");
-	for bb in BLACK_BB:
-		print(bb);
-	print("\n\n")
+	#print("White BB: ", BIT_WHITE);
+	#print("White:");
+	#for bb in WHITE_BB:
+		#print(bb);
+	#print(" ")
+	#print("Black BB: ", BIT_BLACK);
+	#print("Black:");
+	#for bb in BLACK_BB:
+		#print(bb);
+	#print("\n\n")
 	return;
 
 ## Assumes that a piece exist in the given index
@@ -340,6 +343,8 @@ func bbIsIndexEmpty(index:int) -> bool:
 	var temp:BitBoard = createSinglePieceBB(index);
 	var result:BitBoard = temp.AND(BIT_ALL);
 	var status:bool = result.IS_EMPTY();
+	
+	
 	result.free();
 	temp.free();
 	return status;
@@ -381,6 +386,14 @@ func bbClearIndexOf(index:int, isWhite:bool, type:PIECES):
 	activeBoard[type-1] = result;
 	return;
 
+func bbAddPieceOf(index:int, isWhite:bool, type:PIECES):
+	var activeBoard = WHITE_BB if isWhite else BLACK_BB;
+	var mask = createSinglePieceBB(index);
+	var result = activeBoard[type-1].OR(mask);
+	mask.free();
+	activeBoard[type-1].free();
+	activeBoard[type-1] = result;
+	return;
 
 ### Board State
 
@@ -751,7 +764,7 @@ func bbfindCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void
 	var index = QRToIndex(qpos,rpos);
 	
 	if ( bbIsIndexEmpty(index) ):
-		if( EnPassantCordsValid && (EnPassantCords.x == qpos) && (EnPassantCords.y == rpos) ):
+		if( EnPassantCordsValid and (EnPassantCords.x == qpos) and (EnPassantCords.y == rpos) ):
 			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
 	else:
 		if(bbIsPieceWhite(index) != isWhiteTurn):
@@ -765,16 +778,18 @@ func bbfindCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void
 ## Calculate Pawn Capture Moves
 func findCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void:
 	var move = Vector2i(qpos, rpos)
-	if( HexBoard.has(qpos) && HexBoard[qpos].has(rpos)):
-		if ( (HexBoard[qpos][rpos] != PIECES.ZERO) && (!isPieceFriendly(HexBoard[qpos][rpos], isWhiteTurn)) ):
-			if ( isWhitePawnPromotion(move) if isWhiteTurn else isBlackPawnPromotion(move) ) :
-				legalMoves[pawn][MOVE_TYPES.PROMOTE].append(move);
-			else:
-				legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
+	if( not (HexBoard.has(qpos) && HexBoard[qpos].has(rpos)) ):
+		return;
+		
+	if ( (HexBoard[qpos][rpos] != PIECES.ZERO) && (!isPieceFriendly(HexBoard[qpos][rpos], isWhiteTurn)) ):
+		if ( isWhitePawnPromotion(move) if isWhiteTurn else isBlackPawnPromotion(move) ) :
+			legalMoves[pawn][MOVE_TYPES.PROMOTE].append(move);
 		else:
-			if( EnPassantCordsValid && (EnPassantCords.x == qpos) && (EnPassantCords.y == rpos) ):
-				legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
-		updateAttackBoard(qpos, rpos, 1);
+			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
+	else:
+		if( EnPassantCordsValid && (EnPassantCords.x == qpos) && (EnPassantCords.y == rpos) ):
+			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
+	updateAttackBoard(qpos, rpos, 1);
 	return;
 
 
@@ -816,7 +831,37 @@ func findFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
 			legalMoves[pawn][MOVE_TYPES.ENPASSANT].append(Vector2i(pawn.x, doubleF));
 	return;
 
+## Calculate Pawn Moves (TODO: Unfinished Promote)
+func bbfindMovesForPawn(PawnArray:Array)-> void:
+	for i in range(PawnArray.size()):
+		var pawn = PawnArray[i];
+		legalMoves[pawn] = PAWN_MOVE_TEMPLATE.duplicate(true);
 
+		var fowardR = pawn.y - 1 if isWhiteTurn else pawn.y + 1;
+		var leftCaptureR = pawn.y if isWhiteTurn else pawn.y + 1;
+		var rightCaptureR = pawn.y-1 if isWhiteTurn else pawn.y;
+
+		##Foward Move
+		bbfindFowardMovesForPawn(pawn, fowardR);
+
+		##Left Capture
+		bbfindCaptureMovesForPawn(pawn, pawn.x-1, leftCaptureR);
+
+		##Right Capture
+		bbfindCaptureMovesForPawn(pawn, pawn.x+1, rightCaptureR);
+
+		## Not Efficient FIX LATER
+		if(  blockingPieces.has(pawn) ):
+			var newLegalmoves = blockingPieces[pawn];
+			for moveType in legalMoves[pawn].keys():
+				legalMoves[pawn][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[pawn][moveType]);
+
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in legalMoves[pawn].keys():
+				legalMoves[pawn][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[pawn][moveType]);
+
+	return;
 ## Calculate Pawn Moves (TODO: Unfinished Promote)
 func findMovesForPawn(PawnArray:Array)-> void:
 	for i in range(PawnArray.size()):
@@ -1141,6 +1186,24 @@ func findMovesForBishop(BishopArray:Array) -> void:
 
 
 ## Calculate Queen Moves
+func bbfindMovesForQueen(QueenArray:Array) -> void:
+	
+	var tempMoves:Dictionary = {};
+	
+	bbfindMovesForRook(QueenArray);
+	for i in range(QueenArray.size()):
+		var queen = QueenArray[i];
+		tempMoves[queen] = legalMoves[queen].duplicate(true);
+
+	bbfindMovesForBishop(QueenArray);
+	for i in range(QueenArray.size()):
+		var queen = QueenArray[i];
+
+		for moveType in tempMoves[queen].keys():
+			for move in tempMoves[queen][moveType]:
+				legalMoves[queen][moveType].append(move);
+	return;
+## Calculate Queen Moves
 func findMovesForQueen(QueenArray:Array) -> void:
 	
 	var tempMoves:Dictionary = {};
@@ -1231,8 +1294,28 @@ func findMovesForKing(KingArray:Array) -> void:
 
 
 ## Find the legal moves for a single player given an array of pieces
+func bbfindLegalMovesFor(activepieces:Array) -> void:
+	startTime = Time.get_ticks_usec();
+	var pieces:Dictionary = activepieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK];
+	for pieceType in pieces.keys():
+		
+		var singleTypePieces:Array = pieces[pieceType];
+		
+		if singleTypePieces.size() == 0:
+			continue;
+			
+		match pieceType:
+			PIECES.PAWN:bbfindMovesForPawn(singleTypePieces);
+			PIECES.KNIGHT:bbfindMovesForKnight(singleTypePieces);
+			PIECES.ROOK:bbfindMovesForRook(singleTypePieces);
+			PIECES.BISHOP:bbfindMovesForBishop(singleTypePieces);
+			PIECES.QUEEN:bbfindMovesForQueen(singleTypePieces);
+			PIECES.KING:bbfindMovesForKing(singleTypePieces);
+	stopTime = Time.get_ticks_usec();
+	return;
+## Find the legal moves for a single player given an array of pieces
 func findLegalMovesFor(activepieces:Array) -> void:
-	
+	startTime = Time.get_ticks_usec();
 	var pieces:Dictionary = activepieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK];
 	for pieceType in pieces.keys():
 		
@@ -1248,6 +1331,8 @@ func findLegalMovesFor(activepieces:Array) -> void:
 			PIECES.BISHOP:findMovesForBishop(singleTypePieces);
 			PIECES.QUEEN:findMovesForQueen(singleTypePieces);
 			PIECES.KING:findMovesForKing(singleTypePieces);
+		
+	stopTime = Time.get_ticks_usec();
 	return;
 
 
@@ -1586,13 +1671,14 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 	bbClearIndexOf(QRToIndex(moveTo.x,moveTo.y),!isWhiteTurn,captureType);
 	
 	
+	var opColor = SIDES.BLACK if isWhiteTurn else SIDES.WHITE;
 	var i:int = 0;
-	for pieceCords in activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType]:
+	for pieceCords in activePieces[opColor][captureType]:
 		if(moveTo == pieceCords):
 			captureIndex = i;
 			break;
 		i = i+1;
-	activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][captureType].remove_at(i);
+	activePieces[opColor][captureType].remove_at(i);
 
 	removeCapturedFromATBoard(captureType, moveTo);
 
@@ -1607,21 +1693,21 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 
 ##
 func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
-	var pieceVal:int = HexBoard[cords.x][cords.y]
-	
+	var pieceVal:int = HexBoard[cords.x][cords.y]	
 	var previousPieceVal = pieceVal;
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
 	var pieceType:PIECES = getPieceType(pieceVal);
 	var moveTo = legalMoves[cords][moveType][moveIndex];
 	var moveHistMod = "";
 
+
 	HexBoard[cords.x][cords.y] = PIECES.ZERO;
 	var index = QRToIndex(cords.x,cords.y);
 	bbClearIndexFrom(index, isWhiteTurn);
+
 	
 	match moveType:
 		MOVE_TYPES.PROMOTE:
-			
 			if(moveTo.x != cords.x):
 				handleMoveCapture(moveTo, pieceType);
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
@@ -1638,23 +1724,19 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 			activePieces[selfColor][pieceType].push_back(moveTo);
 
 			moveHistMod = moveHistMod + (" +%s,%d" % [pieceType, i]);
-			pass;
 
 		MOVE_TYPES.ENPASSANT:
 			var newECords = legalMoves[cords][MOVE_TYPES.ENPASSANT][0];
 			EnPassantCords = Vector2i(newECords.x,newECords.y + (1 if isWhiteTurn else -1));
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
-			
 			moveHistMod = "E";
-			pass;
 
 		MOVE_TYPES.CAPTURE:
 			if handleMoveCapture(moveTo, pieceType):
 				moveHistMod = "-%d,%d" % [captureType,captureIndex];
 			else:
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
-			pass;
 
 		MOVE_TYPES.MOVES: pass;
 
@@ -1725,7 +1807,10 @@ func generateNextLegalMoves():
 	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
 	legalMoves.clear();
 	influencedPieces.clear();
-	findLegalMovesFor(activePieces);
+	if (useBitboard) :
+		bbfindLegalMovesFor(activePieces);
+	else:
+		findLegalMovesFor(activePieces);
 	
 	pass;
 
@@ -1760,7 +1845,6 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 	if(checkIFCordsUnderAttack(kingCords, legalMoves)):
 		mateStatus = "C"
 		fillInCheckMoves(pieceType, cords, kingCords, true);
-		
 		#print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
 		#print("Game In Check Moves: ", GameInCheckMoves);
 	
@@ -1826,6 +1910,7 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 					print();
 					pass;
 				HexBoard[to.x][to.y] = getPieceInt(id, isWhiteTurn) ;
+				bbAddPieceOf(QRToIndex(to.x, to.y,), !isWhiteTurn, id);
 				if (OK != activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[id]\
@@ -1848,6 +1933,7 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				to.y += 1 if isWhiteTurn else -1;
 				
 				HexBoard[to.x][to.y] = getPieceInt(id, isWhiteTurn);
+				bbAddPieceOf(QRToIndex(to.x, to.y,), !isWhiteTurn, id);
 				activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[id]\
@@ -1867,7 +1953,10 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				
 				HexBoard[from.x][from.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
 				
-				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][id].pop_back(); ## WILL MAYBE FAIL IF MULTIPLE PROMOTIONS HAPPEN
+				bbAddPieceOf(QRToIndex(to.x, to.y,), isWhiteTurn, PIECES.PAWN);
+				bbClearIndexOf(QRToIndex(to.x, to.y,), isWhiteTurn, id);
+				
+				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][id].pop_back();
 				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.PAWN].insert( index, Vector2i(from) )
 				unpromoteValid = true;
 				@warning_ignore("int_as_enum_without_cast")
@@ -2153,8 +2242,8 @@ func _resign():
 		return;
 		
 	GameIsOver = true;
-	print("%s WINS BY RESIGN" % ("White" if not isWhiteTurn else "Black"));
-	print(moveHistory);
+	#print("%s WINS BY RESIGN" % ("White" if not isWhiteTurn else "Black"));
+	#print(moveHistory);
 	return
 
 ## Undo Move PUBLIC CALL
@@ -2181,6 +2270,9 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 	##Default Undo
 	HexBoard[UndoNewFrom.x][UndoNewFrom.y] = pieceVal;
 	HexBoard[UndoNewTo.x][UndoNewTo.y] = PIECES.ZERO;
+	
+	bbClearIndexOf(QRToIndex(UndoNewTo.x,UndoNewTo.y), isWhiteTurn, pieceType);
+	bbAddPieceOf(QRToIndex(UndoNewFrom.x,UndoNewFrom.y), isWhiteTurn, pieceType);
 	
 	for pieceCords in activePieces[selfColor][pieceType]:
 		if(pieceCords == UndoNewTo):

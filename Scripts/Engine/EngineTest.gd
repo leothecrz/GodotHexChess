@@ -1,8 +1,6 @@
 class_name EngineTest
 extends Node
 
-
-
 ##
 func testSetupTime(ref):
 	var tempMarker = Time.get_ticks_usec();
@@ -22,8 +20,6 @@ func testMoveGen(ref):
 		return true
 	else:
 		return false
-
-
 
 ##
 func testCaptureInput2(ref):
@@ -71,24 +67,53 @@ func testMoveInput(ref):
 	return [false, false];
 
 ##
-func simpleMoveAndCapTest(ref):
+func simpleMoveAndCapTest(ref:HexEngine):
 	testSetupTime(ref);
 	var moveGen = testMoveGen(ref);
 	var moveResults = testMoveInput(ref);
 	if moveGen : print ("1. Move Gen Passed");
 	if moveResults[0] : print ("2. Move Input Passed");
 	if moveResults[1] : print ("3. Move Capture Passed");
+	ref._resign();
 	return;
 
 
 
-## Run a test sweep.
-func runSweep(ERef:HexEngine):
-	var timeStart = Time.get_ticks_usec();
-	print("Running Test, Started at: ", Time.get_datetime_string_from_system());
+##
+func trymove(depth, ref:HexEngine) -> void:
+	if(depth == 0 or ref._getGameOverStatus()):
+		return
+	var legalmoves = ref._getMoves().duplicate(true);
+	for piece in legalmoves.keys():
+		for movetype in legalmoves[piece]:
+			var index:int = 0;
+			for move in legalmoves[piece][movetype]:
+				counter += 1;
+				var WAB = ref._duplicateWAB();
+				var BAB = ref._duplicateBAB();
+				var BP = ref._duplicateBP();
+				var IP = ref._duplicateIP();
+				ref._makeMove(piece,movetype,index,ref.PIECES.QUEEN);
+				trymove(depth-1,ref);
+				ref._undoLastMove(false);
+				ref._restoreState(WAB,BAB,BP,IP,legalmoves);
+				index += 1;
+	return ;
 	
-	simpleMoveAndCapTest(ERef);
-	
+
+var counter:int;
+##
+func count_moves(depth:int, ref:HexEngine) -> int:
+	if (depth <= 0):
+		return 0;
+	counter = 0;
+	ref._initDefault();
+	trymove(depth, ref);
+	ref._resign();
+	return counter;
+
+##
+func bitboardRangeTest() -> void:
 	var radius = 5;
 	var failed = false;
 	for q:int in range(-radius, radius+1): #[~r, r]
@@ -106,6 +131,38 @@ func runSweep(ERef:HexEngine):
 		print ("FAILED RANGE TEST");
 	else:
 		print ("PASSED RANGE TEST");
+	
+	return;
+
+func compareMoveGen(ref:HexEngine) ->void:
+	print("Move Gen Test - Dict vs bitboard")
+	ref._initDefault();
+	print("Default: ", ref.stopTime - ref.startTime)
+	ref._resign();
+	ref.useBitboard = true;
+	ref._initDefault();
+	print("BitBoard: ", ref.stopTime - ref.startTime)
+	ref._resign();
+	ref.useBitboard = false;
+	return;
+
+## Run a test sweep.
+func runSweep(ERef:HexEngine):
+	var timeStart = Time.get_ticks_usec();
+	print("Running Test, Started at: ", Time.get_datetime_string_from_system());
+	
+	simpleMoveAndCapTest(ERef);
+	bitboardRangeTest();
+	
+	for i in range(1,4):
+		print("Depth %d:" % i, count_moves(i, ERef) );
+	
+	compareMoveGen(ERef);
+	
+	ERef.useBitboard = true;
+	for i in range(1,4):
+		print("Depth %d:" % i, count_moves(i, ERef) );
+	ERef.useBitboard = false;
 	
 	print("Total Time Taken: ", Time.get_ticks_usec() - timeStart, " milliseconds");
 	return;
