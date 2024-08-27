@@ -165,7 +165,7 @@ var moveHistory : Array = [];
 
 var startTime;
 var stopTime;
-var useBitboard = false;
+var useBitboard = true;
 
 ##
 func createBitBoards() -> void:
@@ -943,14 +943,13 @@ func findMovesForKnight(KnightArray:Array) -> void:
 				var checkingR = knight.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
 				
 				if (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
+					updateAttackBoard(checkingQ, checkingR, 1);
 					if (HexBoard[checkingQ][checkingR] == 0) :
 						legalMoves[knight][MOVE_TYPES.MOVES].append(Vector2i(checkingQ,checkingR));
 
 					elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
 						legalMoves[knight][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ,checkingR));
 					
-					updateAttackBoard(checkingQ, checkingR, 1);
-
 			invertAt2Counter += 1;
 			
 		## Not Efficient FIX LATER
@@ -982,7 +981,7 @@ func bbfindMovesForRook(RookArray:Array) -> void:
 					legalMoves[rook][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
 				
-				elif( isPieceWhite(index) != isWhiteTurn ): #Enemy
+				elif( bbIsPieceWhite(index) != isWhiteTurn ): #Enemy
 					legalMoves[rook][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
 					#King Escape Fix
@@ -2286,6 +2285,9 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 	undoIndex = index;
 	undoSubCleanFlags(splits, UndoNewFrom, UndoNewTo);
 	undoSubFixState();
+	
+	clearCombinedBIT();
+	calculateCombinedBIT();
 	
 	if(genMoves):
 		generateNextLegalMoves();
