@@ -65,5 +65,26 @@ func EQUAL(to:BitBoard) -> bool:
 func IS_EMPTY() -> bool:
 	return (Back == 0) and (Front == 0);
 
+func _getCopy():
+	return BitBoard.new(_getF(), _getB());
+
+func _getIndexes() -> Array:
+	var b = _getB();
+	var f = _getF();
+	var indexes = [];
+	var index:int = 0;
+	while(b > 0b0):
+		if (b & 0b1) > 0:
+			indexes.append(index);
+		b >>= 1;
+		index += 1;
+	index = 62;
+	while(f > 0b0):
+		if (f & 0b1) > 0:
+			indexes.append(index);
+		f >>= 1;
+		index += 1;
+	return indexes;
+
 func _to_string():
 	return "%s %s" % [String.num_int64(Front,2).pad_zeros(32), String.num_int64(Back,2).pad_zeros(63)];

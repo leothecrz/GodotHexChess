@@ -134,35 +134,20 @@ func bitboardRangeTest() -> void:
 	
 	return;
 
-func compareMoveGen(ref:HexEngine) ->void:
-	print("Move Gen Test - Dict vs bitboard")
-	ref._initDefault();
-	print("Default: ", ref.stopTime - ref.startTime)
-	ref._resign();
-	ref.useBitboard = true;
-	ref._initDefault();
-	print("BitBoard: ", ref.stopTime - ref.startTime)
-	ref._resign();
-	ref.useBitboard = false;
-	return;
 
 ## Run a test sweep.
 func runSweep(ERef:HexEngine):
 	var timeStart = Time.get_ticks_usec();
 	print("Running Test, Started at: ", Time.get_datetime_string_from_system());
 	
-	simpleMoveAndCapTest(ERef);
 	bitboardRangeTest();
 	
+	simpleMoveAndCapTest(ERef);
+
 	for i in range(1,4):
 		print("Depth %d:" % i, count_moves(i, ERef) );
-	
-	compareMoveGen(ERef);
-	
-	ERef.useBitboard = true;
-	for i in range(1,4):
-		print("Depth %d:" % i, count_moves(i, ERef) );
-	ERef.useBitboard = false;
+
+	#Next Test
 	
 	print("Total Time Taken: ", Time.get_ticks_usec() - timeStart, " milliseconds");
 	return;

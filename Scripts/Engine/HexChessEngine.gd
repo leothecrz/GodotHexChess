@@ -315,16 +315,16 @@ func calculateCombinedBIT() -> void:
 	BIT_BLACK = getBlackPiecesBitBoard();
 	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
 	
-	#print("White BB: ", BIT_WHITE);
-	#print("White:");
-	#for bb in WHITE_BB:
-		#print(bb);
-	#print(" ")
-	#print("Black BB: ", BIT_BLACK);
-	#print("Black:");
-	#for bb in BLACK_BB:
-		#print(bb);
-	#print("\n\n")
+	print("White BB: ", BIT_WHITE);
+	print("White:");
+	for bb in WHITE_BB:
+		print(bb);
+	print(" ")
+	print("Black BB: ", BIT_BLACK);
+	print("Black:");
+	for bb in BLACK_BB:
+		print(bb);
+	print("\n\n")
 	return;
 
 ## Assumes that a piece exist in the given index
@@ -410,6 +410,28 @@ func createBoard(radius : int) -> Dictionary:
 			Board[q][r] = PIECES.ZERO;
 	return Board;
 
+
+## Use the board to find the location of all pieces. 
+## Intended to be ran only once at the begining.
+func bbfindPieces() -> Array:
+	var pieceCords:Array = \
+	[
+		{ PIECES.PAWN:[],PIECES.KNIGHT:[],PIECES.ROOK:[],PIECES.BISHOP:[],PIECES.QUEEN:[],PIECES.KING:[] },
+		{ PIECES.PAWN:[],PIECES.KNIGHT:[],PIECES.ROOK:[],PIECES.BISHOP:[],PIECES.QUEEN:[],PIECES.KING:[] }
+	];
+	
+	var type:int = 0;
+	for bb in WHITE_BB:
+		
+		type += 1;
+		
+		pass;
+		
+	for bb in BLACK_BB:
+		print(bb);
+		pass;
+	
+	return pieceCords;
 ## Use the board to find the location of all pieces. 
 ## Intended to be ran only once at the begining.
 func findPieces(board:Dictionary) -> Array:
@@ -463,20 +485,16 @@ func addPieceToBoardAt( q:int, r:int, val:String, board:Dictionary) -> void:
 ## Fill The Board by translating a fen string. DOES NOT FULLY VERIFY FEN STRING 
 ## (W I P)
 func fillBoardwithFEN(fenString: String) -> Dictionary:
-	
+	#Board Status
 	var Board : Dictionary = createBoard(HEX_BOARD_RADIUS);
-	createBitBoards();
-	
 	var fenSections : PackedStringArray = fenString.split(" ");
 	if (fenSections.size() != 4):
 		print("Invalid String");
 		return {};
-	
 	var BoardColumns : PackedStringArray = fenSections[0].split("/");
 	if (BoardColumns.size() != 11):
 		print("Invalid String");
 		return {};
-	
 	var regex:RegEx = RegEx.new();
 	regex.compile("(?i)([pnrbqk]|[0-9]|/)*")
 	var result = regex.search(fenString);
@@ -486,6 +504,7 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 		print("Invalid String");
 		return {};
 	
+	createBitBoards();
 	for q in range(-HEX_BOARD_RADIUS, HEX_BOARD_RADIUS+1):
 		var mappedQ:int = q+HEX_BOARD_RADIUS;
 		var activeRow:String = BoardColumns[mappedQ];
@@ -511,9 +530,15 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 				else:
 					push_error("R1 Greater Than Max");
 					return {};
-	
 	calculateCombinedBIT();
 	
+	for bb:BitBoard in WHITE_BB:
+		print(bb._getIndexes());
+	
+	for bb:BitBoard in BLACK_BB:
+		print(bb._getIndexes());
+	
+	##Is White Turn
 	if(fenSections[1] == 'w'):
 		isWhiteTurn = true;
 	elif (fenSections[1] == 'b'):
@@ -521,6 +546,7 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	else:
 		return {};
 
+	#EnPassant Cords
 	if(fenSections[2] != '-'):
 		EnPassantCords = decodeEnPassantFEN(fenSections[2]);
 		EnPassantCordsValid = true;
@@ -531,12 +557,11 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 		EnPassantTarget = Vector2i(-5,-5);
 		EnPassantCordsValid = false;
 
+	## Turn Number
 	turnNumber = fenSections[3].to_int()
 	if(turnNumber < 1):
 		turnNumber = 1;
-
-
-
+		
 	return Board;
 
 
@@ -1806,10 +1831,8 @@ func generateNextLegalMoves():
 	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
 	legalMoves.clear();
 	influencedPieces.clear();
-	if (useBitboard) :
-		bbfindLegalMovesFor(activePieces);
-	else:
-		findLegalMovesFor(activePieces);
+		
+	findLegalMovesFor(activePieces);
 	
 	pass;
 
@@ -2118,13 +2141,11 @@ func debugPrintThree(run:bool) -> void:
 
 ## initiate the engine with a new game
 func initiateEngine(FEN_STRING) -> bool:
+	# fillBoardwithFEN needs to be replaced
 	HexBoard = fillBoardwithFEN(FEN_STRING);
 	if HexBoard == {}:
 		print("Invalid FEN");
-		return false;
-	
-	bypassMoveLock = false;
-	
+		return false;	
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 
@@ -2134,6 +2155,7 @@ func initiateEngine(FEN_STRING) -> bool:
 	blockingPieces.clear();
 	GameInCheckMoves.clear();
 
+	bypassMoveLock = false;
 	GameIsOver = false;
 	GameInCheck = false;
 	captureValid = false;
@@ -2146,6 +2168,8 @@ func initiateEngine(FEN_STRING) -> bool:
 	###Should be removed when 'fillBoardwithFEN' can find TARGET
 	
 	activePieces = findPieces(HexBoard);
+	bbfindPieces();
+	
 	findLegalMovesFor(activePieces);
 	
 	if(EnemyIsAI):
@@ -2155,6 +2179,7 @@ func initiateEngine(FEN_STRING) -> bool:
 			ENEMY_TYPES.MIN_MAX:
 				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
 			ENEMY_TYPES.NN:
+				print("NN Agent not yet implemented, using RNG")
 				EnemyAI = RandomAI.new(EnemyPlaysWhite);
 				pass;
 				
