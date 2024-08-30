@@ -248,6 +248,25 @@ func QRToIndex(q:int, r:int) -> int:
 			
 	return index;
 
+##
+func IndexToQR(index: int) -> Vector2:
+	var accumulated_index:int = 0;
+	var normalq:int = 0;
+	
+	for size in BitBoard.COLUMN_SIZES:
+		if( accumulated_index + size > index ): break;
+		accumulated_index += size;
+		normalq += 1;
+	
+	var r: int;
+	if( normalq <= 5 ):
+		r = 5 - (index - accumulated_index)
+	else:
+		r = (BitBoard.COLUMN_SIZES[normalq] - 6) - (index - accumulated_index)
+	
+	var q = normalq - 5
+	return Vector2(q, r)
+
 ## QUICK Powers of 2
 func get2PowerN(n:int) -> int:
 	return 1 << n;
@@ -315,15 +334,16 @@ func calculateCombinedBIT() -> void:
 	BIT_BLACK = getBlackPiecesBitBoard();
 	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
 	
-	print("White BB: ", BIT_WHITE);
+	print("White BB:\n", BIT_WHITE);
 	print("White:");
 	for bb in WHITE_BB:
 		print(bb);
 	print(" ")
-	print("Black BB: ", BIT_BLACK);
+	print("Black BB:\n", BIT_BLACK);
 	print("Black:");
 	for bb in BLACK_BB:
 		print(bb);
+	print("ALL BB:\n", BIT_ALL);
 	print("\n\n")
 	return;
 
@@ -421,16 +441,19 @@ func bbfindPieces() -> Array:
 	];
 	
 	var type:int = 0;
-	for bb in WHITE_BB:
-		
+	for bb:BitBoard in BLACK_BB:
 		type += 1;
-		
-		pass;
-		
-	for bb in BLACK_BB:
-		print(bb);
-		pass;
+		var pieceIndexes:Array = bb._getIndexes();
+		for i in pieceIndexes:
+			pieceCords[SIDES.BLACK][type].append(IndexToQR(i));
 	
+	type = 0;
+	for bb:BitBoard in WHITE_BB:
+		type += 1;
+		var pieceIndexes:Array = bb._getIndexes();
+		for i in pieceIndexes:
+			pieceCords[SIDES.WHITE][type].append(IndexToQR(i));
+		
 	return pieceCords;
 ## Use the board to find the location of all pieces. 
 ## Intended to be ran only once at the begining.
@@ -1833,6 +1856,7 @@ func generateNextLegalMoves():
 	influencedPieces.clear();
 		
 	findLegalMovesFor(activePieces);
+	#bbfindLegalMovesFor(activePieces);
 	
 	pass;
 
@@ -2045,10 +2069,10 @@ func getAxialCordDist(from:Vector2i,to:Vector2i):
 	return max(abs(dif.x),abs(dif.y),abs(dif.z));
 
 ##
-func printActivePieces():
-	for side in activePieces.size():
+func printActivePieces(AP):
+	for side in AP.size():
 		print(SIDES.find_key(side))
-		for piece in activePieces[side]:
+		for piece in AP[side]:
 			print(PIECES.find_key(piece), " : ", activePieces[side][piece]);
 		print("");
 
@@ -2138,14 +2162,29 @@ func debugPrintThree(run:bool) -> void:
 	print("\n\n")
 	return;
 
+## 
+func initiateEngineAI() -> void:
+	if(not EnemyIsAI):
+		return;
+	match EnemyType:
+		ENEMY_TYPES.RANDOM:
+			EnemyAI = RandomAI.new(EnemyPlaysWhite);
+		ENEMY_TYPES.MIN_MAX:
+			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
+		ENEMY_TYPES.NN:
+			print("NN Agent not yet implemented, using RNG")
+			EnemyAI = RandomAI.new(EnemyPlaysWhite);
+	return;
+
 
 ## initiate the engine with a new game
 func initiateEngine(FEN_STRING) -> bool:
-	# fillBoardwithFEN needs to be replaced
+	#Hexboard
 	HexBoard = fillBoardwithFEN(FEN_STRING);
 	if HexBoard == {}:
 		print("Invalid FEN");
-		return false;	
+		return false;
+	
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 
@@ -2168,21 +2207,15 @@ func initiateEngine(FEN_STRING) -> bool:
 	###Should be removed when 'fillBoardwithFEN' can find TARGET
 	
 	activePieces = findPieces(HexBoard);
-	bbfindPieces();
+	var AP = bbfindPieces();
 	
-	findLegalMovesFor(activePieces);
+	print(activePieces);
+	print(AP)
 	
-	if(EnemyIsAI):
-		match EnemyType:
-			ENEMY_TYPES.RANDOM:
-				EnemyAI = RandomAI.new(EnemyPlaysWhite);
-			ENEMY_TYPES.MIN_MAX:
-				EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
-			ENEMY_TYPES.NN:
-				print("NN Agent not yet implemented, using RNG")
-				EnemyAI = RandomAI.new(EnemyPlaysWhite);
-				pass;
-				
+	generateNextLegalMoves();
+	
+	initiateEngineAI();
+	
 	return true;
 
 

@@ -78,7 +78,7 @@ func _getIndexes() -> Array:
 			indexes.append(index);
 		b >>= 1;
 		index += 1;
-	index = 62;
+	index = 63;
 	while(f > 0b0):
 		if (f & 0b1) > 0:
 			indexes.append(index);
