@@ -146,26 +146,21 @@ var EnemyAI;
 var EnemyType:ENEMY_TYPES = ENEMY_TYPES.PLAYER_TWO;
 var EnemyPromotedTo:PIECES = PIECES.ZERO;
 
-var EnemyIsAI = false;
-var EnemyPlaysWhite = false;
-var EnemyPromoted =  false;
-var bypassMoveLock = false;
+var EnemyIsAI:bool = false;
+var EnemyPlaysWhite:bool = false;
+var EnemyPromoted:bool =  false;
+var bypassMoveLock:bool = false;
 
-var EnemyChoiceType;
-var EnemyChoiceIndex;
-var EnemyTo;
-
-
+var EnemyChoiceType:int;
+var EnemyChoiceIndex:int;
+var EnemyTo:int;
 
 # History
 var moveHistory : Array = [];
 
-
 ### BITBOARD
-
-var startTime;
-var stopTime;
-var useBitboard = true;
+var startTime:int;
+var stopTime:int;
 
 ##
 func createBitBoards() -> void:
@@ -294,13 +289,13 @@ func add_IPieceToBitBoards(q:int, r:int, piece:int) -> void:
 	return;
 
 ##
-func addS_PieceToBitBoards(q:int, r:int, char:String) -> void:
+func addS_PieceToBitBoards(q:int, r:int, c:String) -> void:
 	var isBlack = true;
-	if(char == char.to_upper()):
+	if(c == c.to_upper()):
 		isBlack = false;
-		char = char.to_lower();
+		c = c.to_lower();
 	var piece = PIECES.ZERO;
-	match char:
+	match c:
 		"p": piece = PIECES.PAWN;
 		"n": piece = PIECES.KNIGHT;
 		"r": piece = PIECES.ROOK;
@@ -555,11 +550,11 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 					return {};
 	calculateCombinedBIT();
 	
-	for bb:BitBoard in WHITE_BB:
-		print(bb._getIndexes());
-	
-	for bb:BitBoard in BLACK_BB:
-		print(bb._getIndexes());
+	#for bb:BitBoard in WHITE_BB:
+		#print(bb._getIndexes());
+	#
+	#for bb:BitBoard in BLACK_BB:
+		#print(bb._getIndexes());
 	
 	##Is White Turn
 	if(fenSections[1] == 'w'):
@@ -1695,7 +1690,7 @@ func fillInCheckMoves(pieceType:PIECES, cords:Vector2i, kingCords:Vector2i, clea
 
 
 ##
-func resetFlags() -> void:
+func resetTurnFlags() -> void:
 	GameInCheck = false;
 	captureValid = false;
 	EnPassantCordsValid = false;
@@ -2129,38 +2124,6 @@ func printBoard(board: Dictionary):
 		print("\n","".join(rowString),"\n");
 	return;
 
-##
-func debugPrintOne(run:bool) -> void:
-	if(!run):
-		return;
-	print("Board : ")
-	printBoard(HexBoard);
-	print("W.A.B. : ")
-	printBoard(WhiteAttackBoard);
-	print("B.A.B. : ")
-	printBoard(BlackAttackBoard);
-	return;
-
-##
-func debugPrintTwo(run:bool) -> void:
-	if(!run):
-		return;
-	print("History: \n", moveHistory[moveHistory.size()-1], "\n");
-	print("Active Pieces: \n", activePieces, "\n");
-	print("HexBoard: ")
-	printBoard(HexBoard)
-	print("\n\n")
-	return;
-
-##
-func debugPrintThree(run:bool) -> void:
-	if(!run):
-		return;
-	print("Moves:")
-	for key in legalMoves.keys():
-		print(key, " : ", legalMoves[key]);
-	print("\n\n")
-	return;
 
 ## 
 func initiateEngineAI() -> void:
@@ -2176,12 +2139,10 @@ func initiateEngineAI() -> void:
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
 	return;
 
-
 ## initiate the engine with a new game
 func initiateEngine(FEN_STRING) -> bool:
-	#Hexboard
 	HexBoard = fillBoardwithFEN(FEN_STRING);
-	if HexBoard == {}:
+	if ( HexBoard == {} ):
 		print("Invalid FEN");
 		return false;
 	
@@ -2238,25 +2199,25 @@ func _enableAIMoveLock():
 	return;
 
 ## MAKE MOVE PUBLIC CALL
+# TODO:: HANDLE IN PROPER INPUT FEEDBACK
 func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
-	# TODO:: HANDLE INPROPER INPUT FEEDBACK
-	if(GameIsOver or !legalMoves.has(cords) ):
+
+	if(GameIsOver):
+		push_warning("Game Is Over")
 		return;
 
-	if(EnemyIsAI and ((EnemyPlaysWhite == isWhiteTurn) and bypassMoveLock)):
-		print("NOT YOUR TURN")
-		return
+	if(not legalMoves.has(cords)):
+		push_warning("Game Is Over")
+		return;
 
-	#for key in legalMoves.keys():
-	#	print(key, legalMoves[key]);
-	#print("")
+	if(EnemyIsAI):
+		if (bypassMoveLock and (EnemyPlaysWhite == isWhiteTurn)):
+			push_error("It is not your turn. Is AI Turn: %s" % (EnemyPlaysWhite == isWhiteTurn) );
+			return;
 
-	resetFlags();
+	resetTurnFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
 	
-	debugPrintOne(false)
-	debugPrintTwo(false);
-	debugPrintThree(false);
 	return;
 
 ## Pass To AI
@@ -2267,21 +2228,19 @@ func _passToAI() -> void:
 	EnemyAI._makeChoice(self);
 	
 	EnemyChoiceType = getPieceType(HexBoard[EnemyAI._getCords().x][EnemyAI._getCords().y])
+	EnemyTo = EnemyAI._getTo();
+	
+	EnemyPromoted = EnemyAI._getMoveType() == MOVE_TYPES.PROMOTE;
+	EnemyPromotedTo = EnemyAI._getPromoteTo();
+	
 	EnemyChoiceIndex = 0;
 	for pieceCords in activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][EnemyChoiceType]:
 		if(pieceCords == EnemyAI._getCords()): break;
 		EnemyChoiceIndex += 1;
 	
-	EnemyTo = EnemyAI._getTo();
-	EnemyPromoted = EnemyAI._getMoveType() == MOVE_TYPES.PROMOTE;
-	EnemyPromotedTo = EnemyAI._getPromoteTo();
+	resetTurnFlags();
 	
-	resetFlags();
 	handleMove(EnemyAI._getCords(), EnemyAI._getMoveType(), EnemyAI._getMoveIndex(), EnemyAI._getPromoteTo())
-	
-	debugPrintOne(false)
-	debugPrintTwo(false);
-	debugPrintThree(false);
 	return;
 
 ## RESIGN PUBLIC 
@@ -2289,10 +2248,7 @@ func _resign():
 	destroyBitBoards();
 	if(GameIsOver):
 		return;
-		
 	GameIsOver = true;
-	#print("%s WINS BY RESIGN" % ("White" if not isWhiteTurn else "Black"));
-	#print(moveHistory);
 	return
 
 ## Undo Move PUBLIC CALL
@@ -2325,12 +2281,10 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 	
 	for pieceCords in activePieces[selfColor][pieceType]:
 		if(pieceCords == UndoNewTo):
-			activePieces[selfColor][pieceType][index] = UndoNewFrom;
+			activePieces[selfColor][pieceType][index] = UndoNewFrom;	#if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
 			break;
 		index += 1;
 	
-	#if (index < activePieces[selfColor][pieceType].size() ): # After a promotion pawn does not exist to move back
-
 	undoType = pieceType;
 	undoIndex = index;
 	undoSubCleanFlags(splits, UndoNewFrom, UndoNewTo);

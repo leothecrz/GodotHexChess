@@ -86,5 +86,10 @@ func _getIndexes() -> Array:
 		index += 1;
 	return indexes;
 
+##
 func _to_string():
 	return "%s %s" % [String.num_int64(Front,2).pad_zeros(32), String.num_int64(Back,2).pad_zeros(63)];
+
+##
+func _to_string_nonBin():
+	return "%d %d" % [Front, Back];

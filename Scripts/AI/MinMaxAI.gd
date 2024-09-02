@@ -58,8 +58,8 @@ func Hueristic(hexEngine:HexEngine) -> int:
 	#ENDSTATE
 	if(hexEngine._getGameOverStatus()):
 		if(hexEngine._getGameInCheck()):
-			if(hexEngine._getIsWhiteTurn()): return INF;
-			else: return -INF;
+			if(hexEngine._getIsWhiteTurn()): return MAX_INT;
+			else: return MIN_INT;
 		else: return 0; # StaleMate
 	#Piece Comparison
 	var value = 0;
@@ -104,54 +104,48 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 	var legalmoves = hexEngine._getMoves().duplicate(true);
 	var escapeLoop = false;
 	if(isMaxPlayer):
-		var value = MIN_INT;
+		var invalue = MIN_INT;
 		for piece in legalmoves.keys():
 			if (escapeLoop): break
 			for movetype in legalmoves[piece]:
 				if (escapeLoop): break
 				var index:int = 0;
 				for move in legalmoves[piece][movetype]:
-					#var state:FrozenState = hexEngine._getFrozenState();
 					var WAB = hexEngine._duplicateWAB();
 					var BAB = hexEngine._duplicateBAB();
 					var BP = hexEngine._duplicateBP();
 					var IP = hexEngine._duplicateIP();
 					hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
-					value = max(minimax(depth-1,false,hexEngine, alpha, beta), value);
-					alpha = max(alpha, value);
+					invalue = max(minimax(depth-1,false,hexEngine, alpha, beta), invalue);
+					alpha = max(alpha, invalue);
 					hexEngine._undoLastMove(false);
-					#hexEngine._restoreFrozenState(state,legalmoves);
-					#state.queue_free();
 					hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
 					if(beta <= alpha):
 						escapeLoop = true;
 						break;
 					index += 1;
-		return value;
-	var value = MAX_INT;
+		return invalue;
+	var outvalue = MAX_INT;
 	for piece in legalmoves.keys():
 		if (escapeLoop): break
 		for movetype in legalmoves[piece]:
 			if (escapeLoop): break
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
-				#var state:FrozenState = hexEngine._getFrozenState();
 				var WAB = hexEngine._duplicateWAB();
 				var BAB = hexEngine._duplicateBAB();
 				var BP = hexEngine._duplicateBP();
 				var IP = hexEngine._duplicateIP();
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
-				value = min(minimax(depth-1,true,hexEngine, alpha, beta), value);
-				beta = min(beta, value);
+				outvalue = min(minimax(depth-1,true,hexEngine, alpha, beta), outvalue);
+				beta = min(beta, outvalue);
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
-				#hexEngine._restoreFrozenState(state,legalmoves);
-				#state.queue_free();
 				if(beta <= alpha):
 					escapeLoop = true;
 					break;
 				index += 1;
-	return value;
+	return outvalue;
 
 ##
 func lessThan(a,b):
