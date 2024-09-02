@@ -1554,11 +1554,9 @@ func removePawnAttacks(cords:Vector2i) -> void:
 	
 	##Left Capture
 	if( BitBoard.inBitBoardRange(cords.x-1, leftCaptureR) ):
-	#if( HexBoard.has(cords.x-1) && HexBoard[cords.x-1].has(leftCaptureR)):
 		updateAttackBoard(cords.x-1, leftCaptureR, -1);
 	##Right Capture
 	if( BitBoard.inBitBoardRange(cords.x+1, rightCaptureR) ):
-	#if( HexBoard.has(cords.x+1) && HexBoard[cords.x+1].has(rightCaptureR)):
 		updateAttackBoard(cords.x+1, rightCaptureR, -1);
 	return;
 
@@ -1613,15 +1611,15 @@ func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		direction.y = -1;
 
 	while( true ):
-		
 		GameInCheckMoves.append(moveToCords);
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 		if( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
-		#if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
-			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+			#if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+			if(bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
 				break;
-		else: break;
+		else: 
+			break;
 	return;
 
 #
@@ -1638,7 +1636,6 @@ func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 				direction = Vector2i(2,-1);
 		elif (deltaR > 0):
 			direction = Vector2i(1,1);
-
 	elif (deltaQ < 0):
 		if(deltaR > 0):
 			if(abs(deltaQ) < abs(deltaR)):
@@ -1653,8 +1650,8 @@ func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 		if ( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
-		#if ( HexBoard.has(moveToCords.x) && HexBoard[moveToCords.x].has(moveToCords.y)	):
-			if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+			#if(HexBoard[moveToCords.x][moveToCords.y] != 0):
+			if(bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
 				break;
 		else: break;
 	return;
@@ -1894,6 +1891,7 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 
 	incrementTurnNumber();
 	swapPlayerTurn();
+	
 	generateNextLegalMoves()
 
 	var pieceCount = 0; 
