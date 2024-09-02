@@ -249,7 +249,7 @@ func QRToIndex(q:int, r:int) -> int:
 	return index;
 
 ##
-func IndexToQR(index: int) -> Vector2:
+func IndexToQR(index: int) -> Vector2i:
 	var accumulated_index:int = 0;
 	var normalq:int = 0;
 	
@@ -265,7 +265,7 @@ func IndexToQR(index: int) -> Vector2:
 		r = (BitBoard.COLUMN_SIZES[normalq] - 6) - (index - accumulated_index)
 	
 	var q = normalq - 5
-	return Vector2(q, r)
+	return Vector2i(q, r)
 
 ## QUICK Powers of 2
 func get2PowerN(n:int) -> int:
@@ -2200,18 +2200,10 @@ func initiateEngine(FEN_STRING) -> bool:
 	captureValid = false;
 	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 	
-	### Should be removed when 'fillBoardwithFEN' can find TARGET
-	EnPassantCordsValid = false;
-	EnPassantCords = Vector2i(-5,-5);
-	EnPassantTarget = Vector2i(-5,-5);
-	###Should be removed when 'fillBoardwithFEN' can find TARGET
-	
-	activePieces = findPieces(HexBoard);
-	var AP = bbfindPieces();
-	
-	print(activePieces);
-	print(AP)
-	
+	#activePieces = findPieces(HexBoard);
+	activePieces = bbfindPieces();
+	printActivePieces(activePieces);
+
 	generateNextLegalMoves();
 	
 	initiateEngineAI();
