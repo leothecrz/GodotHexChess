@@ -79,8 +79,7 @@ const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAP
 	#UNSET
 const DECODE_FEN_OFFSET = 70;
 const TYPE_MASK = 0b0111;
-const PAWN_QS_START = [-4,-3,-2,-1,0,1,2,3,4,5];
-const PAWN_QS_PROMOTE = [-4,-3,-2,-1,0,1,2,3,4,5];
+const PAWN_QS = [-4,-3,-2,-1,0,1,2,3,4,5];
 
 
 ### State
@@ -91,14 +90,12 @@ var HexBoard : Dictionary         = {};
 var WhiteAttackBoard : Dictionary = {};
 var BlackAttackBoard : Dictionary = {};
 
-#### 
-#BitBoard Testing
+#BitBoard
 var WHITE_BB:Array;
 var BLACK_BB:Array;
 var BIT_WHITE:BitBoard;
 var BIT_BLACK:BitBoard;
 var BIT_ALL:BitBoard;
-####
 
 # Game Turn
 var isWhiteTurn : bool = true;
@@ -164,8 +161,8 @@ var stopTime:int;
 
 ##
 func createBitBoards() -> void:
-	WHITE_BB = [];
-	BLACK_BB = [];
+	WHITE_BB.clear();
+	BLACK_BB.clear();
 	for i in range(PIECES.size()-1):
 		WHITE_BB.append(BitBoard.new(0,0));
 
@@ -484,20 +481,24 @@ func fillBoardwithFEN(fenString: String) -> bool:
 	
 	var fenSections : PackedStringArray = fenString.split(" ");
 	if (fenSections.size() != 4):
-		print("Invalid String");
+		print("Not Enough Fen Sections");
 		return false;
+		
 	var BoardColumns : PackedStringArray = fenSections[0].split("/");
 	if (BoardColumns.size() != 11):
-		print("Invalid String");
+		print("Not all Hexboard columns are defined");
 		return false;
+		
 	var regex:RegEx = RegEx.new();
 	regex.compile("(?i)([pnrbqk]|[0-9]|/)*")
+	
 	var result = regex.search(fenString);
-	if result && (result.get_string(0) != fenString.substr(0,fenString.find(" ",0))):
-		print(result.get_string(0));
-		print(fenString);
-		print("Invalid String");
-		return false;
+	if (result):
+		if( result.get_string() != fenSections[0] ):
+			print(result.get_string());
+			print(fenString);
+			print("Invalid Board Description");
+			return false;
 
 	for q in range(-HEX_BOARD_RADIUS, HEX_BOARD_RADIUS+1):
 		var mappedQ:int = q+HEX_BOARD_RADIUS;
@@ -541,10 +542,9 @@ func fillBoardwithFEN(fenString: String) -> bool:
 
 	#EnPassant Cords
 	if(fenSections[2] != '-'):
-		EnPassantCords = decodeEnPassantFEN(fenSections[2]);
 		EnPassantCordsValid = true;
-		# TODO: findEnPassantTarget();
-		EnPassantTarget = Vector2i(-5,-5);
+		EnPassantTarget = decodeEnPassantFEN(fenSections[2]);
+		EnPassantCords = Vector2i(EnPassantTarget.x, EnPassantTarget.y + (-1 if isWhiteTurn else 1));
 	else:
 		EnPassantCords = Vector2i(-5,-5);
 		EnPassantTarget = Vector2i(-5,-5);
@@ -585,7 +585,7 @@ func isPieceKing(id:int) -> bool:
 func isBlackPawnStart(cords:Vector2i) -> bool:
 	var r:int = -1;
 	#for q:int in range (-4,4+1):
-	for q:int in PAWN_QS_START:
+	for q:int in PAWN_QS:
 		if( q > 0 ):
 			r -= 1;
 		if (cords.x == q) && (cords.y == r):
@@ -596,7 +596,7 @@ func isBlackPawnStart(cords:Vector2i) -> bool:
 func isWhitePawnStar(cords:Vector2i) ->bool:
 	var r:int = 5;
 	#for q:int in range (-4,4+1):
-	for q:int in PAWN_QS_START:
+	for q:int in PAWN_QS:
 		if (cords.x == q) && (cords.y == r):
 			return true;
 		if( q < 0 ):
@@ -607,7 +607,7 @@ func isWhitePawnStar(cords:Vector2i) ->bool:
 ##
 func isWhitePawnPromotion(cords:Vector2i)-> bool:
 	var r:int = 0;
-	for q:int in PAWN_QS_PROMOTE:
+	for q:int in PAWN_QS:
 		
 		if (cords.x == q) && (cords.y == r):
 			return true;
@@ -620,7 +620,7 @@ func isWhitePawnPromotion(cords:Vector2i)-> bool:
 ##
 func isBlackPawnPromotion(cords:Vector2i) -> bool:
 	var r:int = 5;
-	for q:int in PAWN_QS_PROMOTE:
+	for q:int in PAWN_QS:
 		
 		if (cords.x == q) && (cords.y == r):
 			return true;
