@@ -1,0 +1,444 @@
+extends Node
+
+## Use the board to find the location of all pieces. 
+## Intended to be ran only once at the begining.
+func findPieces(board:Dictionary) -> Array:
+	var pieceCords:Array = \
+	[
+		{ PIECES.PAWN:[],PIECES.KNIGHT:[],PIECES.ROOK:[],PIECES.BISHOP:[],PIECES.QUEEN:[],PIECES.KING:[] },
+		{ PIECES.PAWN:[],PIECES.KNIGHT:[],PIECES.ROOK:[],PIECES.BISHOP:[],PIECES.QUEEN:[],PIECES.KING:[] }
+	];
+	
+	for q in board.keys():
+		for r in board[q].keys():
+			
+			var val:int = board[q][r];
+			if val == PIECES.ZERO:
+				continue;
+			
+			var pieceType:PIECES = getPieceType(val);
+			var pos:Vector2i = Vector2i(q,r);
+			var side = SIDES.WHITE if isPieceWhite(val) else SIDES.BLACK;
+			
+			pieceCords[side][pieceType].append(pos);
+			
+	return pieceCords;
+
+
+##Blocking Piece Search Logic
+func checkForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
+	
+	var isWhiteTrn:bool = isPieceWhite(HexBoard[cords.x][cords.y]);
+	
+	for direction in dirSet.keys():
+		var activeVector:Vector2i = dirSet[direction];
+		
+		var dirBlockingPiece:Vector2i;
+		
+		var checkingQ:int = cords.x + activeVector.x;
+		var checkingR:int = cords.y + activeVector.y;
+
+		var LegalMoves:Array = [];
+		while ( (HexBoard.has(checkingQ)) && (HexBoard[checkingQ].has(checkingR)) ): # CORDS ARE IN RANGE
+			
+			if ( HexBoard[checkingQ][checkingR] == PIECES.ZERO ):
+				if(dirBlockingPiece):
+					LegalMoves.append(Vector2i(checkingQ,checkingR)); ## Track legal moves for the blocking pieces
+
+			else:
+				if ( isPieceFriendly( HexBoard[checkingQ][checkingR], isWhiteTrn) ):
+					if(dirBlockingPiece): break; ## Two friendly pieces in a row. No Danger
+					else: dirBlockingPiece = Vector2i(checkingQ,checkingR); ## First piece found
+
+				else: ##Unfriendly Piece Found
+					var val = getPieceType(HexBoard[checkingQ][checkingR]);
+					if ( (val == PIECES.QUEEN) or (val == piece) ):
+						if(dirBlockingPiece):
+							LegalMoves.append(Vector2i(checkingQ,checkingR));
+							bp[dirBlockingPiece] = LegalMoves; ## store blocking piece moves
+							
+					break;
+
+			checkingQ += activeVector.x;
+			checkingR += activeVector.y;
+	return;
+
+## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
+func checkForBlockingPiecesFrom(cords:Vector2i) -> Dictionary:
+	var blockingpieces:Dictionary = {};
+	checkForBlockingOnVector(PIECES.ROOK, ROOK_VECTORS, blockingpieces, cords);
+	checkForBlockingOnVector(PIECES.BISHOP, BISHOP_VECTORS, blockingpieces, cords);
+	return blockingpieces;
+
+
+## Calculate King Moves
+func findMovesForKing(KingArray:Array) -> void:
+	for i in range(KingArray.size()):
+		var king = KingArray[i];
+		legalMoves[king] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
+
+		for dir in KING_VECTORS.keys():
+			var activeVector:Vector2i = KING_VECTORS[dir];
+			var checkingQ:int = king.x + activeVector.x;
+			var checkingR:int = king.y + activeVector.y;
+			
+			if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
+				updateAttackBoard(checkingQ, checkingR, 1);
+				if(isWhiteTurn):
+					if((BlackAttackBoard[checkingQ][checkingR] > 0)):
+						continue;
+				else:
+					if((WhiteAttackBoard[checkingQ][checkingR] > 0)):
+						continue;
+
+				if( HexBoard[checkingQ][checkingR] == PIECES.ZERO ):
+					legalMoves[king][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
+
+				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
+					legalMoves[king][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
+		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			legalMoves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[king][MOVE_TYPES.CAPTURE]);
+			for moveType in legalMoves[king]:
+				if(moveType == MOVE_TYPES.CAPTURE): continue;
+				legalMoves[king][moveType] = differenceOfTwoArrays(legalMoves[king][moveType], GameInCheckMoves);
+
+	return;
+
+## Calculate Queen Moves
+func findMovesForQueen(QueenArray:Array) -> void:
+	
+	var tempMoves:Dictionary = {};
+	
+	findMovesForRook(QueenArray);
+	for i in range(QueenArray.size()):
+		var queen = QueenArray[i];
+		tempMoves[queen] = legalMoves[queen].duplicate(true);
+
+	findMovesForBishop(QueenArray);
+	for i in range(QueenArray.size()):
+		var queen = QueenArray[i];
+
+		for moveType in tempMoves[queen].keys():
+			for move in tempMoves[queen][moveType]:
+				legalMoves[queen][moveType].append(move);
+	return;
+
+## Calculate Bishop Moves
+func findMovesForBishop(BishopArray:Array) -> void:
+	for i in range(BishopArray.size()):
+		var bishop = BishopArray[i];
+		
+		legalMoves[bishop] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
+		
+		for dir in BISHOP_VECTORS.keys():
+			var activeVector:Vector2i = BISHOP_VECTORS[dir];
+			var checkingQ:int = bishop.x + activeVector.x;
+			var checkingR:int = bishop.y + activeVector.y;
+			
+			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+			
+				if( HexBoard[checkingQ][checkingR] == 0):
+					legalMoves[bishop][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
+					updateAttackBoard(checkingQ, checkingR, 1);
+
+				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
+					legalMoves[bishop][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
+					updateAttackBoard(checkingQ, checkingR, 1);
+					
+					#King Escape Fix
+					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KING):
+						checkingQ += activeVector.x;
+						checkingR += activeVector.y;
+						#print("King Escape %d %d" % [checkingQ, checkingR]);
+						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+							updateAttackBoard(checkingQ, checkingR, 1);
+					
+					break;
+				else:
+					
+					var pos = Vector2i(checkingQ,checkingR);
+					if(influencedPieces.has(pos)):
+						influencedPieces[pos].append(bishop);
+					else:
+						influencedPieces[pos] = [bishop];
+					
+					updateAttackBoard(checkingQ, checkingR, 1);
+					break;
+				
+				checkingQ += activeVector.x;
+				checkingR += activeVector.y;
+				##END WHILE	
+	
+		## Not Efficient FIX LATER
+		if(  blockingPieces.has(bishop) ):
+			var newLegalmoves = blockingPieces[bishop];
+			for moveType in legalMoves[bishop].keys():
+				legalMoves[bishop][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[bishop][moveType]);
+		
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in legalMoves[bishop].keys():
+				legalMoves[bishop][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[bishop][moveType]);
+
+	return;
+
+## Calculate Rook Moves
+func findMovesForRook(RookArray:Array) -> void:
+	for i in range(RookArray.size()):
+		var rook = RookArray[i];
+		legalMoves[rook] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
+		
+		for dir in ROOK_VECTORS.keys():
+			var activeVector:Vector2i = ROOK_VECTORS[dir];
+			var checkingQ:int = rook.x + activeVector.x;
+			var checkingR:int = rook.y + activeVector.y;
+			
+			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+				
+				if( HexBoard[checkingQ][checkingR] == 0):
+					legalMoves[rook][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
+					updateAttackBoard(checkingQ, checkingR, 1);
+
+				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
+					legalMoves[rook][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
+					updateAttackBoard(checkingQ, checkingR, 1);
+					
+					#King Escape Fix
+					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KING):
+						checkingQ += activeVector.x;
+						checkingR += activeVector.y;
+						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+							updateAttackBoard(checkingQ, checkingR, 1);
+					
+					break;
+				else:
+					
+					var pos = Vector2i(checkingQ,checkingR);
+					if(influencedPieces.has(pos)):
+						influencedPieces[pos].append(rook);
+					else:
+						influencedPieces[pos] = [rook];
+						
+					updateAttackBoard(checkingQ, checkingR, 1);
+					break;
+				
+				checkingQ += activeVector.x;
+				checkingR += activeVector.y;
+				##END WHILE	
+				
+		## Not Efficient TODO: FIX LATER
+		if(  blockingPieces.has(rook) ):
+			var newLegalmoves = blockingPieces[rook];
+			for moveType in legalMoves[rook]:
+				legalMoves[rook][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[rook][moveType]);
+		
+		## Not Efficient TODO: FIX LATER
+		if( GameInCheck ):
+			for moveType in legalMoves[rook]:
+				legalMoves[rook][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[rook][moveType]);
+		
+	return;
+
+## Calculate Knight Moves
+func findMovesForKnight(KnightArray:Array) -> void:
+	for i in range(KnightArray.size()):
+
+		var knight = KnightArray[i];
+		legalMoves[knight] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
+
+		var invertAt2Counter = 0;
+		for m in [-1,1,-1,1]:
+			
+			for dir in KNIGHT_VECTORS.keys():
+				var activeVector:Vector2i = KNIGHT_VECTORS[dir];
+				var checkingQ = knight.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
+				var checkingR = knight.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
+				
+				if (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
+					updateAttackBoard(checkingQ, checkingR, 1);
+					if (HexBoard[checkingQ][checkingR] == 0) :
+						legalMoves[knight][MOVE_TYPES.MOVES].append(Vector2i(checkingQ,checkingR));
+
+					elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
+						legalMoves[knight][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ,checkingR));
+					
+			invertAt2Counter += 1;
+			
+		## Not Efficient FIX LATER
+		if(  blockingPieces.has(knight) ):
+			var newLegalmoves = blockingPieces[knight];
+			for moveType in legalMoves[knight].keys():
+				legalMoves[knight][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[knight][moveType]);
+
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in legalMoves[knight].keys():
+				legalMoves[knight][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[knight][moveType]);
+
+	return;
+
+## Calculate Pawn Moves (TODO: Unfinished Promote)
+func findMovesForPawn(PawnArray:Array)-> void:
+	for i in range(PawnArray.size()):
+		var pawn = PawnArray[i];
+		legalMoves[pawn] = PAWN_MOVE_TEMPLATE.duplicate(true);
+
+		var fowardR = pawn.y - 1 if isWhiteTurn else pawn.y + 1;
+		var leftCaptureR = pawn.y if isWhiteTurn else pawn.y + 1;
+		var rightCaptureR = pawn.y-1 if isWhiteTurn else pawn.y;
+
+		##Foward Move
+		findFowardMovesForPawn(pawn, fowardR);
+
+		##Left Capture
+		findCaptureMovesForPawn(pawn, pawn.x-1, leftCaptureR);
+
+		##Right Capture
+		findCaptureMovesForPawn(pawn, pawn.x+1, rightCaptureR);
+
+		## Not Efficient FIX LATER
+		if(  blockingPieces.has(pawn) ):
+			var newLegalmoves = blockingPieces[pawn];
+			for moveType in legalMoves[pawn].keys():
+				legalMoves[pawn][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[pawn][moveType]);
+
+		## Not Efficient FIX LATER
+		if( GameInCheck ):
+			for moveType in legalMoves[pawn].keys():
+				legalMoves[pawn][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[pawn][moveType]);
+
+	return;
+
+## Calculate Pawn Foward Moves
+func findFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
+	var boolCanGoFoward = false;
+	##Foward Move
+	if (HexBoard[pawn.x].has(fowardR) && HexBoard[pawn.x][fowardR] == 0):
+		if ( isWhitePawnPromotion(Vector2i(pawn.x,fowardR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x,fowardR)) ) :
+			legalMoves[pawn][MOVE_TYPES.PROMOTE].append(Vector2i(pawn.x, fowardR));
+		else:
+			legalMoves[pawn][MOVE_TYPES.MOVES].append(Vector2i(pawn.x, fowardR));
+			boolCanGoFoward = true;
+	
+	##Double Move From Start
+	if( boolCanGoFoward && ( isWhitePawnStar(pawn) if isWhiteTurn else isBlackPawnStart(pawn) ) ):
+		var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
+		if (HexBoard[pawn.x][doubleF] == 0):
+			legalMoves[pawn][MOVE_TYPES.ENPASSANT].append(Vector2i(pawn.x, doubleF));
+	return;
+
+## Calculate Pawn Capture Moves
+func findCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void:
+	var move = Vector2i(qpos, rpos)
+	if( not (HexBoard.has(qpos) && HexBoard[qpos].has(rpos)) ):
+		return;
+		
+	if ( (HexBoard[qpos][rpos] != PIECES.ZERO) && (!isPieceFriendly(HexBoard[qpos][rpos], isWhiteTurn)) ):
+		if ( isWhitePawnPromotion(move) if isWhiteTurn else isBlackPawnPromotion(move) ) :
+			legalMoves[pawn][MOVE_TYPES.PROMOTE].append(move);
+		else:
+			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
+	else:
+		if( EnPassantCordsValid && (EnPassantCords.x == qpos) && (EnPassantCords.y == rpos) ):
+			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
+	updateAttackBoard(qpos, rpos, 1);
+	return;
+
+## Find the legal moves for a single player given an array of pieces
+func findLegalMovesFor(activepieces:Array) -> void:
+	startTime = Time.get_ticks_usec();
+	var pieces:Dictionary = activepieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK];
+	for pieceType in pieces.keys():
+		
+		var singleTypePieces:Array = pieces[pieceType];
+		
+		if singleTypePieces.size() == 0:
+			continue;
+			
+		match pieceType:
+			PIECES.PAWN:findMovesForPawn(singleTypePieces);
+			PIECES.KNIGHT:findMovesForKnight(singleTypePieces);
+			PIECES.ROOK:findMovesForRook(singleTypePieces);
+			PIECES.BISHOP:findMovesForBishop(singleTypePieces);
+			PIECES.QUEEN:findMovesForQueen(singleTypePieces);
+			PIECES.KING:findMovesForKing(singleTypePieces);
+		
+	stopTime = Time.get_ticks_usec();
+	return;
+
+##
+func searchForPawnsAtk(pos:Vector2i, isWTurn:bool) -> Array:
+	var leftCaptureR:int = 0 if isWTurn else  1;
+	var rightCaptureR:int = -1 if isWTurn else 0;
+	var qpos:int = pos.x - 1;
+	var lst:Array = [];
+	if( HexBoard.has(qpos) && HexBoard[qpos].has(leftCaptureR)):
+		if(!isPieceFriendly(HexBoard[qpos][leftCaptureR], isWTurn)):
+			if(getPieceType(HexBoard[qpos][leftCaptureR]) == PIECES.PAWN):
+				lst.append(Vector2i(qpos, leftCaptureR));
+	qpos = pos.x + 1;
+	if( HexBoard.has(qpos) && HexBoard[qpos].has(rightCaptureR)):
+		if(!isPieceFriendly(HexBoard[qpos][rightCaptureR], isWTurn)):
+			if(getPieceType(HexBoard[qpos][rightCaptureR]) == PIECES.PAWN):
+				lst.append(Vector2i(qpos, rightCaptureR));
+	return lst;
+
+##
+func searchForKnightsAtk(pos:Vector2i, isWTurn:bool) -> Array:
+	var lst:Array = [];
+	var invertAt2Counter = 0;
+	for m in [-1,1,-1,1]:
+		for dir in KNIGHT_VECTORS.keys():
+			var activeVector:Vector2i = KNIGHT_VECTORS[dir];
+			var checkingQ = pos.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
+			var checkingR = pos.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
+			if (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
+				if(!isPieceFriendly(HexBoard[checkingQ][checkingR], isWTurn)):
+					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KNIGHT):
+						lst.append(Vector2i(checkingQ, checkingR));
+	return lst;
+
+##	
+func searchForSlidingAtk(pos:Vector2i, isWTurn:bool, checkForQueens:bool, initPiece:PIECES, VECTORS) -> Array:
+	var lst:Array = [];
+	var checkFor:Array = [initPiece];
+	if(checkForQueens):
+		checkFor.append(PIECES.QUEEN);
+	
+	for dir in VECTORS.keys():
+		var activeVector:Vector2i = VECTORS[dir];
+		var checkingQ:int = pos.x + activeVector.x;
+		var checkingR:int = pos.y + activeVector.y;
+		
+		while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
+			if (HexBoard[checkingQ][checkingR] == 0): pass;
+			elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWTurn )):
+				if (getPieceType(HexBoard[checkingQ][checkingR]) in checkFor):
+					lst.append(Vector2i(checkingQ, checkingR));
+				break;
+			else: ## Blocked by friendly
+				break;
+			checkingQ += activeVector.x;
+			checkingR += activeVector.y;
+	return lst;
+
+## (WIP) Search the board for attacking pieces on FROM cords
+func searchForMyAttackers(from:Vector2i, isWhiteTrn:bool) -> Array:
+	var side = SIDES.BLACK if isWhiteTrn else SIDES.WHITE;
+	var hasQueens = activePieces[side][PIECES.QUEEN].size() > 0;
+	var attackers:Array = [];
+	if (activePieces[side][PIECES.PAWN].size() > 0): 
+		attackers.append_array(searchForPawnsAtk(from, isWhiteTrn));
+	if (activePieces[side][PIECES.KNIGHT].size() > 0):
+		attackers.append_array(searchForKnightsAtk(from, isWhiteTrn));
+	if (activePieces[side][PIECES.ROOK].size() > 0 or hasQueens): 
+		attackers.append_array(searchForSlidingAtk(from, isWhiteTrn, hasQueens, PIECES.ROOK, ROOK_VECTORS));
+	if (activePieces[side][PIECES.BISHOP].size() > 0 or hasQueens): 
+		attackers.append_array(searchForSlidingAtk(from, isWhiteTrn, hasQueens, PIECES.BISHOP, BISHOP_VECTORS));
+	return attackers;
+
+
+
+

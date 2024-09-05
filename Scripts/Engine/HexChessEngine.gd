@@ -153,7 +153,7 @@ var bypassMoveLock:bool = false;
 
 var EnemyChoiceType:int;
 var EnemyChoiceIndex:int;
-var EnemyTo:int;
+var EnemyTo:Vector2i;
 
 # History
 var moveHistory : Array = [];
@@ -328,18 +328,17 @@ func calculateCombinedBIT() -> void:
 	BIT_WHITE = getWhitePiecesBitBoard();
 	BIT_BLACK = getBlackPiecesBitBoard();
 	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
-	
-	print("White BB:\n", BIT_WHITE);
-	print("White:");
-	for bb in WHITE_BB:
-		print(bb);
-	print(" ")
-	print("Black BB:\n", BIT_BLACK);
-	print("Black:");
-	for bb in BLACK_BB:
-		print(bb);
-	print("ALL BB:\n", BIT_ALL);
-	print("\n\n")
+	#print("White BB:\n", BIT_WHITE);
+	#print("White:");
+	#for bb in WHITE_BB:
+		#print(bb);
+	#print(" ")
+	#print("Black BB:\n", BIT_BLACK);
+	#print("Black:");
+	#for bb in BLACK_BB:
+		#print(bb);
+	#print("ALL BB:\n", BIT_ALL);
+	#print("\n")
 	return;
 
 ## Assumes that a piece exist in the given index
@@ -450,29 +449,6 @@ func bbfindPieces() -> Array:
 			pieceCords[SIDES.WHITE][type].append(IndexToQR(i));
 		
 	return pieceCords;
-## Use the board to find the location of all pieces. 
-## Intended to be ran only once at the begining.
-func findPieces(board:Dictionary) -> Array:
-	var pieceCords:Array = \
-	[
-		{ PIECES.PAWN:[],PIECES.KNIGHT:[],PIECES.ROOK:[],PIECES.BISHOP:[],PIECES.QUEEN:[],PIECES.KING:[] },
-		{ PIECES.PAWN:[],PIECES.KNIGHT:[],PIECES.ROOK:[],PIECES.BISHOP:[],PIECES.QUEEN:[],PIECES.KING:[] }
-	];
-	
-	for q in board.keys():
-		for r in board[q].keys():
-			
-			var val:int = board[q][r];
-			if val == PIECES.ZERO:
-				continue;
-			
-			var pieceType:PIECES = getPieceType(val);
-			var pos:Vector2i = Vector2i(q,r);
-			var side = SIDES.WHITE if isPieceWhite(val) else SIDES.BLACK;
-			
-			pieceCords[side][pieceType].append(pos);
-			
-	return pieceCords;
 
 ## ADD A Piece To Board. At (Q,R) in 'board' decode 'val' and place it.
 func addPieceToBoardAt( q:int, r:int, val:String, board:Dictionary) -> void:
@@ -502,17 +478,18 @@ func addPieceToBoardAt( q:int, r:int, val:String, board:Dictionary) -> void:
 
 ## Fill The Board by translating a fen string. DOES NOT FULLY VERIFY FEN STRING 
 ## (W I P)
-func fillBoardwithFEN(fenString: String) -> Dictionary:
+func fillBoardwithFEN(fenString: String) -> bool:
 	#Board Status
-	var Board : Dictionary = createBoard(HEX_BOARD_RADIUS);
+	createBitBoards();
+	
 	var fenSections : PackedStringArray = fenString.split(" ");
 	if (fenSections.size() != 4):
 		print("Invalid String");
-		return {};
+		return false;
 	var BoardColumns : PackedStringArray = fenSections[0].split("/");
 	if (BoardColumns.size() != 11):
 		print("Invalid String");
-		return {};
+		return false;
 	var regex:RegEx = RegEx.new();
 	regex.compile("(?i)([pnrbqk]|[0-9]|/)*")
 	var result = regex.search(fenString);
@@ -520,9 +497,8 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 		print(result.get_string(0));
 		print(fenString);
 		print("Invalid String");
-		return {};
-	
-	createBitBoards();
+		return false;
+
 	for q in range(-HEX_BOARD_RADIUS, HEX_BOARD_RADIUS+1):
 		var mappedQ:int = q+HEX_BOARD_RADIUS;
 		var activeRow:String = BoardColumns[mappedQ];
@@ -542,12 +518,11 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 
 			else:
 				if(r1 <= r2):
-					addPieceToBoardAt(q,r1,activeChar,Board);
 					addS_PieceToBitBoards(q,r1,activeChar);
 					r1 +=1 ;
 				else:
 					push_error("R1 Greater Than Max");
-					return {};
+					return false;
 	calculateCombinedBIT();
 	
 	#for bb:BitBoard in WHITE_BB:
@@ -562,7 +537,7 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	elif (fenSections[1] == 'b'):
 		isWhiteTurn = false;
 	else:
-		return {};
+		return false;
 
 	#EnPassant Cords
 	if(fenSections[2] != '-'):
@@ -580,7 +555,7 @@ func fillBoardwithFEN(fenString: String) -> Dictionary:
 	if(turnNumber < 1):
 		turnNumber = 1;
 		
-	return Board;
+	return true;
 
 
 ### PIECE IDENTIFING
@@ -712,7 +687,7 @@ func swapPlayerTurn():
 
 ### MOVE GENERATION
 
-## BB VERSION
+## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 func bbcheckForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
 	var index = QRToIndex(cords.x,cords.y);
 	var isWhiteTrn = bbIsPieceWhite(index);
@@ -748,53 +723,12 @@ func bbcheckForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary,
 			checkingQ += activeVector.x;
 			checkingR += activeVector.y;
 	return;
-##Blocking Piece Search Logic
-func checkForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
-	
-	var isWhiteTrn:bool = isPieceWhite(HexBoard[cords.x][cords.y]);
-	
-	for direction in dirSet.keys():
-		var activeVector:Vector2i = dirSet[direction];
-		
-		var dirBlockingPiece:Vector2i;
-		
-		var checkingQ:int = cords.x + activeVector.x;
-		var checkingR:int = cords.y + activeVector.y;
-
-		var LegalMoves:Array = [];
-		while ( (HexBoard.has(checkingQ)) && (HexBoard[checkingQ].has(checkingR)) ): # CORDS ARE IN RANGE
-			
-			if ( HexBoard[checkingQ][checkingR] == PIECES.ZERO ):
-				if(dirBlockingPiece):
-					LegalMoves.append(Vector2i(checkingQ,checkingR)); ## Track legal moves for the blocking pieces
-
-			else:
-				if ( isPieceFriendly( HexBoard[checkingQ][checkingR], isWhiteTrn) ):
-					if(dirBlockingPiece): break; ## Two friendly pieces in a row. No Danger
-					else: dirBlockingPiece = Vector2i(checkingQ,checkingR); ## First piece found
-
-				else: ##Unfriendly Piece Found
-					var val = getPieceType(HexBoard[checkingQ][checkingR]);
-					if ( (val == PIECES.QUEEN) or (val == piece) ):
-						if(dirBlockingPiece):
-							LegalMoves.append(Vector2i(checkingQ,checkingR));
-							bp[dirBlockingPiece] = LegalMoves; ## store blocking piece moves
-							
-					break;
-
-			checkingQ += activeVector.x;
-			checkingR += activeVector.y;
-	return;
-
 
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
-func checkForBlockingPiecesFrom(cords:Vector2i) -> Dictionary:
-	
+func bbcheckForBlockingPiecesFrom(cords:Vector2i) -> Dictionary:
 	var blockingpieces:Dictionary = {};
-	
-	checkForBlockingOnVector(PIECES.ROOK, ROOK_VECTORS, blockingpieces, cords);
-	checkForBlockingOnVector(PIECES.BISHOP, BISHOP_VECTORS, blockingpieces, cords);
-		
+	bbcheckForBlockingOnVector(PIECES.ROOK, ROOK_VECTORS, blockingpieces, cords);
+	bbcheckForBlockingOnVector(PIECES.BISHOP, BISHOP_VECTORS, blockingpieces, cords);
 	return blockingpieces;
 
 
@@ -818,23 +752,6 @@ func bbfindCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void
 	
 	updateAttackBoard(qpos, rpos, 1);
 	return;
-## Calculate Pawn Capture Moves
-func findCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void:
-	var move = Vector2i(qpos, rpos)
-	if( not (HexBoard.has(qpos) && HexBoard[qpos].has(rpos)) ):
-		return;
-		
-	if ( (HexBoard[qpos][rpos] != PIECES.ZERO) && (!isPieceFriendly(HexBoard[qpos][rpos], isWhiteTurn)) ):
-		if ( isWhitePawnPromotion(move) if isWhiteTurn else isBlackPawnPromotion(move) ) :
-			legalMoves[pawn][MOVE_TYPES.PROMOTE].append(move);
-		else:
-			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
-	else:
-		if( EnPassantCordsValid && (EnPassantCords.x == qpos) && (EnPassantCords.y == rpos) ):
-			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
-	updateAttackBoard(qpos, rpos, 1);
-	return;
-
 
 ## Calculate Pawn Foward Moves
 func bbfindFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
@@ -854,23 +771,6 @@ func bbfindFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
 		var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
 		var index:int = QRToIndex(pawn.x, doubleF);
 		if (bbIsIndexEmpty(index)):
-			legalMoves[pawn][MOVE_TYPES.ENPASSANT].append(Vector2i(pawn.x, doubleF));
-	return;
-## Calculate Pawn Foward Moves
-func findFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
-	var boolCanGoFoward = false;
-	##Foward Move
-	if (HexBoard[pawn.x].has(fowardR) && HexBoard[pawn.x][fowardR] == 0):
-		if ( isWhitePawnPromotion(Vector2i(pawn.x,fowardR)) if isWhiteTurn else isBlackPawnPromotion(Vector2i(pawn.x,fowardR)) ) :
-			legalMoves[pawn][MOVE_TYPES.PROMOTE].append(Vector2i(pawn.x, fowardR));
-		else:
-			legalMoves[pawn][MOVE_TYPES.MOVES].append(Vector2i(pawn.x, fowardR));
-			boolCanGoFoward = true;
-	
-	##Double Move From Start
-	if( boolCanGoFoward && ( isWhitePawnStar(pawn) if isWhiteTurn else isBlackPawnStart(pawn) ) ):
-		var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
-		if (HexBoard[pawn.x][doubleF] == 0):
 			legalMoves[pawn][MOVE_TYPES.ENPASSANT].append(Vector2i(pawn.x, doubleF));
 	return;
 
@@ -905,38 +805,6 @@ func bbfindMovesForPawn(PawnArray:Array)-> void:
 				legalMoves[pawn][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[pawn][moveType]);
 
 	return;
-## Calculate Pawn Moves (TODO: Unfinished Promote)
-func findMovesForPawn(PawnArray:Array)-> void:
-	for i in range(PawnArray.size()):
-		var pawn = PawnArray[i];
-		legalMoves[pawn] = PAWN_MOVE_TEMPLATE.duplicate(true);
-
-		var fowardR = pawn.y - 1 if isWhiteTurn else pawn.y + 1;
-		var leftCaptureR = pawn.y if isWhiteTurn else pawn.y + 1;
-		var rightCaptureR = pawn.y-1 if isWhiteTurn else pawn.y;
-
-		##Foward Move
-		findFowardMovesForPawn(pawn, fowardR);
-
-		##Left Capture
-		findCaptureMovesForPawn(pawn, pawn.x-1, leftCaptureR);
-
-		##Right Capture
-		findCaptureMovesForPawn(pawn, pawn.x+1, rightCaptureR);
-
-		## Not Efficient FIX LATER
-		if(  blockingPieces.has(pawn) ):
-			var newLegalmoves = blockingPieces[pawn];
-			for moveType in legalMoves[pawn].keys():
-				legalMoves[pawn][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[pawn][moveType]);
-
-		## Not Efficient FIX LATER
-		if( GameInCheck ):
-			for moveType in legalMoves[pawn].keys():
-				legalMoves[pawn][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[pawn][moveType]);
-
-	return;
-
 
 ## Calculate Knight Moves
 func bbfindMovesForKnight(KnightArray:Array) -> void:
@@ -970,44 +838,6 @@ func bbfindMovesForKnight(KnightArray:Array) -> void:
 				legalMoves[knight][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[knight][moveType]);
 
 	return;
-## Calculate Knight Moves
-func findMovesForKnight(KnightArray:Array) -> void:
-	for i in range(KnightArray.size()):
-
-		var knight = KnightArray[i];
-		legalMoves[knight] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
-
-		var invertAt2Counter = 0;
-		for m in [-1,1,-1,1]:
-			
-			for dir in KNIGHT_VECTORS.keys():
-				var activeVector:Vector2i = KNIGHT_VECTORS[dir];
-				var checkingQ = knight.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
-				var checkingR = knight.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
-				
-				if (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
-					updateAttackBoard(checkingQ, checkingR, 1);
-					if (HexBoard[checkingQ][checkingR] == 0) :
-						legalMoves[knight][MOVE_TYPES.MOVES].append(Vector2i(checkingQ,checkingR));
-
-					elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
-						legalMoves[knight][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ,checkingR));
-					
-			invertAt2Counter += 1;
-			
-		## Not Efficient FIX LATER
-		if(  blockingPieces.has(knight) ):
-			var newLegalmoves = blockingPieces[knight];
-			for moveType in legalMoves[knight].keys():
-				legalMoves[knight][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[knight][moveType]);
-
-		## Not Efficient FIX LATER
-		if( GameInCheck ):
-			for moveType in legalMoves[knight].keys():
-				legalMoves[knight][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[knight][moveType]);
-
-	return;
-
 
 ## Calculate Rook Moves
 func bbfindMovesForRook(RookArray:Array) -> void:
@@ -1059,63 +889,6 @@ func bbfindMovesForRook(RookArray:Array) -> void:
 				legalMoves[rook][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[rook][moveType]);
 		
 	return;
-## Calculate Rook Moves
-func findMovesForRook(RookArray:Array) -> void:
-	for i in range(RookArray.size()):
-		var rook = RookArray[i];
-		legalMoves[rook] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
-		
-		for dir in ROOK_VECTORS.keys():
-			var activeVector:Vector2i = ROOK_VECTORS[dir];
-			var checkingQ:int = rook.x + activeVector.x;
-			var checkingR:int = rook.y + activeVector.y;
-			
-			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
-				
-				if( HexBoard[checkingQ][checkingR] == 0):
-					legalMoves[rook][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-
-				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn)):
-					legalMoves[rook][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-					
-					#King Escape Fix
-					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KING):
-						checkingQ += activeVector.x;
-						checkingR += activeVector.y;
-						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
-							updateAttackBoard(checkingQ, checkingR, 1);
-					
-					break;
-				else:
-					
-					var pos = Vector2i(checkingQ,checkingR);
-					if(influencedPieces.has(pos)):
-						influencedPieces[pos].append(rook);
-					else:
-						influencedPieces[pos] = [rook];
-						
-					updateAttackBoard(checkingQ, checkingR, 1);
-					break;
-				
-				checkingQ += activeVector.x;
-				checkingR += activeVector.y;
-				##END WHILE	
-				
-		## Not Efficient TODO: FIX LATER
-		if(  blockingPieces.has(rook) ):
-			var newLegalmoves = blockingPieces[rook];
-			for moveType in legalMoves[rook]:
-				legalMoves[rook][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[rook][moveType]);
-		
-		## Not Efficient TODO: FIX LATER
-		if( GameInCheck ):
-			for moveType in legalMoves[rook]:
-				legalMoves[rook][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[rook][moveType]);
-		
-	return;
-
 
 ## Calculate Bishop Moves
 func bbfindMovesForBishop(BishopArray:Array) -> void:
@@ -1167,65 +940,6 @@ func bbfindMovesForBishop(BishopArray:Array) -> void:
 				legalMoves[bishop][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[bishop][moveType]);
 
 	return;
-## Calculate Bishop Moves
-func findMovesForBishop(BishopArray:Array) -> void:
-	for i in range(BishopArray.size()):
-		var bishop = BishopArray[i];
-		
-		legalMoves[bishop] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
-		
-		for dir in BISHOP_VECTORS.keys():
-			var activeVector:Vector2i = BISHOP_VECTORS[dir];
-			var checkingQ:int = bishop.x + activeVector.x;
-			var checkingR:int = bishop.y + activeVector.y;
-			
-			while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
-			
-				if( HexBoard[checkingQ][checkingR] == 0):
-					legalMoves[bishop][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-
-				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
-					legalMoves[bishop][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-					
-					#King Escape Fix
-					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KING):
-						checkingQ += activeVector.x;
-						checkingR += activeVector.y;
-						#print("King Escape %d %d" % [checkingQ, checkingR]);
-						if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
-							updateAttackBoard(checkingQ, checkingR, 1);
-					
-					break;
-				else:
-					
-					var pos = Vector2i(checkingQ,checkingR);
-					if(influencedPieces.has(pos)):
-						influencedPieces[pos].append(bishop);
-					else:
-						influencedPieces[pos] = [bishop];
-					
-					updateAttackBoard(checkingQ, checkingR, 1);
-					break;
-				
-				checkingQ += activeVector.x;
-				checkingR += activeVector.y;
-				##END WHILE	
-	
-		## Not Efficient FIX LATER
-		if(  blockingPieces.has(bishop) ):
-			var newLegalmoves = blockingPieces[bishop];
-			for moveType in legalMoves[bishop].keys():
-				legalMoves[bishop][moveType] = intersectOfTwoArrays(newLegalmoves, legalMoves[bishop][moveType]);
-		
-		## Not Efficient FIX LATER
-		if( GameInCheck ):
-			for moveType in legalMoves[bishop].keys():
-				legalMoves[bishop][moveType] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[bishop][moveType]);
-
-	return;
-
 
 ## Calculate Queen Moves
 func bbfindMovesForQueen(QueenArray:Array) -> void:
@@ -1245,25 +959,6 @@ func bbfindMovesForQueen(QueenArray:Array) -> void:
 			for move in tempMoves[queen][moveType]:
 				legalMoves[queen][moveType].append(move);
 	return;
-## Calculate Queen Moves
-func findMovesForQueen(QueenArray:Array) -> void:
-	
-	var tempMoves:Dictionary = {};
-	
-	findMovesForRook(QueenArray);
-	for i in range(QueenArray.size()):
-		var queen = QueenArray[i];
-		tempMoves[queen] = legalMoves[queen].duplicate(true);
-
-	findMovesForBishop(QueenArray);
-	for i in range(QueenArray.size()):
-		var queen = QueenArray[i];
-
-		for moveType in tempMoves[queen].keys():
-			for move in tempMoves[queen][moveType]:
-				legalMoves[queen][moveType].append(move);
-	return;
-
 
 ## Calculate King Moves
 func bbfindMovesForKing(KingArray:Array) -> void:
@@ -1299,41 +994,6 @@ func bbfindMovesForKing(KingArray:Array) -> void:
 				legalMoves[king][moveType] = differenceOfTwoArrays(legalMoves[king][moveType], GameInCheckMoves);
 
 	return;
-## Calculate King Moves
-func findMovesForKing(KingArray:Array) -> void:
-	for i in range(KingArray.size()):
-		var king = KingArray[i];
-		legalMoves[king] = DEFAULT_MOVE_TEMPLATE.duplicate(true);
-
-		for dir in KING_VECTORS.keys():
-			var activeVector:Vector2i = KING_VECTORS[dir];
-			var checkingQ:int = king.x + activeVector.x;
-			var checkingR:int = king.y + activeVector.y;
-			
-			if(HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
-				updateAttackBoard(checkingQ, checkingR, 1);
-				if(isWhiteTurn):
-					if((BlackAttackBoard[checkingQ][checkingR] > 0)):
-						continue;
-				else:
-					if((WhiteAttackBoard[checkingQ][checkingR] > 0)):
-						continue;
-
-				if( HexBoard[checkingQ][checkingR] == PIECES.ZERO ):
-					legalMoves[king][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
-
-				elif( !isPieceFriendly(HexBoard[checkingQ][checkingR], isWhiteTurn) ):
-					legalMoves[king][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
-		
-		## Not Efficient FIX LATER
-		if( GameInCheck ):
-			legalMoves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoArrays(GameInCheckMoves, legalMoves[king][MOVE_TYPES.CAPTURE]);
-			for moveType in legalMoves[king]:
-				if(moveType == MOVE_TYPES.CAPTURE): continue;
-				legalMoves[king][moveType] = differenceOfTwoArrays(legalMoves[king][moveType], GameInCheckMoves);
-
-	return;
-
 
 ## Find the legal moves for a single player given an array of pieces
 func bbfindLegalMovesFor(activepieces:Array) -> void:
@@ -1353,27 +1013,6 @@ func bbfindLegalMovesFor(activepieces:Array) -> void:
 			PIECES.BISHOP:bbfindMovesForBishop(singleTypePieces);
 			PIECES.QUEEN:bbfindMovesForQueen(singleTypePieces);
 			PIECES.KING:bbfindMovesForKing(singleTypePieces);
-	stopTime = Time.get_ticks_usec();
-	return;
-## Find the legal moves for a single player given an array of pieces
-func findLegalMovesFor(activepieces:Array) -> void:
-	startTime = Time.get_ticks_usec();
-	var pieces:Dictionary = activepieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK];
-	for pieceType in pieces.keys():
-		
-		var singleTypePieces:Array = pieces[pieceType];
-		
-		if singleTypePieces.size() == 0:
-			continue;
-			
-		match pieceType:
-			PIECES.PAWN:findMovesForPawn(singleTypePieces);
-			PIECES.KNIGHT:findMovesForKnight(singleTypePieces);
-			PIECES.ROOK:findMovesForRook(singleTypePieces);
-			PIECES.BISHOP:findMovesForBishop(singleTypePieces);
-			PIECES.QUEEN:findMovesForQueen(singleTypePieces);
-			PIECES.KING:findMovesForKing(singleTypePieces);
-		
 	stopTime = Time.get_ticks_usec();
 	return;
 
@@ -1417,22 +1056,6 @@ func bbsearchForPawnsAtk(pos:Vector2i, isWTurn:bool) -> Array:
 			if(bbPieceTypeOf(index, isWTurn) == PIECES.PAWN):
 				lst.append(Vector2i(qpos, rightCaptureR));
 	return lst;
-##
-func searchForPawnsAtk(pos:Vector2i, isWTurn:bool) -> Array:
-	var leftCaptureR:int = 0 if isWTurn else  1;
-	var rightCaptureR:int = -1 if isWTurn else 0;
-	var qpos:int = pos.x - 1;
-	var lst:Array = [];
-	if( HexBoard.has(qpos) && HexBoard[qpos].has(leftCaptureR)):
-		if(!isPieceFriendly(HexBoard[qpos][leftCaptureR], isWTurn)):
-			if(getPieceType(HexBoard[qpos][leftCaptureR]) == PIECES.PAWN):
-				lst.append(Vector2i(qpos, leftCaptureR));
-	qpos = pos.x + 1;
-	if( HexBoard.has(qpos) && HexBoard[qpos].has(rightCaptureR)):
-		if(!isPieceFriendly(HexBoard[qpos][rightCaptureR], isWTurn)):
-			if(getPieceType(HexBoard[qpos][rightCaptureR]) == PIECES.PAWN):
-				lst.append(Vector2i(qpos, rightCaptureR));
-	return lst;
 
 ##
 func bbsearchForKnightsAtk(pos:Vector2i, isWTurn:bool) -> Array:
@@ -1447,20 +1070,6 @@ func bbsearchForKnightsAtk(pos:Vector2i, isWTurn:bool) -> Array:
 				var index = QRToIndex(checkingQ, checkingR);
 				if( not bbIsIndexEmpty(index) and bbIsPieceWhite(index) != isWTurn):
 					if(bbPieceTypeOf(index, isWTurn) == PIECES.KNIGHT):
-						lst.append(Vector2i(checkingQ, checkingR));
-	return lst;
-##
-func searchForKnightsAtk(pos:Vector2i, isWTurn:bool) -> Array:
-	var lst:Array = [];
-	var invertAt2Counter = 0;
-	for m in [-1,1,-1,1]:
-		for dir in KNIGHT_VECTORS.keys():
-			var activeVector:Vector2i = KNIGHT_VECTORS[dir];
-			var checkingQ = pos.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
-			var checkingR = pos.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
-			if (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR)):
-				if(!isPieceFriendly(HexBoard[checkingQ][checkingR], isWTurn)):
-					if(getPieceType(HexBoard[checkingQ][checkingR]) == PIECES.KNIGHT):
 						lst.append(Vector2i(checkingQ, checkingR));
 	return lst;
 
@@ -1478,31 +1087,8 @@ func bbsearchForSlidingAtk(pos:Vector2i, isWTurn:bool, checkForQueens:bool, init
 		while ( BitBoard.inBitBoardRange(checkingQ, checkingR) ):
 			var index = QRToIndex(checkingQ, checkingR);
 			if (bbIsIndexEmpty(index)): pass;
-			elif (bbIsPieceWhite(index != isWTurn)):
+			elif (bbIsPieceWhite(index) != isWTurn):
 				if (bbPieceTypeOf(index, isWTurn) in checkFor):
-					lst.append(Vector2i(checkingQ, checkingR));
-				break;
-			else: ## Blocked by friendly
-				break;
-			checkingQ += activeVector.x;
-			checkingR += activeVector.y;
-	return lst;
-##	
-func searchForSlidingAtk(pos:Vector2i, isWTurn:bool, checkForQueens:bool, initPiece:PIECES, VECTORS) -> Array:
-	var lst:Array = [];
-	var checkFor:Array = [initPiece];
-	if(checkForQueens):
-		checkFor.append(PIECES.QUEEN);
-	
-	for dir in VECTORS.keys():
-		var activeVector:Vector2i = VECTORS[dir];
-		var checkingQ:int = pos.x + activeVector.x;
-		var checkingR:int = pos.y + activeVector.y;
-		
-		while (HexBoard.has(checkingQ) && HexBoard[checkingQ].has(checkingR) ):
-			if (HexBoard[checkingQ][checkingR] == 0): pass;
-			elif (!isPieceFriendly(HexBoard[checkingQ][checkingR], isWTurn )):
-				if (getPieceType(HexBoard[checkingQ][checkingR]) in checkFor):
 					lst.append(Vector2i(checkingQ, checkingR));
 				break;
 			else: ## Blocked by friendly
@@ -1512,18 +1098,18 @@ func searchForSlidingAtk(pos:Vector2i, isWTurn:bool, checkForQueens:bool, initPi
 	return lst;
 
 ## (WIP) Search the board for attacking pieces on FROM cords
-func searchForMyAttackers(from:Vector2i, isWhiteTrn:bool) -> Array:
+func bbsearchForMyAttackers(from:Vector2i, isWhiteTrn:bool) -> Array:
 	var side = SIDES.BLACK if isWhiteTrn else SIDES.WHITE;
 	var hasQueens = activePieces[side][PIECES.QUEEN].size() > 0;
 	var attackers:Array = [];
 	if (activePieces[side][PIECES.PAWN].size() > 0): 
-		attackers.append_array(searchForPawnsAtk(from, isWhiteTrn));
+		attackers.append_array(bbsearchForPawnsAtk(from, isWhiteTrn));
 	if (activePieces[side][PIECES.KNIGHT].size() > 0):
-		attackers.append_array(searchForKnightsAtk(from, isWhiteTrn));
+		attackers.append_array(bbsearchForKnightsAtk(from, isWhiteTrn));
 	if (activePieces[side][PIECES.ROOK].size() > 0 or hasQueens): 
-		attackers.append_array(searchForSlidingAtk(from, isWhiteTrn, hasQueens, PIECES.ROOK, ROOK_VECTORS));
+		attackers.append_array(bbsearchForSlidingAtk(from, isWhiteTrn, hasQueens, PIECES.ROOK, ROOK_VECTORS));
 	if (activePieces[side][PIECES.BISHOP].size() > 0 or hasQueens): 
-		attackers.append_array(searchForSlidingAtk(from, isWhiteTrn, hasQueens, PIECES.BISHOP, BISHOP_VECTORS));
+		attackers.append_array(bbsearchForSlidingAtk(from, isWhiteTrn, hasQueens, PIECES.BISHOP, BISHOP_VECTORS));
 	return attackers;
 
 
@@ -1583,7 +1169,7 @@ func removeCapturedFromATBoard(pieceType:PIECES, cords:Vector2i):
 		
 	var savedMoves = legalMoves.duplicate(true);
 	legalMoves.clear();
-	findLegalMovesFor(movedPiece);
+	bbfindLegalMovesFor(movedPiece);
 	removeAttacksFrom(cords, pieceType);
 	legalMoves = savedMoves;
 	
@@ -1615,8 +1201,7 @@ func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 		if( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
-			#if(HexBoard[moveToCords.x][moveToCords.y] != 0):
-			if(bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
+			if(not bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
 				break;
 		else: 
 			break;
@@ -1650,8 +1235,7 @@ func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 		if ( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
-			#if(HexBoard[moveToCords.x][moveToCords.y] != 0):
-			if(bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
+			if(not bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
 				break;
 		else: break;
 	return;
@@ -1695,21 +1279,21 @@ func resetTurnFlags() -> void:
 
 ##
 func handleMoveCapture(moveTo, pieceType) -> bool:
-	captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
+	var revertEnPassant:bool = false;
+	var moveToIndex = 	QRToIndex(moveTo.x,moveTo.y);
+	captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 	captureValid = true;
 
 	## ENPASSANT FIX
-	var revertEnPassant:bool = false;
-	if(pieceType == PIECES.PAWN && HexBoard[moveTo.x][moveTo.y] == 0):
+	#
+	if(pieceType == PIECES.PAWN && bbIsIndexEmpty(moveToIndex)):
 		moveTo.y += 1 if isWhiteTurn else -1;
-		captureType = getPieceType(HexBoard[moveTo.x][moveTo.y]);
-		HexBoard[moveTo.x][moveTo.y] = 0;
+		moveToIndex = 	QRToIndex(moveTo.x,moveTo.y);
+		captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 		revertEnPassant = true;
-	
-	
+
 	bbClearIndexOf(QRToIndex(moveTo.x,moveTo.y),!isWhiteTurn,captureType);
-	
-	
+		
 	var opColor = SIDES.BLACK if isWhiteTurn else SIDES.WHITE;
 	var i:int = 0;
 	for pieceCords in activePieces[opColor][captureType]:
@@ -1732,19 +1316,17 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 
 ##
 func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
-	var pieceVal:int = HexBoard[cords.x][cords.y]	
+	var pieceType = bbPieceTypeOf(QRToIndex(cords.x,cords.y), !isWhiteTurn);
+	var pieceVal = getPieceInt(pieceType, !isWhiteTurn)
 	var previousPieceVal = pieceVal;
+	
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
-	var pieceType:PIECES = getPieceType(pieceVal);
 	var moveTo = legalMoves[cords][moveType][moveIndex];
 	var moveHistMod = "";
 
-
-	HexBoard[cords.x][cords.y] = PIECES.ZERO;
 	var index = QRToIndex(cords.x,cords.y);
 	bbClearIndexFrom(index, isWhiteTurn);
 
-	
 	match moveType:
 		MOVE_TYPES.PROMOTE:
 			if(moveTo.x != cords.x):
@@ -1779,11 +1361,8 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 
 		MOVE_TYPES.MOVES: pass;
 
-
-	HexBoard[moveTo.x][moveTo.y] = pieceVal;
-	add_IPieceToBitBoardsOf(moveTo.x,moveTo.y,pieceType,isWhiteTurn)
-
-
+	add_IPieceToBitBoardsOf(moveTo.x,moveTo.y,pieceType,isWhiteTurn);
+	
 	var histPreview = ("%s %s %s %s" % [pieceVal,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
 	
 	# Update Piece List
@@ -1843,12 +1422,11 @@ func generateNextLegalMoves():
 	else:
 		resetBoard(BlackAttackBoard);
 	
-	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
+	blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
 	legalMoves.clear();
 	influencedPieces.clear();
 		
-	findLegalMovesFor(activePieces);
-	#bbfindLegalMovesFor(activePieces);
+	bbfindLegalMovesFor(activePieces);
 	
 	pass;
 
@@ -1858,7 +1436,7 @@ func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 	
 	if (influencedPieces.has(lastCords)):
 		for item in influencedPieces[lastCords]:
-			var inPieceType = getPieceType(HexBoard[item.x][item.y]);
+			var inPieceType = bbPieceTypeOf(QRToIndex(item.x,item.y), !isWhiteTurn)
 			if movedPiece[0].has(inPieceType):
 				movedPiece[0][inPieceType].append(item);
 			else:
@@ -1871,14 +1449,14 @@ func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 
 ##
 func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
-	var pieceType:PIECES = getPieceType(HexBoard[cords.x][cords.y]);
+	var pieceType = bbPieceTypeOf(QRToIndex(cords.x,cords.y), !isWhiteTurn);
 	var movedPiece = setupActiveForSingle(pieceType, cords, lastCords);
 	var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][0];
 	var mateStatus = "";
 
-	blockingPieces = checkForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
+	blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
 	legalMoves.clear();
-	findLegalMovesFor(movedPiece);
+	bbfindLegalMovesFor(movedPiece);
 
 	if(checkIFCordsUnderAttack(kingCords, legalMoves)):
 		mateStatus = "C"
@@ -1948,7 +1526,6 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				if(index > 20):
 					print();
 					pass;
-				HexBoard[to.x][to.y] = getPieceInt(id, isWhiteTurn) ;
 				bbAddPieceOf(QRToIndex(to.x, to.y,), !isWhiteTurn, id);
 				if (OK != activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
@@ -1971,7 +1548,6 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 			
 				to.y += 1 if isWhiteTurn else -1;
 				
-				HexBoard[to.x][to.y] = getPieceInt(id, isWhiteTurn);
 				bbAddPieceOf(QRToIndex(to.x, to.y,), !isWhiteTurn, id);
 				activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
@@ -1989,8 +1565,6 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				var idAndIndex = cleanFlag.split(',');
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
-				
-				HexBoard[from.x][from.y] = getPieceInt(PIECES.PAWN, !isWhiteTurn);
 				
 				bbAddPieceOf(QRToIndex(to.x, to.y,), isWhiteTurn, PIECES.PAWN);
 				bbClearIndexOf(QRToIndex(to.x, to.y,), isWhiteTurn, id);
@@ -2020,14 +1594,14 @@ func undoSubFixState():
 		match flag:
 			"C":
 				# GET IN CHECK DATA
-				var kingCords:Vector2i = activePieces[SIDES.BLACK if !isWhiteTurn else SIDES.WHITE][PIECES.KING][KING_INDEX];
-				var attacker = searchForMyAttackers(kingCords, isWhiteTurn);
+				var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
+				var attacker = bbsearchForMyAttackers(kingCords, isWhiteTurn);
 				
 				GameInCheckMoves.clear();
 				GameInCheck = true;
 				
 				for atk in attacker:
-					var pieceType:PIECES = getPieceType(HexBoard[atk.x][atk.y]);
+					var pieceType:PIECES = bbPieceTypeOf(QRToIndex(atk.x, atk.y), isWhiteTurn)
 					fillInCheckMoves(pieceType, atk, kingCords, false);
 				
 				# GET IN CHECK DATA
@@ -2103,7 +1677,7 @@ func differenceOfTwoArrays(ARR:Array, ARR1:Array):
 			intersection.append(item);
 	return intersection;
 
-## Print HexBoard 
+## Print A Dictionary Board 
 func printBoard(board: Dictionary):
 	var flipedKeys = board.keys();
 	flipedKeys.reverse();
@@ -2139,8 +1713,7 @@ func initiateEngineAI() -> void:
 
 ## initiate the engine with a new game
 func initiateEngine(FEN_STRING) -> bool:
-	HexBoard = fillBoardwithFEN(FEN_STRING);
-	if ( HexBoard == {} ):
+	if ( not fillBoardwithFEN(FEN_STRING) ):
 		print("Invalid FEN");
 		return false;
 	
@@ -2159,9 +1732,7 @@ func initiateEngine(FEN_STRING) -> bool:
 	captureValid = false;
 	GameInCheckFrom = Vector2i(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 	
-	#activePieces = findPieces(HexBoard);
 	activePieces = bbfindPieces();
-	printActivePieces(activePieces);
 
 	generateNextLegalMoves();
 	
@@ -2225,7 +1796,8 @@ func _passToAI() -> void:
 	
 	EnemyAI._makeChoice(self);
 	
-	EnemyChoiceType = getPieceType(HexBoard[EnemyAI._getCords().x][EnemyAI._getCords().y])
+	EnemyChoiceType = bbPieceTypeOf(QRToIndex(EnemyAI._getCords().x,EnemyAI._getCords().y),  !isWhiteTurn);
+	
 	EnemyTo = EnemyAI._getTo();
 	
 	EnemyPromoted = EnemyAI._getMoveType() == MOVE_TYPES.PROMOTE;
@@ -2271,9 +1843,6 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 	var index:int = 0;
 	
 	##Default Undo
-	HexBoard[UndoNewFrom.x][UndoNewFrom.y] = pieceVal;
-	HexBoard[UndoNewTo.x][UndoNewTo.y] = PIECES.ZERO;
-	
 	bbClearIndexOf(QRToIndex(UndoNewTo.x,UndoNewTo.y), isWhiteTurn, pieceType);
 	bbAddPieceOf(QRToIndex(UndoNewFrom.x,UndoNewFrom.y), isWhiteTurn, pieceType);
 	
