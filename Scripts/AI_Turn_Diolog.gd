@@ -1,6 +1,6 @@
 extends Control
 
-@onready var SpriteController = $Panel/ColorRect;
+@onready var SpriteController = $SpriteHolder;
 
 const SPIN_SPEED = 200;
 

@@ -1,8 +1,7 @@
-[gd_scene load_steps=13 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=12 format=3 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/Central.gd" id="2_tcmm4"]
-[ext_resource type="PackedScene" uid="uid://dpk8skvfvafhc" path="res://Scenes/AI_Turn_Diolog.tscn" id="2_ycxg1"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scripts/GUI/Left/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/GUI/Right/SideSelect.gd" id="5_ref6b"]
@@ -390,9 +389,6 @@ History
 
 [node name="SettingsDialog" parent="." instance=ExtResource("8_avrf3")]
 visible = false
-layout_mode = 1
-
-[node name="AITurnDiolog" parent="." instance=ExtResource("2_ycxg1")]
 layout_mode = 1
 
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]

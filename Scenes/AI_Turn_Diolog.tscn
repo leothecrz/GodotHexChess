@@ -12,18 +12,15 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_i4y7p")
 
-[node name="Panel" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -200.0
+[node name="ColorRect2" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 376.0
 offset_top = 100.0
-offset_right = 200.0
+offset_right = 776.0
 offset_bottom = 300.0
-grow_horizontal = 2
+color = Color(0, 0, 0, 0.392157)
 
-[node name="RichTextLabel" type="RichTextLabel" parent="Panel"]
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -31,9 +28,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -175.0
-offset_top = -80.0
+offset_top = -204.0
 offset_right = 175.0
-offset_bottom = 80.0
+offset_bottom = -44.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
@@ -41,24 +38,21 @@ text = "[center][font_size=20]
 The AI is taking its turn. 
 [/font_size][/center]"
 
-[node name="ColorRect" type="ColorRect" parent="Panel"]
+[node name="SpriteHolder" type="ColorRect" parent="."]
 layout_mode = 1
-anchors_preset = 7
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 1.0
 offset_left = -30.0
-offset_top = -90.0
+offset_top = 200.0
 offset_right = 30.0
-offset_bottom = -30.0
+offset_bottom = 260.0
 grow_horizontal = 2
-grow_vertical = 0
 rotation = -5.94285
 pivot_offset = Vector2(30, 30)
 color = Color(1, 1, 1, 0)
 
-[node name="Sprite2D" type="Sprite2D" parent="Panel/ColorRect"]
+[node name="Sprite2D" type="Sprite2D" parent="SpriteHolder"]
 position = Vector2(30, 30)
 scale = Vector2(0.615, 0.615)
 texture = ExtResource("1_kyspi")
