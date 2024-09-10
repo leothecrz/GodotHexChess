@@ -22,6 +22,7 @@ var MOVEINDEX:int;
 var PROMOTETO:int;
 
 var counter = 0;
+var statesEvaluated = 0;
 
 ##
 func _init(playswhite:bool, max_Depth:int):
@@ -73,6 +74,7 @@ func selectBestMove(piece:Vector2i, movetype:int, index:int, move:Vector2i):
 
 ## Measure Board State
 func Hueristic(hexEngine:HexEngine) -> int:
+	statesEvaluated += 1;
 	#ENDSTATE
 	if(hexEngine._getGameOverStatus()):
 		if(hexEngine._getGameInCheck()):
@@ -116,10 +118,9 @@ func Hueristic(hexEngine:HexEngine) -> int:
 
 ##
 func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:int) -> int:
+	counter +=1;
 	if(depth == 0 or hexEngine._getGameOverStatus()):
 			return Hueristic(hexEngine);
-			
-	counter +=1;
 	
 	var legalmoves = hexEngine._getMoves().duplicate(true);
 	var escapeLoop = false;
@@ -216,11 +217,13 @@ func _makeChoice(hexEngine:HexEngine):
 				
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
-				
-				
 	
-	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
-	print("Moves Checked: ", counter);
+	print("Move Gen For Depth [%d+1] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
+	print("MinMax Calls: ", counter);
+	print("Evals Made: ", statesEvaluated);
 	print("Best Value: ", BestValue);
+	
+	print("Cords: (%d,%d), To: (%d,%d), Type: %d, Index: %d \n" % [CORDS.x,CORDS.y, TO.x,TO.y, MOVETYPE, MOVEINDEX]);
+	
 	hexEngine._enableAIMoveLock();
 	return
