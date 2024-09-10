@@ -691,7 +691,6 @@ func swapPlayerTurn():
 func bbcheckForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
 	var index = QRToIndex(cords.x,cords.y);
 	var isWhiteTrn = bbIsPieceWhite(index);
-	var allPieces = BIT_BLACK.OR(BIT_WHITE);
 	
 	for direction in dirSet.keys():
 		var LegalMoves:Array = [];

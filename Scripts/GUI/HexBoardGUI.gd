@@ -320,6 +320,7 @@ func allowAITurn():
 	pieceSelectedLockOthers.emit();
 	
 	ThinkingDialogRef = preload("res://Scenes/AI_Turn_Diolog.tscn").instantiate();
+	ThinkingDialogRef.z_index = 1;
 	add_child(ThinkingDialogRef);
 	
 	MasterAIThread.start(passAIToNewThread);

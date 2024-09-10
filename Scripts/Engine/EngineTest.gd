@@ -92,11 +92,11 @@ func trymove(depth, ref:HexEngine) -> void:
 				var WAB = ref._duplicateWAB();
 				var BAB = ref._duplicateBAB();
 				var BP = ref._duplicateBP();
-				var IP = ref._duplicateIP();
+				var InPi = ref._duplicateIP();
 				ref._makeMove(piece,movetype,index,ref.PIECES.QUEEN);
 				trymove(depth-1,ref);
 				ref._undoLastMove(false);
-				ref._restoreState(WAB,BAB,BP,IP,legalmoves);
+				ref._restoreState(WAB,BAB,BP,InPi,legalmoves);
 				index += 1;
 	return ;
 	

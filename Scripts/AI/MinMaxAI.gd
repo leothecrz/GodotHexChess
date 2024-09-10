@@ -1,8 +1,10 @@
 extends Node;
 class_name MinMaxAI;
 
-const MIN_INT = -9223372036854775808;
-const MAX_INT = 9223372036854775807;
+#const MIN_INT = -9223372036854775808;
+#const MAX_INT = 9223372036854775807;
+const MIN_INT = -922337203685477580;
+const MAX_INT = 922337203685477580;
 
 const DIST_VALUE = 100;
 const CHECK_VAL = 10000;
@@ -29,7 +31,9 @@ func _init(playswhite:bool, max_Depth:int):
 	PROMOTETO = 5;
 	return
 
-### GETTER
+
+### GETTERS
+
 
 ##
 func _getCords():
@@ -51,9 +55,23 @@ func _getPromoteTo():
 func _getTo():
 	return TO;
 
-enum test {zero,one}
 
-##
+## Update Self
+
+
+## Update the AI choice that will be read by the GUI
+func selectBestMove(piece:Vector2i, movetype:int, index:int, move:Vector2i):
+	CORDS = piece;
+	MOVETYPE = movetype;
+	MOVEINDEX = index;
+	TO = move;
+	return
+
+
+## MINIMAX
+
+
+## Measure Board State
 func Hueristic(hexEngine:HexEngine) -> int:
 	#ENDSTATE
 	if(hexEngine._getGameOverStatus()):
@@ -100,9 +118,12 @@ func Hueristic(hexEngine:HexEngine) -> int:
 func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:int) -> int:
 	if(depth == 0 or hexEngine._getGameOverStatus()):
 			return Hueristic(hexEngine);
+			
 	counter +=1;
+	
 	var legalmoves = hexEngine._getMoves().duplicate(true);
 	var escapeLoop = false;
+	
 	if(isMaxPlayer):
 		var invalue = MIN_INT;
 		for piece in legalmoves.keys():
@@ -114,12 +135,15 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 					var WAB = hexEngine._duplicateWAB();
 					var BAB = hexEngine._duplicateBAB();
 					var BP = hexEngine._duplicateBP();
-					var IP = hexEngine._duplicateIP();
+					var InPi = hexEngine._duplicateIP();
+					
 					hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
 					invalue = max(minimax(depth-1,false,hexEngine, alpha, beta), invalue);
 					alpha = max(alpha, invalue);
+					
 					hexEngine._undoLastMove(false);
-					hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
+					hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+					
 					if(beta <= alpha):
 						escapeLoop = true;
 						break;
@@ -135,63 +159,65 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 				var WAB = hexEngine._duplicateWAB();
 				var BAB = hexEngine._duplicateBAB();
 				var BP = hexEngine._duplicateBP();
-				var IP = hexEngine._duplicateIP();
+				var InPi = hexEngine._duplicateIP();
+				
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
+				
 				outvalue = min(minimax(depth-1,true,hexEngine, alpha, beta), outvalue);
 				beta = min(beta, outvalue);
+				
 				hexEngine._undoLastMove(false);
-				hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
+				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+				
 				if(beta <= alpha):
 					escapeLoop = true;
 					break;
 				index += 1;
 	return outvalue;
 
-##
-func lessThan(a,b):
-	return a<b;
 
-##
-func greaterThan(a,b):
-	return a>b;
+## API
 
-##
-func selectBestMove(piece:Vector2i, movetype:int, index:int, move:Vector2i):
-	CORDS = piece;
-	MOVETYPE = movetype;
-	MOVEINDEX = index;
-	TO = move;
-	return
 
-##
+## allow AI to make its choice
 func _makeChoice(hexEngine:HexEngine):
-	if(hexEngine._getGameOverStatus()): return;
-	hexEngine._disableAIMoveLock();
-	CORDS = Vector2i()
-	var isMaxPlayer = side != hexEngine.SIDES.BLACK;
-	var BestValue:int = MAX_INT if isMaxPlayer else MIN_INT;
-	var function:Callable = lessThan if not isMaxPlayer else greaterThan;
+	if(hexEngine._getGameOverStatus()): 
+		return;
+	
+	var isMaxPlayer = (side == hexEngine.SIDES.BLACK);
+	var BestValue:int = MIN_INT if isMaxPlayer else MAX_INT;
+	
+	var function:Callable = func(a, b): return a < b  if isMaxPlayer else func(a,b): return a > b ;
+	
 	var legalmoves:Dictionary = hexEngine._getMoves().duplicate(true);
 	var start = Time.get_ticks_msec();
+	
+	hexEngine._disableAIMoveLock();
+	CORDS = Vector2i()
 	counter = 0;
+	
 	for piece in legalmoves.keys():
 		for movetype in legalmoves[piece]:
 			var index:int = 0;
 			for move in legalmoves[piece][movetype]:
-				#var state:FrozenState = hexEngine._getFrozenState();
-				var WAB = hexEngine._duplicateWAB();
-				var BAB = hexEngine._duplicateBAB();
-				var BP = hexEngine._duplicateBP();
-				var IP = hexEngine._duplicateIP();
+
+				var WAB:Dictionary = hexEngine._duplicateWAB();
+				var BAB:Dictionary = hexEngine._duplicateBAB();
+				var BP:Dictionary = hexEngine._duplicateBP();
+				var InPi:Dictionary = hexEngine._duplicateIP();
+				
 				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
-				var val = minimax(maxDepth,isMaxPlayer,hexEngine, MIN_INT, MAX_INT);
+				
+				var val = minimax(maxDepth,!isMaxPlayer,hexEngine, MIN_INT, MAX_INT);
+				
 				if (function.call(BestValue,val)):
 					BestValue = val;
 					selectBestMove(piece,movetype,index,move);
+				
 				hexEngine._undoLastMove(false);
-				hexEngine._restoreState(WAB,BAB,BP,IP,legalmoves);
-				#hexEngine._restoreFrozenState(state,legalmoves)
-				#state.queue_free();
+				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+				
+				
 	
 	print("Move Gen For Depth [%d] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
 	print("Moves Checked: ", counter);
