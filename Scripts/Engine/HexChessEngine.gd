@@ -1311,8 +1311,8 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 		moveTo.y += -1 if isWhiteTurn else 1;
 
 	#Add To Captures
-	if(isWhiteTurn): whiteCaptures.append(captureType);
-	else: blackCaptures.append(captureType);
+	#if(isWhiteTurn): whiteCaptures.append(captureType);
+	#else: blackCaptures.append(captureType);
 	return revertEnPassant;
 
 ##
@@ -1706,7 +1706,7 @@ func initiateEngineAI() -> void:
 		ENEMY_TYPES.RANDOM:
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
 		ENEMY_TYPES.MIN_MAX:
-			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
+			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 1);
 		ENEMY_TYPES.NN:
 			print("NN Agent not yet implemented, using RNG")
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
