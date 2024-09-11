@@ -116,6 +116,41 @@ func Hueristic(hexEngine:HexEngine) -> int:
 			value += DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS-pawn.x));;
 	return value;
 
+func NegativeMaximum(hexEngine:HexEngine, depth:int, multiplier:int, alpha:int, beta:int) -> int:
+	counter += 1
+	if (depth == 0) or (hexEngine._getGameOverStatus()):
+		return multiplier * Hueristic(hexEngine);
+	
+	var index:int = 0;
+	var value = MIN_INT;
+	var escapeLoop = false;
+	var legalmoves = hexEngine._getMoves().duplicate(true);
+	#Insert Move Ordering Here
+	
+	for piece in legalmoves.keys():
+		for movetype in legalmoves[piece]:
+			index = 0;
+			for move in legalmoves[piece][movetype]:
+				var WAB = hexEngine._duplicateWAB();
+				var BAB = hexEngine._duplicateBAB();
+				var BP = hexEngine._duplicateBP();
+				var InPi = hexEngine._duplicateIP();
+				
+				hexEngine._makeMove(piece,movetype,index,hexEngine.PIECES.QUEEN);
+				value = max(-NegativeMaximum(hexEngine, (depth-1), -multiplier, -beta, -alpha), value);
+				alpha = max(alpha, value);
+				
+				hexEngine._undoLastMove(false);
+				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+				index += 1;
+				
+				if(alpha >= beta):
+					escapeLoop = true;
+					break;
+			if (escapeLoop): break;
+		if (escapeLoop): break;
+	return value;
+
 ##
 func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:int) -> int:
 	counter +=1;
@@ -170,10 +205,12 @@ func minimax(depth:int, isMaxPlayer:bool, hexEngine:HexEngine, alpha:int, beta:i
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
 				
+				index += 1;
+				
 				if(beta <= alpha):
 					escapeLoop = true;
 					break;
-				index += 1;
+				
 	return outvalue;
 
 
@@ -224,8 +261,6 @@ func _makeChoice(hexEngine:HexEngine):
 	print("MinMax Calls: ", counter);
 	print("Evals Made: ", statesEvaluated);
 	print("Best Value: ", BestValue);
-	
-	print("Cords: (%d,%d), To: (%d,%d), Type: %d, Index: %d \n" % [CORDS.x,CORDS.y, TO.x,TO.y, MOVETYPE, MOVEINDEX]);
 	
 	hexEngine._enableAIMoveLock();
 	return

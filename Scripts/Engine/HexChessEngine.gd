@@ -1706,7 +1706,7 @@ func initiateEngineAI() -> void:
 		ENEMY_TYPES.RANDOM:
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
 		ENEMY_TYPES.MIN_MAX:
-			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 3);
+			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
 		ENEMY_TYPES.NN:
 			print("NN Agent not yet implemented, using RNG")
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
