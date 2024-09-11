@@ -214,9 +214,11 @@ func _makeChoice(hexEngine:HexEngine):
 				if (function.call(BestValue,val)):
 					BestValue = val;
 					selectBestMove(piece,movetype,index,move);
+					print("Cords: (%d,%d), To: (%d,%d), Type: %d, Index: %d \n" % [CORDS.x,CORDS.y, TO.x,TO.y, MOVETYPE, MOVEINDEX]);
 				
 				hexEngine._undoLastMove(false);
 				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+
 	
 	print("Move Gen For Depth [%d+1] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
 	print("MinMax Calls: ", counter);

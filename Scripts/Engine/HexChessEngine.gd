@@ -79,7 +79,9 @@ const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAP
 	#UNSET
 const DECODE_FEN_OFFSET = 70;
 const TYPE_MASK = 0b0111;
-const PAWN_QS = [-4,-3,-2,-1,0,1,2,3,4,5];
+
+const PAWN_START = [-4,-3,-2,-1,0,1,2,3,4];
+const PAWN_PROMOTE = [-5,-4,-3,-2,-1,0,1,2,3,4];
 
 
 ### State
@@ -585,7 +587,7 @@ func isPieceKing(id:int) -> bool:
 func isBlackPawnStart(cords:Vector2i) -> bool:
 	var r:int = -1;
 	#for q:int in range (-4,4+1):
-	for q:int in PAWN_QS:
+	for q:int in PAWN_START:
 		if( q > 0 ):
 			r -= 1;
 		if (cords.x == q) && (cords.y == r):
@@ -593,10 +595,10 @@ func isBlackPawnStart(cords:Vector2i) -> bool:
 	return false;
 
 ## Check if cords are in the white pawn start
-func isWhitePawnStar(cords:Vector2i) ->bool:
+func isWhitePawnStart(cords:Vector2i) ->bool:
 	var r:int = 5;
 	#for q:int in range (-4,4+1):
-	for q:int in PAWN_QS:
+	for q:int in PAWN_START:
 		if (cords.x == q) && (cords.y == r):
 			return true;
 		if( q < 0 ):
@@ -607,7 +609,7 @@ func isWhitePawnStar(cords:Vector2i) ->bool:
 ##
 func isWhitePawnPromotion(cords:Vector2i)-> bool:
 	var r:int = 0;
-	for q:int in PAWN_QS:
+	for q:int in PAWN_PROMOTE:
 		
 		if (cords.x == q) && (cords.y == r):
 			return true;
@@ -620,7 +622,7 @@ func isWhitePawnPromotion(cords:Vector2i)-> bool:
 ##
 func isBlackPawnPromotion(cords:Vector2i) -> bool:
 	var r:int = 5;
-	for q:int in PAWN_QS:
+	for q:int in PAWN_PROMOTE:
 		
 		if (cords.x == q) && (cords.y == r):
 			return true;
@@ -766,7 +768,7 @@ func bbfindFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
 				legalMoves[pawn][MOVE_TYPES.MOVES].append(move);
 				boolCanGoFoward = true;
 	##Double Move From Start
-	if( boolCanGoFoward && ( isWhitePawnStar(pawn) if isWhiteTurn else isBlackPawnStart(pawn) ) ):
+	if( boolCanGoFoward && ( isWhitePawnStart(pawn) if isWhiteTurn else isBlackPawnStart(pawn) ) ):
 		var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
 		var index:int = QRToIndex(pawn.x, doubleF);
 		if (bbIsIndexEmpty(index)):
@@ -1704,7 +1706,7 @@ func initiateEngineAI() -> void:
 		ENEMY_TYPES.RANDOM:
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
 		ENEMY_TYPES.MIN_MAX:
-			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 1);
+			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 3);
 		ENEMY_TYPES.NN:
 			print("NN Agent not yet implemented, using RNG")
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
