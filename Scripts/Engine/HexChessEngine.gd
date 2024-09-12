@@ -38,9 +38,10 @@ enum SIDES { BLACK, WHITE };
 enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 enum MATE_STATUS{ NONE, CHECK, OVER }
 
-enum UNDO_FLAGS {};
+enum UNDO_FLAGS {ENPASSANT, CHECK, GAME_OVER };
 
 enum ENEMY_TYPES { PLAYER_TWO, RANDOM, MIN_MAX, NN }
+
 	#Defaults
 const HEX_BOARD_RADIUS = 5;
 const KING_INDEX = 0;
@@ -81,10 +82,13 @@ const PAWN_MOVE_TEMPLATE : Dictionary    = { MOVE_TYPES.MOVES:[], MOVE_TYPES.CAP
 	#UNSET
 const DECODE_FEN_OFFSET = 70;
 const TYPE_MASK = 0b0111;
-
 const PAWN_START = [-4,-3,-2,-1,0,1,2,3,4];
 const PAWN_PROMOTE = [-5,-4,-3,-2,-1,0,1,2,3,4];
 
+const PROMOTE_SYM = "+";
+const TOP_SNEAK_CAPTURE_SYM = "-";
+const CAPTURE_SYM = "/";
+const INDEX_DELIM_SYM = ",";
 
 ### State
 
@@ -159,9 +163,13 @@ var EnemyTo:Vector2i;
 # History
 var moveHistory : Array = [];
 
-### BITBOARD
+# BITBOARD
 var startTime:int;
 var stopTime:int;
+
+
+## Bitboard
+
 
 ##
 func createBitBoards() -> void:
@@ -401,6 +409,7 @@ func bbClearIndexOf(index:int, isWhite:bool, type:PIECES):
 	activeBoard[type-1] = result;
 	return;
 
+##
 func bbAddPieceOf(index:int, isWhite:bool, type:PIECES):
 	var activeBoard = WHITE_BB if isWhite else BLACK_BB;
 	var mask = createSinglePieceBB(index);
@@ -409,6 +418,7 @@ func bbAddPieceOf(index:int, isWhite:bool, type:PIECES):
 	activeBoard[type-1].free();
 	activeBoard[type-1] = result;
 	return;
+
 
 ### Board State
 
@@ -690,6 +700,7 @@ func swapPlayerTurn():
 
 
 ### MOVE GENERATION
+
 
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 func bbcheckForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
@@ -1020,6 +1031,9 @@ func bbfindLegalMovesFor(activepieces:Array) -> void:
 	return;
 
 
+## Board Search
+
+
 ## Check if an active piece appears in the capture moves of any piece.
 func checkIFCordsUnderAttack(Cords:Vector2i, enemyMoves:Dictionary) -> bool:
 	for piece:Vector2i in enemyMoves.keys():
@@ -1280,6 +1294,63 @@ func resetTurnFlags() -> void:
 	EnPassantCordsValid = false;
 	return;
 
+
+## Handle Move
+
+
+##
+func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
+	var pieceType = bbPieceTypeOf(QRToIndex(cords.x,cords.y), !isWhiteTurn);
+	var movedPiece = setupActiveForSingle(pieceType, cords, lastCords);
+	var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][0];
+	var mateStatus;
+
+	blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
+	legalMoves.clear();
+	bbfindLegalMovesFor(movedPiece);
+
+	if(checkIFCordsUnderAttack(kingCords, legalMoves)):
+		mateStatus = UNDO_FLAGS.CHECK;
+		fillInCheckMoves(pieceType, cords, kingCords, true);
+		#print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
+		#print("Game In Check Moves: ", GameInCheckMoves);
+	
+	clearCombinedBIT();
+	calculateCombinedBIT();
+
+	incrementTurnNumber();
+	swapPlayerTurn();
+	
+	generateNextLegalMoves()
+
+	var pieceCount = 0; 
+	for side in activePieces:
+		for type in side.keys():
+			for piece in side[type]:
+				pieceCount+=1;
+				
+	if(pieceCount <= 2):
+		GameIsOver = true;
+
+	## Check For Mate and Stale Mate	
+	var moveCount = countMoves(legalMoves);
+	if( moveCount <= 0):
+		GameIsOver = true;
+		mateStatus = UNDO_FLAGS.GAME_OVER;
+		#if(GameInCheck):
+			##print("Check Mate")
+			#pass;
+		#else:
+			##print("Stale Mate")
+			#pass;
+	
+	if(mateStatus):
+		moveHistory.append("%s %d" % [historyPreview, mateStatus]);
+	else:
+		moveHistory.append(historyPreview);
+	
+	return;
+
 ##
 func handleMoveCapture(moveTo, pieceType) -> bool:
 	var revertEnPassant:bool = false;
@@ -1288,7 +1359,6 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 	captureValid = true;
 
 	## ENPASSANT FIX
-	#
 	if(pieceType == PIECES.PAWN && bbIsIndexEmpty(moveToIndex)):
 		moveTo.y += 1 if isWhiteTurn else -1;
 		moveToIndex = 	QRToIndex(moveTo.x,moveTo.y);
@@ -1296,7 +1366,7 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 		revertEnPassant = true;
 
 	bbClearIndexOf(QRToIndex(moveTo.x,moveTo.y),!isWhiteTurn,captureType);
-		
+	
 	var opColor = SIDES.BLACK if isWhiteTurn else SIDES.WHITE;
 	var i:int = 0;
 	for pieceCords in activePieces[opColor][captureType]:
@@ -1325,7 +1395,7 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 	
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
 	var moveTo = legalMoves[cords][moveType][moveIndex];
-	var moveHistMod = "";
+	var moveHistMod;
 
 	var index = QRToIndex(cords.x,cords.y);
 	bbClearIndexFrom(index, isWhiteTurn);
@@ -1347,14 +1417,14 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
 			activePieces[selfColor][pieceType].push_back(moveTo);
 
-			moveHistMod = moveHistMod + (" +%s,%d" % [pieceType, i]);
+			moveHistMod = moveHistMod + (" +%d,%d" % [pieceType, i]);
 
 		MOVE_TYPES.ENPASSANT:
 			var newECords = legalMoves[cords][MOVE_TYPES.ENPASSANT][0];
 			EnPassantCords = Vector2i(newECords.x,newECords.y + (1 if isWhiteTurn else -1));
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
-			moveHistMod = "E";
+			moveHistMod = UNDO_FLAGS.ENPASSANT;
 
 		MOVE_TYPES.CAPTURE:
 			if handleMoveCapture(moveTo, pieceType):
@@ -1366,7 +1436,15 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 
 	add_IPieceToBitBoardsOf(moveTo.x,moveTo.y,pieceType,isWhiteTurn);
 	
-	var histPreview = ("%s %s %s %s" % [pieceVal,encodeEnPassantFEN(cords.x,cords.y),encodeEnPassantFEN(moveTo.x,moveTo.y),moveHistMod]);
+	var histPreview = ("%d %s %s" % 
+	[
+		pieceVal,
+		encodeEnPassantFEN(cords.x,cords.y),
+		encodeEnPassantFEN(moveTo.x,moveTo.y)
+	]);
+	
+	if(moveHistMod):
+		histPreview = "%s %s" % [histPreview, moveHistMod];
 	
 	# Update Piece List
 	for i in range(activePieces[selfColor][pieceType].size()):
@@ -1379,6 +1457,10 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 	handleMoveState(moveTo, cords, histPreview);
 
 	return;
+
+
+##
+
 
 ##
 func _restoreFrozenState(state:FrozenState, moves:Dictionary):
@@ -1450,56 +1532,6 @@ func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 		
 	return movedPiece;
 
-##
-func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
-	var pieceType = bbPieceTypeOf(QRToIndex(cords.x,cords.y), !isWhiteTurn);
-	var movedPiece = setupActiveForSingle(pieceType, cords, lastCords);
-	var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][0];
-	var mateStatus = "";
-
-	blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
-	legalMoves.clear();
-	bbfindLegalMovesFor(movedPiece);
-
-	if(checkIFCordsUnderAttack(kingCords, legalMoves)):
-		mateStatus = "C"
-		fillInCheckMoves(pieceType, cords, kingCords, true);
-		#print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
-		#print("Game In Check Moves: ", GameInCheckMoves);
-	
-	clearCombinedBIT();
-	calculateCombinedBIT();
-
-	incrementTurnNumber();
-	swapPlayerTurn();
-	
-	generateNextLegalMoves()
-
-	var pieceCount = 0; 
-	for side in activePieces:
-		for type in side.keys():
-			for piece in side[type]:
-				pieceCount+=1;
-				
-	if(pieceCount <= 2):
-		GameIsOver = true;
-
-	## Check For Mate and Stale Mate	
-	var moveCount = countMoves(legalMoves);
-	if( moveCount <= 0):
-		mateStatus = "O"
-		if(GameInCheck):
-			#print("Check Mate")
-			pass;
-		else:
-			#print("Stale Mate")
-			pass;
-		
-		GameIsOver = true;
-	
-	moveHistory.append("%s %s" % [historyPreview, mateStatus])
-	return;
-
 
 ### UNDO
 
@@ -1511,24 +1543,12 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 	while (i < splits.size()):
 		var flag:String = splits[i];
 		match flag:
-			"":
-				i += 1;
-				continue;
-			"C":
-				GameInCheck = false;
-			"O":
-				GameIsOver = false;
-			"E":
-				EnPassantCordsValid = false;
-				
 			_ when flag[0] == '/':
 				var cleanFlag:String = flag.get_slice('/', 1);
 				var idAndIndex = cleanFlag.split(',');
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
-				if(index > 20):
-					print();
-					pass;
+				
 				bbAddPieceOf(QRToIndex(to.x, to.y,), !isWhiteTurn, id);
 				if (OK != activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
@@ -1545,7 +1565,6 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 			_ when flag[0] == '-':
 				var cleanFlag:String = flag.get_slice('-', 1);
 				var idAndIndex = cleanFlag.split(',');
-				
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 			
@@ -1561,7 +1580,6 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				@warning_ignore("int_as_enum_without_cast")
 				captureType = id;
 				captureIndex = index;
-				#signal gui // finished?
 
 			_ when flag[0] == '+':
 				var cleanFlag:String = flag.get_slice('+', 1);
@@ -1578,53 +1596,51 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				@warning_ignore("int_as_enum_without_cast")
 				unpromoteType = id;
 				unpromoteIndex = index;
+			
+			_ when flag.is_valid_int():
+				match int(flag):
+					UNDO_FLAGS.ENPASSANT: EnPassantCordsValid = false;
+					UNDO_FLAGS.CHECK: GameInCheck = false;
+					UNDO_FLAGS.GAME_OVER: GameIsOver = false;
+			_ : pass;
+			
 		i += 1;
 		continue;
 
 ##
 # SUB Routine
 # Moves should be generated by caller function afterwards
-func undoSubFixState():
-	#Early Escape
+func undoSubFixState() -> void:
 	if(moveHistory.size() <= 0):
 		return;
 		
 	var currentMove = moveHistory[moveHistory.size()-1];
-	var splits = currentMove.split(" ");
+	var splits:PackedStringArray = currentMove.split(" ");
 	var i = 3;
 	while (i < splits.size()):
-		var flag = splits[i];
-		match flag:
-			"C":
-				# GET IN CHECK DATA
-				var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
-				var attacker = bbsearchForMyAttackers(kingCords, isWhiteTurn);
-				
-				GameInCheckMoves.clear();
-				GameInCheck = true;
-				
-				for atk in attacker:
-					var pieceType:PIECES = bbPieceTypeOf(QRToIndex(atk.x, atk.y), isWhiteTurn)
-					fillInCheckMoves(pieceType, atk, kingCords, false);
-				
-				# GET IN CHECK DATA
-				pass;
-				
-			"E":
-				#print("Undo onto EnPassant")
-				EnPassantCordsValid = true;
-				# GET EnPASSANT DATA
-				var from:Vector2i = decodeEnPassantFEN(splits[1]);
-				var to:Vector2i = decodeEnPassantFEN(splits[2]);
-				var side = SIDES.BLACK if ((from - to).y) < 0 else SIDES.WHITE;
-				EnPassantTarget = to;
-				EnPassantCords = Vector2i(to.x, to.y - (1 if side == SIDES.BLACK else -1));
-				# GET EnPASSANT DATA
-				pass;
+		var flag:String = splits[i];
+		if(flag.is_valid_int()):
+			match int(flag):
+				UNDO_FLAGS.CHECK:
+					var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
+					var attacker = bbsearchForMyAttackers(kingCords, isWhiteTurn);
+					GameInCheckMoves.clear();
+					GameInCheck = true;
+					for atk in attacker:
+						var pieceType:PIECES = bbPieceTypeOf(QRToIndex(atk.x, atk.y), isWhiteTurn)
+						fillInCheckMoves(pieceType, atk, kingCords, false);
 			
-			_: pass;
+				UNDO_FLAGS.ENPASSANT:
+					EnPassantCordsValid = true;
+					var from:Vector2i = decodeEnPassantFEN(splits[1]);
+					var to:Vector2i = decodeEnPassantFEN(splits[2]);
+					var side = SIDES.BLACK if ((from - to).y) < 0 else SIDES.WHITE;
+					EnPassantTarget = to;
+					EnPassantCords = Vector2i(to.x, to.y - (1 if side == SIDES.BLACK else -1));
+				
+				_: pass;
 		i += 1;
-	pass;
+	return;
 
 
 ### UTILITY
@@ -1634,6 +1650,7 @@ func undoSubFixState():
 func getSAxialCordFrom(cords:Vector2i) -> int:
 	return (-1 * cords.x) - cords.y;
 
+##
 func getAxialCordDist(from:Vector2i,to:Vector2i):
 	var dif = Vector3i(from.x-to.x, from.y-to.y, getSAxialCordFrom(from)-getSAxialCordFrom(to));
 	return max(abs(dif.x),abs(dif.y),abs(dif.z));
@@ -1700,6 +1717,9 @@ func printBoard(board: Dictionary):
 	return;
 
 
+## Init
+
+
 ## 
 func initiateEngineAI() -> void:
 	if(not EnemyIsAI):
@@ -1744,9 +1764,9 @@ func initiateEngine(FEN_STRING) -> bool:
 	return true;
 
 
-###
-##  API INTERACTIONS
-###
+
+###  API INTERACTIONS
+
 
 
 # NON-GETTER FUNCTIONS
@@ -1762,10 +1782,12 @@ func _setEnemy(type:ENEMY_TYPES, isWhite:bool) -> void:
 	EnemyPlaysWhite = isWhite;
 	return;
 
+##
 func _disableAIMoveLock():
 	bypassMoveLock = false;
 	return;
-	
+
+##
 func _enableAIMoveLock():
 	bypassMoveLock = true;
 	return;
@@ -1967,6 +1989,6 @@ func _getUndoType() -> PIECES:
 func _getUndoIndex() -> int:
 	return undoIndex;
 
-##
+## Get Move History Size
 func _getMoveHistorySize() -> int:
 	return moveHistory.size();
