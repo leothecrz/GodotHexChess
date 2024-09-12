@@ -142,9 +142,9 @@ func runSweep(ERef:HexEngine):
 	
 	bitboardRangeTest();
 	
-	simpleMoveAndCapTest(ERef);
+	#simpleMoveAndCapTest(ERef);
 
-	for i in range(1,4):
+	for i in range(1,5):
 		print("Depth %d:" % i, count_moves(i, ERef) );
 
 	#Next Test

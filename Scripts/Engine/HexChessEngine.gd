@@ -38,6 +38,8 @@ enum SIDES { BLACK, WHITE };
 enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 enum MATE_STATUS{ NONE, CHECK, OVER }
 
+enum UNDO_FLAGS {};
+
 enum ENEMY_TYPES { PLAYER_TWO, RANDOM, MIN_MAX, NN }
 	#Defaults
 const HEX_BOARD_RADIUS = 5;
@@ -1706,7 +1708,7 @@ func initiateEngineAI() -> void:
 		ENEMY_TYPES.RANDOM:
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);
 		ENEMY_TYPES.MIN_MAX:
-			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 1);
+			EnemyAI = MinMaxAI.new(EnemyPlaysWhite, 2);
 		ENEMY_TYPES.NN:
 			print("NN Agent not yet implemented, using RNG")
 			EnemyAI = RandomAI.new(EnemyPlaysWhite);

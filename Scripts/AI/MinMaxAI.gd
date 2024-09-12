@@ -1,16 +1,16 @@
 extends Node;
 class_name MinMaxAI;
 
-#const MIN_INT = -9223372036854775808;
-#const MAX_INT = 9223372036854775807;
 const MIN_INT = -9223372036854775808;
 const MAX_INT = 9223372036854775807;
 
-const DIST_VALUE = 1000;
-const CHECK_VAL = 10000;
+const DIST_VALUE = 10000;
+const CHECK_VAL = 15000;
+
 #skip ZERO and ignore king *(its always present) 
 const PIECE_VALUES = [0, 1000, 3000, 5000, 3000, 9000, 0]
 
+## State
 
 var side:int;
 var maxDepth:int;
@@ -28,12 +28,12 @@ var statesEvaluated = 0;
 
 
 ##
-func _init(playswhite:bool, max_Depth:int):
-	side = 1 if playswhite else 0;
-	maxDepth = max_Depth;
+func _init(playswhite:bool, maxdepth:int):
+	side = HexEngine.SIDES.WHITE if playswhite else HexEngine.SIDES.BLACK;
+	maxDepth = maxdepth;
 	## For Promote moves should check if knight or queen is best choice (WIP)
 	PROMOTETO = 5;
-	return
+	return;
 
 
 ### GETTERS
@@ -119,6 +119,7 @@ func Hueristic(hexEngine:HexEngine) -> int:
 			value += DIST_VALUE * hexEngine.getAxialCordDist(pawn, Vector2i(pawn.x, hexEngine.HEX_BOARD_RADIUS-pawn.x));;
 	return value;
 
+## Recursive Move Check
 func NegativeMaximum(hexEngine:HexEngine, depth:int, multiplier:int, alpha:int, beta:int) -> int:
 	counter += 1
 	if (depth == 0) or (hexEngine._getGameOverStatus()):
@@ -200,3 +201,4 @@ func _makeChoice(hexEngine:HexEngine):
 	
 	hexEngine._enableAIMoveLock();
 	return
+
