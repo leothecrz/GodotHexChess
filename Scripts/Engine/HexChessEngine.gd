@@ -1764,9 +1764,7 @@ func initiateEngine(FEN_STRING) -> bool:
 	return true;
 
 
-
 ###  API INTERACTIONS
-
 
 
 # NON-GETTER FUNCTIONS
