@@ -245,6 +245,8 @@ func _makeChoice(hexEngine:HexEngine):
 	positionsFound = 0;
 	statesEvaluated = 0;
 	
+	
+	
 	#Insert Iterative Deepening Here
 	for depth in range(1, maxDepth+1):
 		for piece in legalmoves.keys():
@@ -268,7 +270,6 @@ func _makeChoice(hexEngine:HexEngine):
 					hexEngine._undoLastMove(false);
 					hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
 
-	
 	print("Move Gen For Depth [%d+1] took %d" % [maxDepth, Time.get_ticks_msec() - start]);
 	print("MinMax Calls: ", counter);
 	print("Evals Made: ", statesEvaluated);

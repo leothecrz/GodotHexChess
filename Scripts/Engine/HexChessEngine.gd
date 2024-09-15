@@ -167,75 +167,11 @@ var moveHistory : Array = [];
 var startTime:int;
 var stopTime:int;
 
+## Static
 
-## Bitboard
-
-
-##
-func createBitBoards() -> void:
-	WHITE_BB.clear();
-	BLACK_BB.clear();
-	for i in range(PIECES.size()-1):
-		WHITE_BB.append(BitBoard.new(0,0));
-
-	for i in range(PIECES.size()-1):
-		BLACK_BB.append(BitBoard.new(0,0));
-		
-	return;
-
-##
-func destroyBitBoards() -> void:
-	for BB in WHITE_BB:
-		BB.free();
-	for BB in BLACK_BB:
-		BB.free();
-	BIT_BLACK.free();
-	BIT_WHITE.free();
-	BIT_ALL.free();
-	return;
-
-##
-func getWhitePiecesBitBoard() -> BitBoard:
-	var returnBoard = BitBoard.new(0,0);
-	var tempBoard;
-	
-	for BB in WHITE_BB:
-		tempBoard = returnBoard.OR(BB);
-		returnBoard.free();
-		returnBoard = tempBoard;
-	
-	return returnBoard;
-
-##
-func getBlackPiecesBitBoard() -> BitBoard:
-	var returnBoard = BitBoard.new(0,0);
-	var tempBoard;
-	
-	for BB in BLACK_BB:
-		tempBoard = returnBoard.OR(BB);
-		returnBoard.free();
-		returnBoard = tempBoard;
-	
-	return returnBoard;
-
-##
-func getAllPiecesBitBoard() -> BitBoard:
-	var returnBoard = BitBoard.new(0,0);
-	var tempBoard;
-	
-	for BB in BLACK_BB:
-		tempBoard = returnBoard.OR(BB);
-		returnBoard.free();
-		returnBoard = tempBoard;
-		
-	for BB in WHITE_BB:
-		tempBoard = returnBoard.OR(BB);
-		returnBoard.free();
-		returnBoard = tempBoard;
-	return returnBoard;
 
 ## Get the index of (q,r)
-func QRToIndex(q:int, r:int) -> int:
+static func QRToIndex (q:int, r:int) -> int:
 	var normalq = q + 5;
 	var i = 0;
 	var index = 0;
@@ -252,8 +188,8 @@ func QRToIndex(q:int, r:int) -> int:
 			
 	return index;
 
-##
-func IndexToQR(index: int) -> Vector2i:
+## Get the (q,r) of index
+static func IndexToQR (index: int) -> Vector2i:
 	var accumulated_index:int = 0;
 	var normalq:int = 0;
 	
@@ -272,16 +208,93 @@ func IndexToQR(index: int) -> Vector2i:
 	return Vector2i(q, r)
 
 ## QUICK Powers of 2
-func get2PowerN(n:int) -> int:
+# N must be below 64 
+static func get2PowerN (n:int) -> int:
 	return 1 << n;
 
-##
-func add_IPieceToBitBoardsOf(q:int, r:int, piece:int, iswhite:bool) -> void:
-	var index = QRToIndex(q,r);
-	var type = getPieceType(piece);
-	var insert = createSinglePieceBB(index);
+## Create a BitBoard mask for the index
+static func createSinglePieceBB (index:int) -> BitBoard:
+	var back = 0;
+	var front = 0;
+	if(index > BitBoard.INDEX_TRANSITION):
+		front = HexEngine.get2PowerN( index - BitBoard.INDEX_OFFSET );
+		back = 0;
+	else:
+		back = HexEngine.get2PowerN( index );
+	return BitBoard.new(front,back);
+
+## Create and return the Bitwise-OR total of all white pieces
+static func genTotalBitBoard (BBArray:Array) -> BitBoard:
+	var returnBoard = BitBoard.new(0,0);
+	var tempBoard;
 	
-	if(iswhite):
+	for BB in BBArray:
+		tempBoard = returnBoard.OR(BB);
+		returnBoard.free();
+		returnBoard = tempBoard;
+	
+	return returnBoard;
+
+
+## Bitboard
+
+
+## Initializes bitboards
+#SideEffects
+func createBitBoards() -> void:
+	WHITE_BB = [];
+	BLACK_BB = [];
+	for i in range(PIECES.size()-1):
+		WHITE_BB.append(BitBoard.new(0,0));
+
+	for i in range(PIECES.size()-1):
+		BLACK_BB.append(BitBoard.new(0,0));
+		
+	return;
+
+## Free all the bitboards holding state
+#SideEffects
+func destroyBitBoards() -> void:
+	for BB in WHITE_BB:
+		BB.free();
+	for BB in BLACK_BB:
+		BB.free();
+	clearCombinedBIT();
+	return;
+
+## Free the combined state bitboards
+func clearCombinedBIT() -> void:
+	BIT_ALL.free();
+	BIT_BLACK.free();
+	BIT_WHITE.free();
+	return;
+
+## Generate the combined state bitboards
+func calculateCombinedBIT() -> void:
+	BIT_WHITE = HexEngine.genTotalBitBoard(WHITE_BB);
+	BIT_BLACK = HexEngine.genTotalBitBoard(BLACK_BB);
+	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
+	#print("White BB:\n", BIT_WHITE);
+	#print("White:");
+	#for bb in WHITE_BB:
+		#print(bb);
+	#print(" ")
+	#print("Black BB:\n", BIT_BLACK);
+	#print("Black:");
+	#for bb in BLACK_BB:
+		#print(bb);
+	#print("ALL BB:\n", BIT_ALL);
+	#print("\n")
+	return;
+
+
+## Update the selected sides type bitboard at (q,r)
+func add_IPieceToBitBoardsOf(q:int, r:int, piece:int, updateWhite:bool) -> void:
+	var index = HexEngine.QRToIndex(q,r);
+	var insert = HexEngine.createSinglePieceBB(index);
+	var type = getPieceType(piece);
+
+	if(updateWhite):
 		var temp = WHITE_BB[type-1].OR(insert);
 		WHITE_BB[type-1].free();
 		WHITE_BB[type-1] = temp;
@@ -289,15 +302,16 @@ func add_IPieceToBitBoardsOf(q:int, r:int, piece:int, iswhite:bool) -> void:
 		var temp = BLACK_BB[type-1].OR(insert);
 		BLACK_BB[type-1].free();
 		BLACK_BB[type-1] = temp;
+	
 	insert.free();
 	return;
 
-##
+## Update the bitboard at (q,r) using piece int
 func add_IPieceToBitBoards(q:int, r:int, piece:int) -> void:
 	add_IPieceToBitBoardsOf(q, r, piece, isPieceWhite(piece));
 	return;
 
-##
+## Update the bitboard based on piece FEN STRING
 func addS_PieceToBitBoards(q:int, r:int, c:String) -> void:
 	var isBlack = true;
 	if(c == c.to_upper()):
@@ -315,67 +329,38 @@ func addS_PieceToBitBoards(q:int, r:int, c:String) -> void:
 	return;
 
 ##
-func createSinglePieceBB(index:int) -> BitBoard:
-	var back = 0;
-	var front = 0;
-	if(index > BitBoard.INDEX_TRANSITION):
-		front = get2PowerN( index - BitBoard.INDEX_OFFSET );
-		back = 0;
-	else:
-		back = get2PowerN( index );
-	return BitBoard.new(front,back);
-
-##
-func clearCombinedBIT() -> void:
-	BIT_ALL.free();
-	BIT_BLACK.free();
-	BIT_WHITE.free();
+func bbAddPieceOf(index:int, isWhite:bool, type:PIECES):
+	var activeBoard = WHITE_BB if isWhite else BLACK_BB;
+	var mask = HexEngine.createSinglePieceBB(index);
+	var result = activeBoard[type-1].OR(mask);
+	mask.free();
+	activeBoard[type-1].free();
+	activeBoard[type-1] = result;
 	return;
 
-##
-func calculateCombinedBIT() -> void:
-	BIT_WHITE = getWhitePiecesBitBoard();
-	BIT_BLACK = getBlackPiecesBitBoard();
-	BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
-	#print("White BB:\n", BIT_WHITE);
-	#print("White:");
-	#for bb in WHITE_BB:
-		#print(bb);
-	#print(" ")
-	#print("Black BB:\n", BIT_BLACK);
-	#print("Black:");
-	#for bb in BLACK_BB:
-		#print(bb);
-	#print("ALL BB:\n", BIT_ALL);
-	#print("\n")
-	return;
 
-## Assumes that a piece exist in the given index
-func bbIsPieceWhite(index:int) -> bool:
-	var check = createSinglePieceBB(index);
-	var result = BIT_WHITE.AND(check);
-	var status = result.IS_EMPTY();
-	result.free();
-	check.free();
-	if(status):
-		return false;
-	return true;
-
-##
+## Checks BIT_ALL for the existence of a piece at index
 func bbIsIndexEmpty(index:int) -> bool:
-	var temp:BitBoard = createSinglePieceBB(index);
-	var result:BitBoard = temp.AND(BIT_ALL);
+	var temp:BitBoard = HexEngine.createSinglePieceBB(index);
+	var result:BitBoard = BIT_ALL.AND(temp);
 	var status:bool = result.IS_EMPTY();
-	
-	
 	result.free();
 	temp.free();
 	return status;
 
-## Assumes Piece Exists
+## Assumes Piece Exists. Check on which side bitboard the piece exist on.
+func bbIsPieceWhite(index:int) -> bool:
+	var check = HexEngine.createSinglePieceBB(index);
+	var result = BIT_WHITE.AND(check);
+	var status = result.IS_EMPTY();
+	result.free();
+	check.free();
+	return not status;
+
+## Assumes Piece Exists. Check on which type bitboard the piece exist on. Checks Opponent bitboard.
 func bbPieceTypeOf(index:int, isWhiteTrn:bool) -> PIECES:
 	var i = 0;
-	var temp:BitBoard = createSinglePieceBB(index);
+	var temp:BitBoard = HexEngine.createSinglePieceBB(index);
 	var opponentBitBoards:Array = BLACK_BB if isWhiteTrn else WHITE_BB;
 
 	for bb:BitBoard in opponentBitBoards:
@@ -386,34 +371,26 @@ func bbPieceTypeOf(index:int, isWhiteTrn:bool) -> PIECES:
 		if (not status) : break;
 	
 	temp.free();
+	
+	@warning_ignore("int_as_enum_without_cast")
 	return i;
 
-##
+## Assumes Piece Exists. Clears index of selected side.
 func bbClearIndexFrom(index:int, isWhite:bool):
 	var type:PIECES = bbPieceTypeOf(index, !isWhite);
 	var activeBoard:Array = WHITE_BB if isWhite else BLACK_BB;
-	var mask = createSinglePieceBB(index);
+	var mask = HexEngine.createSinglePieceBB(index);
 	var result = activeBoard[type-1].XOR(mask);
 	mask.free();
 	activeBoard[type-1].free();
 	activeBoard[type-1] = result;
 	return;
 
-##
+## Assumes Piece Exists. Clears index of selected side from selected type.
 func bbClearIndexOf(index:int, isWhite:bool, type:PIECES):
 	var activeBoard:Array = WHITE_BB if isWhite else BLACK_BB;
-	var mask = createSinglePieceBB(index);
+	var mask = HexEngine.createSinglePieceBB(index);
 	var result = activeBoard[type-1].XOR(mask);
-	mask.free();
-	activeBoard[type-1].free();
-	activeBoard[type-1] = result;
-	return;
-
-##
-func bbAddPieceOf(index:int, isWhite:bool, type:PIECES):
-	var activeBoard = WHITE_BB if isWhite else BLACK_BB;
-	var mask = createSinglePieceBB(index);
-	var result = activeBoard[type-1].OR(mask);
 	mask.free();
 	activeBoard[type-1].free();
 	activeBoard[type-1] = result;
@@ -435,7 +412,6 @@ func createBoard(radius : int) -> Dictionary:
 			Board[q][r] = PIECES.ZERO;
 	return Board;
 
-
 ## Use the board to find the location of all pieces. 
 ## Intended to be ran only once at the begining.
 func bbfindPieces() -> Array:
@@ -450,14 +426,14 @@ func bbfindPieces() -> Array:
 		type += 1;
 		var pieceIndexes:Array = bb._getIndexes();
 		for i in pieceIndexes:
-			pieceCords[SIDES.BLACK][type].append(IndexToQR(i));
+			pieceCords[SIDES.BLACK][type].append(HexEngine.IndexToQR(i));
 	
 	type = 0;
 	for bb:BitBoard in WHITE_BB:
 		type += 1;
 		var pieceIndexes:Array = bb._getIndexes();
 		for i in pieceIndexes:
-			pieceCords[SIDES.WHITE][type].append(IndexToQR(i));
+			pieceCords[SIDES.WHITE][type].append(HexEngine.IndexToQR(i));
 		
 	return pieceCords;
 
@@ -704,7 +680,7 @@ func swapPlayerTurn():
 
 ## Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 func bbcheckForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary, cords:Vector2i):
-	var index = QRToIndex(cords.x,cords.y);
+	var index = HexEngine.QRToIndex(cords.x,cords.y);
 	var isWhiteTrn = bbIsPieceWhite(index);
 	
 	for direction in dirSet.keys():
@@ -717,7 +693,7 @@ func bbcheckForBlockingOnVector(piece: PIECES, dirSet:Dictionary, bp:Dictionary,
 		var checkingR:int = cords.y + activeVector.y;
 		
 		while ( BitBoard.inBitBoardRange(checkingQ,checkingR) ):
-			index = QRToIndex(checkingQ,checkingR);
+			index = HexEngine.QRToIndex(checkingQ,checkingR);
 			if( bbIsIndexEmpty(index) ):
 				if(dirBlockingPiece):
 					LegalMoves.append(Vector2i(checkingQ,checkingR)); ## Track legal moves for the blocking pieces
@@ -752,7 +728,7 @@ func bbfindCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void
 		return;
 		
 	var move = Vector2i(qpos, rpos)
-	var index = QRToIndex(qpos,rpos);
+	var index = HexEngine.QRToIndex(qpos,rpos);
 	
 	if ( bbIsIndexEmpty(index) ):
 		if( EnPassantCordsValid and (EnPassantCords.x == qpos) and (EnPassantCords.y == rpos) ):
@@ -773,7 +749,7 @@ func bbfindFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
 	var boolCanGoFoward:bool = false;
 	##Foward Move
 	if (BitBoard.inBitBoardRange(pawn.x, fowardR)):
-		var index:int = QRToIndex(pawn.x,fowardR);
+		var index:int = HexEngine.QRToIndex(pawn.x,fowardR);
 		if(bbIsIndexEmpty(index)):
 			if ( isWhitePawnPromotion(move) if (isWhiteTurn) else isBlackPawnPromotion(move) ) :
 				legalMoves[pawn][MOVE_TYPES.PROMOTE].append(move);
@@ -783,7 +759,7 @@ func bbfindFowardMovesForPawn(pawn : Vector2i, fowardR : int ) -> void:
 	##Double Move From Start
 	if( boolCanGoFoward && ( isWhitePawnStart(pawn) if isWhiteTurn else isBlackPawnStart(pawn) ) ):
 		var doubleF = pawn.y - 2 if isWhiteTurn else pawn.y + 2;
-		var index:int = QRToIndex(pawn.x, doubleF);
+		var index:int = HexEngine.QRToIndex(pawn.x, doubleF);
 		if (bbIsIndexEmpty(index)):
 			legalMoves[pawn][MOVE_TYPES.ENPASSANT].append(Vector2i(pawn.x, doubleF));
 	return;
@@ -832,7 +808,7 @@ func bbfindMovesForKnight(KnightArray:Array) -> void:
 				var checkingQ = knight.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
 				var checkingR = knight.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
 				if (BitBoard.inBitBoardRange(checkingQ,checkingR)):
-					var index = QRToIndex(checkingQ,checkingR);
+					var index = HexEngine.QRToIndex(checkingQ,checkingR);
 					updateAttackBoard(checkingQ, checkingR, 1);
 					if (bbIsIndexEmpty(index)) :
 						legalMoves[knight][MOVE_TYPES.MOVES].append(Vector2i(checkingQ,checkingR));
@@ -863,7 +839,7 @@ func bbfindMovesForRook(RookArray:Array) -> void:
 			var checkingQ:int = rook.x + activeVector.x;
 			var checkingR:int = rook.y + activeVector.y;			
 			while (BitBoard.inBitBoardRange(checkingQ,checkingR)):
-				var index = QRToIndex(checkingQ,checkingR);
+				var index = HexEngine.QRToIndex(checkingQ,checkingR);
 				if( bbIsIndexEmpty(index) ):
 					legalMoves[rook][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
@@ -884,6 +860,9 @@ func bbfindMovesForRook(RookArray:Array) -> void:
 						influencedPieces[pos].append(rook);
 					else:
 						influencedPieces[pos] = [rook];
+					
+					##Add influenced piece to rook list as well
+						
 					updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				
@@ -914,7 +893,7 @@ func bbfindMovesForBishop(BishopArray:Array) -> void:
 			var checkingQ:int = bishop.x + activeVector.x;
 			var checkingR:int = bishop.y + activeVector.y;
 			while ( BitBoard.inBitBoardRange(checkingQ,checkingR) ):
-				var index = QRToIndex(checkingQ,checkingR);
+				var index = HexEngine.QRToIndex(checkingQ,checkingR);
 				if( bbIsIndexEmpty(index) ):
 					legalMoves[bishop][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 					updateAttackBoard(checkingQ, checkingR, 1);
@@ -935,6 +914,9 @@ func bbfindMovesForBishop(BishopArray:Array) -> void:
 						influencedPieces[pos].append(bishop);
 					else:
 						influencedPieces[pos] = [bishop];
+						
+					##Add influenced piece to bishop list as well
+						
 					updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				
@@ -993,7 +975,7 @@ func bbfindMovesForKing(KingArray:Array) -> void:
 				else:
 					if((WhiteAttackBoard[checkingQ][checkingR] > 0)):
 						continue;
-				var index = QRToIndex(checkingQ,checkingR);
+				var index = HexEngine.QRToIndex(checkingQ,checkingR);
 				if( bbIsIndexEmpty(index) ):
 					legalMoves[king][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
 
@@ -1062,13 +1044,13 @@ func bbsearchForPawnsAtk(pos:Vector2i, isWTurn:bool) -> Array:
 	var qpos:int = pos.x - 1;
 	var lst:Array = [];
 	if( BitBoard.inBitBoardRange(qpos, leftCaptureR) ):
-		var index = QRToIndex(qpos, leftCaptureR);
+		var index = HexEngine.QRToIndex(qpos, leftCaptureR);
 		if( not bbIsIndexEmpty(index) and (bbIsPieceWhite(index) != isWTurn)):
 			if(bbPieceTypeOf(index, isWTurn) == PIECES.PAWN):
 				lst.append(Vector2i(qpos, leftCaptureR));
 	qpos = pos.x + 1;
 	if( BitBoard.inBitBoardRange(qpos, rightCaptureR) ):
-		var index = QRToIndex(qpos, rightCaptureR);
+		var index = HexEngine.QRToIndex(qpos, rightCaptureR);
 		if( not bbIsIndexEmpty(index) and bbIsPieceWhite(index) != isWTurn):
 			if(bbPieceTypeOf(index, isWTurn) == PIECES.PAWN):
 				lst.append(Vector2i(qpos, rightCaptureR));
@@ -1084,7 +1066,7 @@ func bbsearchForKnightsAtk(pos:Vector2i, isWTurn:bool) -> Array:
 			var checkingQ = pos.x + ((activeVector.x if (invertAt2Counter < 2) else activeVector.y) * m);
 			var checkingR = pos.y + ((activeVector.y if (invertAt2Counter < 2) else activeVector.x) * m);
 			if (BitBoard.inBitBoardRange(checkingQ,checkingR)):
-				var index = QRToIndex(checkingQ, checkingR);
+				var index = HexEngine.QRToIndex(checkingQ, checkingR);
 				if( not bbIsIndexEmpty(index) and bbIsPieceWhite(index) != isWTurn):
 					if(bbPieceTypeOf(index, isWTurn) == PIECES.KNIGHT):
 						lst.append(Vector2i(checkingQ, checkingR));
@@ -1102,7 +1084,7 @@ func bbsearchForSlidingAtk(pos:Vector2i, isWTurn:bool, checkForQueens:bool, init
 		var checkingQ:int = pos.x + activeVector.x;
 		var checkingR:int = pos.y + activeVector.y;
 		while ( BitBoard.inBitBoardRange(checkingQ, checkingR) ):
-			var index = QRToIndex(checkingQ, checkingR);
+			var index = HexEngine.QRToIndex(checkingQ, checkingR);
 			if (bbIsIndexEmpty(index)): pass;
 			elif (bbIsPieceWhite(index) != isWTurn):
 				if (bbPieceTypeOf(index, isWTurn) in checkFor):
@@ -1218,7 +1200,7 @@ func fillRookCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 		if( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
-			if(not bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
+			if(not bbIsIndexEmpty(HexEngine.QRToIndex(moveToCords.x, moveToCords.y))):
 				break;
 		else: 
 			break;
@@ -1252,7 +1234,7 @@ func fillBishopCheckMoves(kingCords:Vector2i, moveToCords:Vector2i):
 		moveToCords.x += direction.x;
 		moveToCords.y += direction.y;
 		if ( BitBoard.inBitBoardRange(moveToCords.x, moveToCords.y) ):
-			if(not bbIsIndexEmpty(QRToIndex(moveToCords.x, moveToCords.y))):
+			if(not bbIsIndexEmpty(HexEngine.QRToIndex(moveToCords.x, moveToCords.y))):
 				break;
 		else: break;
 	return;
@@ -1300,7 +1282,7 @@ func resetTurnFlags() -> void:
 
 ##
 func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
-	var pieceType = bbPieceTypeOf(QRToIndex(cords.x,cords.y), !isWhiteTurn);
+	var pieceType = bbPieceTypeOf(HexEngine.QRToIndex(cords.x,cords.y), !isWhiteTurn);
 	var movedPiece = setupActiveForSingle(pieceType, cords, lastCords);
 	var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][0];
 	var mateStatus;
@@ -1354,18 +1336,18 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 ##
 func handleMoveCapture(moveTo, pieceType) -> bool:
 	var revertEnPassant:bool = false;
-	var moveToIndex = 	QRToIndex(moveTo.x,moveTo.y);
+	var moveToIndex = 	HexEngine.QRToIndex(moveTo.x,moveTo.y);
 	captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 	captureValid = true;
 
 	## ENPASSANT FIX
 	if(pieceType == PIECES.PAWN && bbIsIndexEmpty(moveToIndex)):
 		moveTo.y += 1 if isWhiteTurn else -1;
-		moveToIndex = 	QRToIndex(moveTo.x,moveTo.y);
+		moveToIndex = 	HexEngine.QRToIndex(moveTo.x,moveTo.y);
 		captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 		revertEnPassant = true;
 
-	bbClearIndexOf(QRToIndex(moveTo.x,moveTo.y),!isWhiteTurn,captureType);
+	bbClearIndexOf(HexEngine.QRToIndex(moveTo.x,moveTo.y),!isWhiteTurn,captureType);
 	
 	var opColor = SIDES.BLACK if isWhiteTurn else SIDES.WHITE;
 	var i:int = 0;
@@ -1389,7 +1371,7 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 
 ##
 func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
-	var pieceType = bbPieceTypeOf(QRToIndex(cords.x,cords.y), !isWhiteTurn);
+	var pieceType = bbPieceTypeOf(HexEngine.QRToIndex(cords.x,cords.y), !isWhiteTurn);
 	var pieceVal = getPieceInt(pieceType, !isWhiteTurn)
 	var previousPieceVal = pieceVal;
 	
@@ -1397,7 +1379,7 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 	var moveTo = legalMoves[cords][moveType][moveIndex];
 	var moveHistMod;
 
-	var index = QRToIndex(cords.x,cords.y);
+	var index = HexEngine.QRToIndex(cords.x,cords.y);
 	bbClearIndexFrom(index, isWhiteTurn);
 
 	match moveType:
@@ -1521,7 +1503,7 @@ func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 	
 	if (influencedPieces.has(lastCords)):
 		for item in influencedPieces[lastCords]:
-			var inPieceType = bbPieceTypeOf(QRToIndex(item.x,item.y), !isWhiteTurn)
+			var inPieceType = bbPieceTypeOf(HexEngine.QRToIndex(item.x,item.y), !isWhiteTurn)
 			if movedPiece[0].has(inPieceType):
 				movedPiece[0][inPieceType].append(item);
 			else:
@@ -1549,7 +1531,7 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				bbAddPieceOf(QRToIndex(to.x, to.y,), !isWhiteTurn, id);
+				bbAddPieceOf(HexEngine.QRToIndex(to.x, to.y,), !isWhiteTurn, id);
 				if (OK != activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[id]\
@@ -1570,7 +1552,7 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 			
 				to.y += 1 if isWhiteTurn else -1;
 				
-				bbAddPieceOf(QRToIndex(to.x, to.y,), !isWhiteTurn, id);
+				bbAddPieceOf(HexEngine.QRToIndex(to.x, to.y,), !isWhiteTurn, id);
 				activePieces\
 				[SIDES.BLACK if isWhiteTurn else SIDES.WHITE]\
 				[id]\
@@ -1587,8 +1569,8 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				var id = int(idAndIndex[0]);
 				var index = int(idAndIndex[1]);
 				
-				bbAddPieceOf(QRToIndex(to.x, to.y,), isWhiteTurn, PIECES.PAWN);
-				bbClearIndexOf(QRToIndex(to.x, to.y,), isWhiteTurn, id);
+				bbAddPieceOf(HexEngine.QRToIndex(to.x, to.y,), isWhiteTurn, PIECES.PAWN);
+				bbClearIndexOf(HexEngine.QRToIndex(to.x, to.y,), isWhiteTurn, id);
 				
 				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][id].pop_back();
 				activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.PAWN].insert( index, Vector2i(from) )
@@ -1627,7 +1609,7 @@ func undoSubFixState() -> void:
 					GameInCheckMoves.clear();
 					GameInCheck = true;
 					for atk in attacker:
-						var pieceType:PIECES = bbPieceTypeOf(QRToIndex(atk.x, atk.y), isWhiteTurn)
+						var pieceType:PIECES = bbPieceTypeOf(HexEngine.QRToIndex(atk.x, atk.y), isWhiteTurn)
 						fillInCheckMoves(pieceType, atk, kingCords, false);
 			
 				UNDO_FLAGS.ENPASSANT:
@@ -1819,7 +1801,7 @@ func _passToAI() -> void:
 	
 	EnemyAI._makeChoice(self);
 	
-	EnemyChoiceType = bbPieceTypeOf(QRToIndex(EnemyAI._getCords().x,EnemyAI._getCords().y),  !isWhiteTurn);
+	EnemyChoiceType = bbPieceTypeOf(HexEngine.QRToIndex(EnemyAI._getCords().x,EnemyAI._getCords().y),  !isWhiteTurn);
 	
 	EnemyTo = EnemyAI._getTo();
 	
@@ -1866,8 +1848,8 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 	var index:int = 0;
 	
 	##Default Undo
-	bbClearIndexOf(QRToIndex(UndoNewTo.x,UndoNewTo.y), isWhiteTurn, pieceType);
-	bbAddPieceOf(QRToIndex(UndoNewFrom.x,UndoNewFrom.y), isWhiteTurn, pieceType);
+	bbClearIndexOf(HexEngine.QRToIndex(UndoNewTo.x,UndoNewTo.y), isWhiteTurn, pieceType);
+	bbAddPieceOf(HexEngine.QRToIndex(UndoNewFrom.x,UndoNewFrom.y), isWhiteTurn, pieceType);
 	
 	for pieceCords in activePieces[selfColor][pieceType]:
 		if(pieceCords == UndoNewTo):

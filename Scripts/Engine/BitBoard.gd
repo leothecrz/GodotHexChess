@@ -32,17 +32,17 @@ static func CREATE_FULL_MASK() -> BitBoard:
 	return BitBoard.new(MinMaxAI.MAX_INT, MinMaxAI.MAX_INT);
 
 ##
-func _init(front:int=0, back:int=0):
+func _init(front:int=0, back:int=0) -> void:
 	Front = front;
 	Back = back;
 	return;
 
 ##
-func _getF():
+func _getF() -> int:
 	return Front;
 
 ##
-func _getB():
+func _getB() -> int:
 	return Back;
 
 ##
@@ -65,9 +65,11 @@ func EQUAL(to:BitBoard) -> bool:
 func IS_EMPTY() -> bool:
 	return (Back == 0) and (Front == 0);
 
-func _getCopy():
+##
+func _getCopy() -> BitBoard:
 	return BitBoard.new(_getF(), _getB());
 
+##
 func _getIndexes() -> Array:
 	var b = _getB();
 	var f = _getF();
