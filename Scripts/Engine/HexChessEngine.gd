@@ -61,6 +61,7 @@ const UNDO_TEST_ONE   = '6/7/8/9/10/4p6/k2p2P2K/9/8/7/6 w - 1';
 const UNDO_TEST_TWO   = '6/7/8/9/1P7/11/3p2P2K/9/8/7/k5 w - 1';
 const UNDO_TEST_THREE   = '6/7/8/9/2R6/11/k2p2P2K/9/8/7/6 w - 1';
 const KING_INTERACTION_TEST = '5P/7/8/9/10/k9K/10/9/8/7/p5 w - 1';
+const ILLEGAL_ENPASSANT_TEST = '6/7/8/4K3/5P4/4p6/6r3/9/8/7/k5 w - 1';
 	#Piece Tests
 const PAWN_TEST   = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
 const KNIGHT_TEST = '6/7/8/9/10/5N5/10/9/8/7/6 w - 1';
@@ -111,6 +112,7 @@ var turnNumber : int   = 1;
 
 # Pieces
 var influencedPieces : Dictionary = {};
+var lastInfluencedPieces : Dictionary = {};
 var blockingPieces : Dictionary = {};
 var activePieces : Array = [];
 
@@ -724,7 +726,8 @@ func bbcheckForBlockingPiecesFrom(cords:Vector2i) -> Dictionary:
 
 func EnPassantLegal() -> bool:
 	var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
-	for piece:Vector2i in influencedPieces[EnPassantTarget]:
+	var targetPos = Vector2i(EnPassantCords.x, EnPassantCords.y + (1 if isWhiteTurn else -1));
+	for piece:Vector2i in lastInfluencedPieces[targetPos]:
 		var index = HexEngine.QRToIndex(piece.x,piece.y);
 		if(bbIsPieceWhite(index) == isWhiteTurn): continue;
 		var type:PIECES = bbPieceTypeOf(index, isWhiteTurn);
@@ -1494,9 +1497,12 @@ func generateNextLegalMoves():
 	
 	blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
 	legalMoves.clear();
-	influencedPieces.clear();
+	lastInfluencedPieces = influencedPieces
+	influencedPieces = {};
 		
 	bbfindLegalMovesFor(activePieces);
+	
+	lastInfluencedPieces.clear();
 	
 	pass;
 
@@ -1876,7 +1882,7 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> bool:
-	return initiateEngine(DEFAULT_FEN_STRING);
+	return initiateEngine(ILLEGAL_ENPASSANT_TEST);
 
 
 # GETTERS
