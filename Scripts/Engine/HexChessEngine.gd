@@ -722,6 +722,23 @@ func bbcheckForBlockingPiecesFrom(cords:Vector2i) -> Dictionary:
 	return blockingpieces;
 
 
+func EnPassantLegal() -> bool:
+	var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
+	for piece:Vector2i in influencedPieces[EnPassantTarget]:
+		var index = HexEngine.QRToIndex(piece.x,piece.y);
+		if(bbIsPieceWhite(index) == isWhiteTurn): continue;
+		var type:PIECES = bbPieceTypeOf(index, isWhiteTurn);
+		if(type == PIECES.ROOK or type == PIECES.QUEEN):
+			if(piece.x == kingCords.x): return false;
+			elif(piece.y == kingCords.y): return false
+			elif(getSAxialCordFrom(piece) == getSAxialCordFrom(kingCords)): return false
+		if(type == PIECES.BISHOP or type == PIECES.QUEEN):
+			var differenceS = getSAxialCordFrom(piece) - getSAxialCordFrom(kingCords);
+			if(piece.x - kingCords.x == piece.y - kingCords.y): return false;
+			elif(piece.x - kingCords.x == differenceS ): return false
+			elif(piece.y - kingCords.y == differenceS ): return false
+	return true;
+
 ## Calculate Pawn Capture Moves
 func bbfindCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void:
 	if ( not BitBoard.inBitBoardRange(qpos, rpos) ):
@@ -732,7 +749,8 @@ func bbfindCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void
 	
 	if ( bbIsIndexEmpty(index) ):
 		if( EnPassantCordsValid and (EnPassantCords.x == qpos) and (EnPassantCords.y == rpos) ):
-			legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
+			#if( EnPassantLegal() ):
+				legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
 	else:
 		if(bbIsPieceWhite(index) != isWhiteTurn):
 			if ( isWhitePawnPromotion(move) if isWhiteTurn else isBlackPawnPromotion(move) ) :
@@ -837,38 +855,29 @@ func bbfindMovesForRook(RookArray:Array) -> void:
 		for dir in ROOK_VECTORS.keys():
 			var activeVector:Vector2i = ROOK_VECTORS[dir];
 			var checkingQ:int = rook.x + activeVector.x;
-			var checkingR:int = rook.y + activeVector.y;			
+			var checkingR:int = rook.y + activeVector.y;
 			while (BitBoard.inBitBoardRange(checkingQ,checkingR)):
 				var index = HexEngine.QRToIndex(checkingQ,checkingR);
+				updateAttackBoard(checkingQ, checkingR, 1);
 				if( bbIsIndexEmpty(index) ):
 					legalMoves[rook][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-				
-				elif( bbIsPieceWhite(index) != isWhiteTurn ): #Enemy
-					legalMoves[rook][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-					#King Escape Fix
-					if( bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING ):
-						checkingQ += activeVector.x;
-						checkingR += activeVector.y;
-						if(BitBoard.inBitBoardRange(checkingQ, checkingR)):
-							updateAttackBoard(checkingQ, checkingR, 1);
-					break;
-				else: ## TODO :: INFLUENCED PIECES CAN BE A BIT BOARD
+				else:
 					var pos = Vector2i(checkingQ,checkingR);
-					if(influencedPieces.has(pos)):
-						influencedPieces[pos].append(rook);
-					else:
-						influencedPieces[pos] = [rook];
+					if(influencedPieces.has(pos)): influencedPieces[pos].append(rook);
+					else: influencedPieces[pos] = [rook];
 					
-					##Add influenced piece to rook list as well
-						
-					updateAttackBoard(checkingQ, checkingR, 1);
+					if( bbIsPieceWhite(index) != isWhiteTurn ): #Enemy
+						legalMoves[rook][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
+						#King Escape Fix
+						if( bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING ):
+							checkingQ += activeVector.x;
+							checkingR += activeVector.y;
+							if(BitBoard.inBitBoardRange(checkingQ, checkingR)):
+								updateAttackBoard(checkingQ, checkingR, 1);
 					break;
-				
 				checkingQ += activeVector.x;
 				checkingR += activeVector.y;
-				##END WHILE	
+				##END WHILE
 				
 		## Not Efficient TODO: FIX LATER
 		if(  blockingPieces.has(rook) ):
@@ -894,30 +903,24 @@ func bbfindMovesForBishop(BishopArray:Array) -> void:
 			var checkingR:int = bishop.y + activeVector.y;
 			while ( BitBoard.inBitBoardRange(checkingQ,checkingR) ):
 				var index = HexEngine.QRToIndex(checkingQ,checkingR);
+				updateAttackBoard(checkingQ, checkingR, 1);
 				if( bbIsIndexEmpty(index) ):
 					legalMoves[bishop][MOVE_TYPES.MOVES].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-				
-				elif( bbIsPieceWhite(index) != isWhiteTurn ):
-					legalMoves[bishop][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
-					updateAttackBoard(checkingQ, checkingR, 1);
-					#King Escape Fix
-					if(bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING):
-						checkingQ += activeVector.x;
-						checkingR += activeVector.y;
-						if( BitBoard.inBitBoardRange(checkingQ,checkingR) ):
-							updateAttackBoard(checkingQ, checkingR, 1);
-					break;
 				else:
 					var pos = Vector2i(checkingQ,checkingR);
 					if(influencedPieces.has(pos)):
 						influencedPieces[pos].append(bishop);
 					else:
 						influencedPieces[pos] = [bishop];
-						
-					##Add influenced piece to bishop list as well
-						
-					updateAttackBoard(checkingQ, checkingR, 1);
+					
+					if( bbIsPieceWhite(index) != isWhiteTurn ): ## Enemy
+						legalMoves[bishop][MOVE_TYPES.CAPTURE].append(Vector2i(checkingQ, checkingR));
+						#King Escape Fix
+						if(bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING):
+							checkingQ += activeVector.x;
+							checkingR += activeVector.y;
+							if( BitBoard.inBitBoardRange(checkingQ,checkingR) ):
+								updateAttackBoard(checkingQ, checkingR, 1);
 					break;
 				
 				checkingQ += activeVector.x;
@@ -1503,7 +1506,9 @@ func setupActiveForSingle(type:PIECES, cords:Vector2i, lastCords:Vector2i):
 	
 	if (influencedPieces.has(lastCords)):
 		for item in influencedPieces[lastCords]:
-			var inPieceType = bbPieceTypeOf(HexEngine.QRToIndex(item.x,item.y), !isWhiteTurn)
+			var index = HexEngine.QRToIndex(item.x,item.y)
+			if(bbIsPieceWhite(index) != isWhiteTurn): continue;
+			var inPieceType = bbPieceTypeOf(index, !isWhiteTurn);
 			if movedPiece[0].has(inPieceType):
 				movedPiece[0][inPieceType].append(item);
 			else:
