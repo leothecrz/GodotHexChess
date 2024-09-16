@@ -20,12 +20,12 @@ extends Node
 ##TODO:
 # FEN1 - Starting from a fen string requires that attack boards be created before anybody can go.
 # FEN2 - Make it possible to start from fen string
-# PlayerAction - Move Undo - Finished Untested.
 # Test - Add tests
-# AI1 - Random AI
-# AI2 - MinMax AI
 # AI3 - Neural Network AI
-# Untested - Attacking King with King cause odd behaviour sometimes
+
+# 50 move rule
+# 3 fold repatetion
+
 
 
 ### Constants
@@ -61,7 +61,7 @@ const UNDO_TEST_ONE   = '6/7/8/9/10/4p6/k2p2P2K/9/8/7/6 w - 1';
 const UNDO_TEST_TWO   = '6/7/8/9/1P7/11/3p2P2K/9/8/7/k5 w - 1';
 const UNDO_TEST_THREE   = '6/7/8/9/2R6/11/k2p2P2K/9/8/7/6 w - 1';
 const KING_INTERACTION_TEST = '5P/7/8/9/10/k9K/10/9/8/7/p5 w - 1';
-const ILLEGAL_ENPASSANT_TEST = '6/7/8/4K3/5P4/4p6/6r3/9/8/7/k5 w - 1';
+const ILLEGAL_ENPASSANT_TEST_ONE = '6/7/8/4K3/5P4/4p6/6r3/9/8/7/k5 w - 1';
 	#Piece Tests
 const PAWN_TEST   = '6/7/8/9/10/5P5/10/9/8/7/6 w - 1';
 const KNIGHT_TEST = '6/7/8/9/10/5N5/10/9/8/7/6 w - 1';
@@ -752,7 +752,7 @@ func bbfindCaptureMovesForPawn(pawn : Vector2i, qpos : int, rpos : int ) -> void
 	
 	if ( bbIsIndexEmpty(index) ):
 		if( EnPassantCordsValid and (EnPassantCords.x == qpos) and (EnPassantCords.y == rpos) ):
-			#if( EnPassantLegal() ):
+			if( EnPassantLegal() ):
 				legalMoves[pawn][MOVE_TYPES.CAPTURE].append(move);
 	else:
 		if(bbIsPieceWhite(index) != isWhiteTurn):
@@ -1285,6 +1285,30 @@ func resetTurnFlags() -> void:
 
 ## Handle Move
 
+func addInflunceFrom(cords:Vector2i) -> void:
+	for v:Vector2i in ROOK_VECTORS.values():
+		var checking:Vector2i = Vector2i(cords) + v;
+		while (BitBoard.inBitBoardRange(checking.x, checking.y)):
+			if(not bbIsIndexEmpty(QRToIndex(checking.x,checking.y))):
+				if(influencedPieces.has(cords)):
+					influencedPieces[cords].append(checking);
+				else:
+					influencedPieces[cords] = [checking];
+				break;
+			checking = checking + v;
+		
+	for v:Vector2i in BISHOP_VECTORS.values():
+		var checking = Vector2i(cords) + v;
+		while (BitBoard.inBitBoardRange(checking.x, checking.y)):
+			if(not bbIsIndexEmpty(QRToIndex(checking.x,checking.y))):
+				if(influencedPieces.has(cords)):
+					influencedPieces[cords].append(checking);
+				else:
+					influencedPieces[cords] = [checking];
+				break;
+			checking += v;
+		
+	return;
 
 ##
 func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
@@ -1305,6 +1329,8 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 	
 	clearCombinedBIT();
 	calculateCombinedBIT();
+
+	addInflunceFrom(cords)
 
 	incrementTurnNumber();
 	swapPlayerTurn();
@@ -1882,7 +1908,7 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> bool:
-	return initiateEngine(ILLEGAL_ENPASSANT_TEST);
+	return initiateEngine(DEFAULT_FEN_STRING);
 
 
 # GETTERS
