@@ -164,6 +164,7 @@ var EnemyTo:Vector2i;
 
 # History
 var moveHistory : Array = [];
+var historyStack : Array = [];
 
 # BITBOARD
 var startTime:int;
@@ -727,6 +728,7 @@ func bbcheckForBlockingPiecesFrom(cords:Vector2i) -> Dictionary:
 func EnPassantLegal() -> bool:
 	var kingCords:Vector2i = activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][KING_INDEX];
 	var targetPos = Vector2i(EnPassantCords.x, EnPassantCords.y + (1 if isWhiteTurn else -1));
+	
 	for piece:Vector2i in lastInfluencedPieces[targetPos]:
 		var index = HexEngine.QRToIndex(piece.x,piece.y);
 		if(bbIsPieceWhite(index) == isWhiteTurn): continue;
@@ -1289,7 +1291,7 @@ func addInflunceFrom(cords:Vector2i) -> void:
 	for v:Vector2i in ROOK_VECTORS.values():
 		var checking:Vector2i = Vector2i(cords) + v;
 		while (BitBoard.inBitBoardRange(checking.x, checking.y)):
-			if(not bbIsIndexEmpty(QRToIndex(checking.x,checking.y))):
+			if(not bbIsIndexEmpty(HexEngine.QRToIndex(checking.x,checking.y))):
 				if(influencedPieces.has(cords)):
 					influencedPieces[cords].append(checking);
 				else:
@@ -1300,7 +1302,7 @@ func addInflunceFrom(cords:Vector2i) -> void:
 	for v:Vector2i in BISHOP_VECTORS.values():
 		var checking = Vector2i(cords) + v;
 		while (BitBoard.inBitBoardRange(checking.x, checking.y)):
-			if(not bbIsIndexEmpty(QRToIndex(checking.x,checking.y))):
+			if(not bbIsIndexEmpty(HexEngine.QRToIndex(checking.x,checking.y))):
 				if(influencedPieces.has(cords)):
 					influencedPieces[cords].append(checking);
 				else:
@@ -1311,7 +1313,7 @@ func addInflunceFrom(cords:Vector2i) -> void:
 	return;
 
 ##
-func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
+func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String, hist:HistoryEntry):
 	var pieceType = bbPieceTypeOf(HexEngine.QRToIndex(cords.x,cords.y), !isWhiteTurn);
 	var movedPiece = setupActiveForSingle(pieceType, cords, lastCords);
 	var kingCords:Vector2i = activePieces[SIDES.BLACK if isWhiteTurn else SIDES.WHITE][PIECES.KING][0];
@@ -1359,9 +1361,15 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String):
 			#pass;
 	
 	if(mateStatus):
+		hist._flipOver();
 		moveHistory.append("%s %d" % [historyPreview, mateStatus]);
 	else:
 		moveHistory.append(historyPreview);
+	
+	historyStack.append(hist);
+	
+	print(moveHistory[moveHistory.size()-1]);
+	print(historyStack[historyStack.size()-1]);
 	
 	return;
 
@@ -1402,21 +1410,35 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 	return revertEnPassant;
 
 ##
-func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> void:
+func handleMove(cords:Vector2i, moveType:MOVE_TYPES, moveIndex:int, promoteTo:PIECES) -> void:
 	var pieceType = bbPieceTypeOf(HexEngine.QRToIndex(cords.x,cords.y), !isWhiteTurn);
 	var pieceVal = getPieceInt(pieceType, !isWhiteTurn)
 	var previousPieceVal = pieceVal;
 	
 	var selfColor:int = SIDES.WHITE if isWhiteTurn else SIDES.BLACK;
 	var moveTo = legalMoves[cords][moveType][moveIndex];
+	
 	var moveHistMod;
+
 
 	var index = HexEngine.QRToIndex(cords.x,cords.y);
 	bbClearIndexFrom(index, isWhiteTurn);
 
+	var histPreview = ("%d %s %s" % 
+	[
+		pieceVal,
+		encodeEnPassantFEN(cords.x,cords.y),
+		encodeEnPassantFEN(moveTo.x,moveTo.y)
+	]);
+	
+	var histEntry:HistoryEntry = HistoryEntry.new(pieceVal, cords,moveTo);
+
 	match moveType:
 		MOVE_TYPES.PROMOTE:
 			if(moveTo.x != cords.x):
+				histEntry._flipCapture();
+				histEntry._setCType(captureType);
+				histEntry._setCIndex(captureIndex);
 				handleMoveCapture(moveTo, pieceType);
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
 			
@@ -1430,7 +1452,11 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 			pieceType = getPieceType(promoteTo);
 			pieceVal = getPieceInt(pieceType, !isWhiteTurn);
 			activePieces[selfColor][pieceType].push_back(moveTo);
-
+			
+			histEntry._flipPromote();
+			histEntry._setPPieceType(pieceType);
+			histEntry._setPIndex(i);
+			
 			moveHistMod = moveHistMod + (" +%d,%d" % [pieceType, i]);
 
 		MOVE_TYPES.ENPASSANT:
@@ -1439,25 +1465,24 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 			EnPassantTarget = moveTo;
 			EnPassantCordsValid = true;
 			moveHistMod = UNDO_FLAGS.ENPASSANT;
-
+			histEntry._flipEnPassant();
+			
 		MOVE_TYPES.CAPTURE:
+			histEntry._flipCapture();
 			if handleMoveCapture(moveTo, pieceType):
 				moveHistMod = "-%d,%d" % [captureType,captureIndex];
+				histEntry._flipTopSneak();
 			else:
+				
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
+			histEntry._setCIndex(captureIndex);
+			histEntry._setCPieceType(captureType);
 
 		MOVE_TYPES.MOVES: pass;
 
 	add_IPieceToBitBoardsOf(moveTo.x,moveTo.y,pieceType,isWhiteTurn);
 	
-	var histPreview = ("%d %s %s" % 
-	[
-		pieceVal,
-		encodeEnPassantFEN(cords.x,cords.y),
-		encodeEnPassantFEN(moveTo.x,moveTo.y)
-	]);
-	
-	if(moveHistMod):
+	if(moveHistMod != null):
 		histPreview = "%s %s" % [histPreview, moveHistMod];
 	
 	# Update Piece List
@@ -1468,22 +1493,12 @@ func handleMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> vo
 
 	removeAttacksFrom(cords, getPieceType(previousPieceVal));
 	
-	handleMoveState(moveTo, cords, histPreview);
+	handleMoveState(moveTo, cords, histPreview, histEntry);
 
 	return;
 
 
 ##
-
-
-##
-func _restoreFrozenState(state:FrozenState, moves:Dictionary):
-	WhiteAttackBoard = state.WABoard.duplicate(true);
-	BlackAttackBoard = state.BABoard.duplicate(true);
-	blockingPieces = state.BPieces.duplicate(true);
-	influencedPieces = state.IPieces.duplicate(true);
-	legalMoves = moves.duplicate(true);
-	return;
 
 ##
 func _restoreState(WABoard:Dictionary, BABoard:Dictionary, BPieces:Dictionary, IPieces:Dictionary, moves:Dictionary):
@@ -1493,10 +1508,6 @@ func _restoreState(WABoard:Dictionary, BABoard:Dictionary, BPieces:Dictionary, I
 	influencedPieces = IPieces.duplicate(true);
 	legalMoves = moves.duplicate(true);
 	return;
-
-##
-func _getFrozenState():
-	return FrozenState.new(WhiteAttackBoard,BlackAttackBoard,blockingPieces,influencedPieces);
 
 ##
 func _duplicateWAB():
@@ -1580,6 +1591,8 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				@warning_ignore("int_as_enum_without_cast")
 				captureType = id;
 				captureIndex = index;
+				
+				addInflunceFrom(to);
 
 			_ when flag[0] == '-':
 				var cleanFlag:String = flag.get_slice('-', 1);
@@ -1599,6 +1612,8 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				@warning_ignore("int_as_enum_without_cast")
 				captureType = id;
 				captureIndex = index;
+				
+				addInflunceFrom(to);
 
 			_ when flag[0] == '+':
 				var cleanFlag:String = flag.get_slice('+', 1);
@@ -1615,6 +1630,8 @@ func undoSubCleanFlags(splits:PackedStringArray, from:Vector2i, to:Vector2i):
 				@warning_ignore("int_as_enum_without_cast")
 				unpromoteType = id;
 				unpromoteIndex = index;
+				
+				addInflunceFrom(to);
 			
 			_ when flag.is_valid_int():
 				match int(flag):
@@ -1762,11 +1779,16 @@ func initiateEngine(FEN_STRING) -> bool:
 	WhiteAttackBoard = createBoard(HEX_BOARD_RADIUS);
 	BlackAttackBoard = createBoard(HEX_BOARD_RADIUS);
 
+	for h in historyStack:
+		h.free();
+	historyStack.clear();
+	
 	blackCaptures.clear();
 	whiteCaptures.clear();
 	legalMoves.clear();
 	blockingPieces.clear();
 	GameInCheckMoves.clear();
+	moveHistory.clear();
 
 	bypassMoveLock = false;
 	GameIsOver = false;
@@ -1901,6 +1923,8 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 	
 	clearCombinedBIT();
 	calculateCombinedBIT();
+	
+	addInflunceFrom(UndoNewFrom);
 	
 	if(genMoves):
 		generateNextLegalMoves();
