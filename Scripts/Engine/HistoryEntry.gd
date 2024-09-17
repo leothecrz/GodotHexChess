@@ -103,6 +103,16 @@ func _setPIndex ( i:int )-> void:
 	pIndex = i;
 
 
+func _getPiece() -> int:
+	return piece;
+	
+func _getFrom() -> Vector2i:
+	return from;
+	
+func _getTo() -> Vector2i:
+	return to;
+
+
 func _to_string():
 	return "P:%d, from:(%d,%d), to:(%d,%d) -- e:%s c:%s o:%s -- p:%s type:%d index:%d -- cap:%s top:%s type:%d index:%d" % [piece, from.x, from.y, to.x, to.y, enPassant, check, over, promote, pPiece, pIndex, capture, captureTopSneak, cPiece, cIndex];
 	
