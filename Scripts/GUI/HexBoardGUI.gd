@@ -611,9 +611,29 @@ func closeSettingsDialog():
 	return
 
 ##
+func changeRes(choice:int):
+	match choice:
+		0: #Def
+			DisplayServer.window_set_size(Vector2i(1152,648));
+			pass;
+		1: #1.5
+			DisplayServer.window_set_size(Vector2i(1728,972));
+			pass;
+		2: #2
+			DisplayServer.window_set_size(Vector2i(2304,1296));
+			pass;
+		3: #Fullscreen
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+			pass;
+		4: #Fullscreen
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+			pass;
+	return;
+
+##
 func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 	match settingIndex:
-		0:pass;
+		0:changeRes(choice);
 		1:pass;
 		2:toggleMusic(choice);
 		3:toggleSound(choice);

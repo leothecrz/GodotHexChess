@@ -8,25 +8,32 @@ extends Control
 
 @export var debounce_timer: Timer
 
-var can_execute = true
+var can_execute : bool = true
+var choice : int = 0;
 
+signal settingsUpdated(settingIndex:int, Choice:int);
+
+##
 func _on_debounce_timer_timeout():
 	can_execute = true
 	return;
 
+##
 func _exit_tree():
 	debounce_timer.queue_free();
 	return;
 
+## SETUP MENU OPTIONS
 func _ready():
 	debounce_timer = Timer.new();
-	add_child(debounce_timer);
 	debounce_timer.timeout.connect(_on_debounce_timer_timeout)
 	debounce_timer.one_shot = true;
 	debounce_timer.wait_time = 0.1
-	## SETUP MENU OPTIONS
+	add_child(debounce_timer);
+	
 	pass;
 
+##
 func _input(event:InputEvent):
 	if (not visible):
 		return;
@@ -35,7 +42,7 @@ func _input(event:InputEvent):
 			_on_close_button_pressed();
 	return;
 
-signal settingsUpdated(settingIndex:int, Choice:int);
+
 
 
 
