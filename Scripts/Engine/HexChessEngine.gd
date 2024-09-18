@@ -1973,3 +1973,5 @@ func _getUndoType() -> PIECES:
 func _getUndoIndex() -> int:
 	return undoIndex;
 
+func _getMoveHistorySize() -> int:
+	return historyStack.size();

@@ -9,7 +9,8 @@ extends Control
 ### User Created
 ##
 func onResize() -> void:
-	print("Left Pannel Resize")
+	var viewRect = get_viewport_rect();
+	scale = Vector2((viewRect.size.y/642.0),(viewRect.size.y/642.0))
 	return;
 
 func _swapLabelState() -> void:

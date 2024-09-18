@@ -83,6 +83,7 @@ func onResize() ->void:
 	LeftPanel.onResize();
 	$PlayerColumn.onResize();
 	$Background.onResize();
+	
 	return;
 
 ## Convert Axial Cordinates To Viewport Cords
