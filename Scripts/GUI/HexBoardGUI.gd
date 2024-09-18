@@ -16,6 +16,8 @@ const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 @onready var PIXEL_OFFSET = 35;
 @onready var AXIAL_X_SCALE = 1.4;
 @onready var AXIAL_Y_SCALE = 0.9395;
+@onready var PIECE_SCALE = 0.18;
+@onready var MOVE_SCALE = 0.015;
 
 	# Node Ref
 @onready var GameDataNode:HexEngine = $ChessEngine;
@@ -71,7 +73,16 @@ func connectResizeToRoot() -> void:
 ##TODO: Implement Resize - Cascade scale factor to gui elements
 ## Begining of resize cascade
 func onResize() ->void:
+	var viewRect = get_viewport_rect();
 	VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
+	AXIAL_X_SCALE = 1.4 * (viewRect.size.x/1152.0);
+	AXIAL_Y_SCALE = 0.9395 * (viewRect.size.y/642.0);
+	PIECE_SCALE = 0.18 * (viewRect.size.y/642.0);
+	MOVE_SCALE = 0.015 * (viewRect.size.y/642.0);
+	
+	LeftPanel.onResize();
+	$PlayerColumn.onResize();
+	$Background.onResize();
 	return;
 
 ## Convert Axial Cordinates To Viewport Cords
@@ -118,8 +129,8 @@ func preloadChessPiece(side:int, pieceType, piece:Vector2i) -> Node:
 	newPieceScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords));
 	
 	# TODO: FIX SCALE-ING
-	newPieceScene.scale.x = 0.18;
-	newPieceScene.scale.y = 0.18;
+	newPieceScene.scale.x = PIECE_SCALE;
+	newPieceScene.scale.y = PIECE_SCALE;
 	
 	return newPieceScene;
 
@@ -251,10 +262,11 @@ func spawnAMove(moves:Array, color:Color, key, cords):
 		activeScene.hexMove = move;
 		activeScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cord));
 		activeScene.rotation_degrees = 90;
-		activeScene.scale.x = 0.015;
-		activeScene.scale.y = 0.015;
 		activeScene.z_index = 1;
 		activeScene.isSetup = true;
+		
+		activeScene.scale.x = MOVE_SCALE;
+		activeScene.scale.y = MOVE_SCALE;
 		
 		MoveGUI.add_child(activeScene);
 		
@@ -615,19 +627,16 @@ func changeRes(choice:int):
 	match choice:
 		0: #Def
 			DisplayServer.window_set_size(Vector2i(1152,648));
-			pass;
 		1: #1.5
 			DisplayServer.window_set_size(Vector2i(1728,972));
-			pass;
 		2: #2
 			DisplayServer.window_set_size(Vector2i(2304,1296));
-			pass;
 		3: #Fullscreen
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
-			pass;
 		4: #Fullscreen
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-			pass;
+	
+	
 	return;
 
 ##

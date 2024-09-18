@@ -8,6 +8,10 @@ extends Control
 ###
 ### User Created
 ##
+func onResize() -> void:
+	print("Left Pannel Resize")
+	return;
+
 func _swapLabelState() -> void:
 	inCheckLabel.visible = !inCheckLabel.visible;
 	return;
