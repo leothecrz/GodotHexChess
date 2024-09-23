@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=16 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/Central.gd" id="2_tcmm4"]
@@ -7,10 +7,16 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Left/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/GUI/Right/SideSelect.gd" id="5_ref6b"]
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
+[ext_resource type="Texture2D" uid="uid://b7ynqeqd2uut2" path="res://Images/PerfectHexagon.png" id="6_mxkma"]
 [ext_resource type="Script" path="res://Scripts/PlayerColumn.gd" id="7_la6xt"]
 [ext_resource type="Script" path="res://Scripts/Engine/HexChessEngine.gd" id="7_uqrw5"]
 [ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
 [ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_754bx"]
+texture = ExtResource("6_mxkma")
+texture_region_size = Vector2i(600, 600)
+0:0/0 = 0
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_poe7d"]
 texture = ExtResource("4_p44o5")
@@ -30,6 +36,7 @@ tile_layout = 1
 tile_offset_axis = 1
 tile_size = Vector2i(65, 57)
 sources/4 = SubResource("TileSetAtlasSource_poe7d")
+sources/0 = SubResource("TileSetAtlasSource_754bx")
 
 [node name="Control" type="Control"]
 layout_mode = 3
@@ -79,11 +86,11 @@ offset_right = 324.0
 offset_bottom = 324.0
 color = Color(1, 1, 1, 0.156863)
 
-[node name="BoardTiles" type="TileMap" parent="Background/Central"]
+[node name="BoardTiles" type="TileMapLayer" parent="Background/Central"]
+use_parent_material = true
 position = Vector2(-33, 0)
+tile_map_data = PackedByteArray("AAD7//3/BAAAAAAAAQD7//7/BAAAAAAAAwD7////BAAAAAAAAgD7/wAABAAAAAAAAQD7/wEABAAAAAAAAwD7/wIABAAAAAAAAgD8//z/BAAAAAAAAwD8//3/BAAAAAAAAgD8//7/BAAAAAAAAQD8////BAAAAAAAAwD8/wAABAAAAAAAAgD8/wEABAAAAAAAAQD8/wIABAAAAAAAAwD9//z/BAAAAAAAAgD9//3/BAAAAAAAAQD9//7/BAAAAAAAAwD9////BAAAAAAAAgD9/wAABAAAAAAAAQD9/wEABAAAAAAAAwD9/wIABAAAAAAAAgD9/wMABAAAAAAAAQD+//v/BAAAAAAAAQD+//z/BAAAAAAAAwD+//3/BAAAAAAAAgD+//7/BAAAAAAAAQD+////BAAAAAAAAwD+/wAABAAAAAAAAgD+/wEABAAAAAAAAQD+/wIABAAAAAAAAwD+/wMABAAAAAAAAgD///v/BAAAAAAAAwD///z/BAAAAAAAAgD///3/BAAAAAAAAQD///7/BAAAAAAAAwD/////BAAAAAAAAgD//wAABAAAAAAAAQD//wEABAAAAAAAAwD//wIABAAAAAAAAgD//wMABAAAAAAAAQAAAPv/BAAAAAAAAQAAAPz/BAAAAAAAAwAAAP3/BAAAAAAAAgAAAP7/BAAAAAAAAQAAAP//BAAAAAAAAwAAAAAABAAAAAAAAgAAAAEABAAAAAAAAQAAAAIABAAAAAAAAwABAPz/BAAAAAAAAgABAP3/BAAAAAAAAQABAP7/BAAAAAAAAwABAP//BAAAAAAAAgABAAAABAAAAAAAAQABAAEABAAAAAAAAwABAAIABAAAAAAAAgABAAQABAAAAAAAAwACAPz/BAAAAAAAAwACAP3/BAAAAAAAAgACAP7/BAAAAAAAAQACAP//BAAAAAAAAwACAAAABAAAAAAAAgACAAEABAAAAAAAAQACAAIABAAAAAAAAwACAAMABAAAAAAAAgADAP3/BAAAAAAAAQADAP7/BAAAAAAAAwADAP//BAAAAAAAAgADAAAABAAAAAAAAQADAAEABAAAAAAAAwADAAIABAAAAAAAAgADAAMABAAAAAAAAQAEAP7/BAAAAAAAAQAEAP//BAAAAAAAAwAEAAAABAAAAAAAAgAEAAEABAAAAAAAAQAEAAIABAAAAAAAAwAAAPr/BAAAAAAAAgABAPv/BAAAAAAAAwACAPv/BAAAAAAAAQADAPz/BAAAAAAAAgAEAPz/BAAAAAAAAwAFAP3/BAAAAAAAAQAFAP7/BAAAAAAAAwAFAP//BAAAAAAAAgAFAAAABAAAAAAAAQAFAAEABAAAAAAAAwAFAAIABAAAAAAAAgAAAAQABAAAAAAAAQD//wQABAAAAAAAAwAAAAMABAAAAAAAAgABAAMABAAAAAAAAQAEAP3/BAAAAAAAAgA=")
 tile_set = SubResource("TileSet_7e04f")
-format = 2
-layer_0/tile_data = PackedInt32Array(-131077, 4, 65536, -65541, 4, 196608, -5, 4, 131072, 65531, 4, 65536, 131067, 4, 196608, 196603, 4, 131072, -196612, 4, 196608, -131076, 4, 131072, -65540, 4, 65536, -4, 4, 196608, 65532, 4, 131072, 131068, 4, 65536, 196604, 4, 196608, -196611, 4, 131072, -131075, 4, 65536, -65539, 4, 196608, -3, 4, 131072, 65533, 4, 65536, 131069, 4, 196608, 196605, 4, 131072, 262141, 4, 65536, -262146, 4, 65536, -196610, 4, 196608, -131074, 4, 131072, -65538, 4, 65536, -2, 4, 196608, 65534, 4, 131072, 131070, 4, 65536, 196606, 4, 196608, 262142, 4, 131072, -262145, 4, 196608, -196609, 4, 131072, -131073, 4, 65536, -65537, 4, 196608, -1, 4, 131072, 65535, 4, 65536, 131071, 4, 196608, 196607, 4, 131072, 262143, 4, 65536, -327680, 4, 65536, -262144, 4, 196608, -196608, 4, 131072, -131072, 4, 65536, -65536, 4, 196608, 0, 4, 131072, 65536, 4, 65536, 131072, 4, 196608, -262143, 4, 131072, -196607, 4, 65536, -131071, 4, 196608, -65535, 4, 131072, 1, 4, 65536, 65537, 4, 196608, 131073, 4, 131072, 262145, 4, 196608, -262142, 4, 196608, -196606, 4, 131072, -131070, 4, 65536, -65534, 4, 196608, 2, 4, 131072, 65538, 4, 65536, 131074, 4, 196608, 196610, 4, 131072, -196605, 4, 65536, -131069, 4, 196608, -65533, 4, 131072, 3, 4, 65536, 65539, 4, 196608, 131075, 4, 131072, 196611, 4, 65536, -131068, 4, 65536, -65532, 4, 196608, 4, 4, 131072, 65540, 4, 65536, 131076, 4, 196608, -393216, 4, 131072, -327679, 4, 196608, -327678, 4, 65536, -262141, 4, 131072, -262140, 4, 196608, -196603, 4, 65536, -131067, 4, 196608, -65531, 4, 131072, 5, 4, 65536, 65541, 4, 196608, 131077, 4, 131072, 262144, 4, 65536, 327679, 4, 196608, 196608, 4, 131072, 196609, 4, 65536, -196604, 4, 131072)
 
 [node name="TurnSignal" type="Sprite2D" parent="Background/Central"]
 position = Vector2(-270, -270)
@@ -229,10 +236,9 @@ offset_bottom = -110.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-item_count = 2
 selected = 0
+item_count = 2
 popup/item_0/text = "White"
-popup/item_0/id = 0
 popup/item_1/text = "Black"
 popup/item_1/id = 1
 script = ExtResource("5_ref6b")
@@ -266,12 +272,11 @@ offset_bottom = -180.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-item_count = 5
 selected = 0
+item_count = 5
 popup/item_0/text = "Player"
-popup/item_0/id = 0
 popup/item_1/text = "AI"
-popup/item_1/id = 0
+popup/item_1/id = 1
 popup/item_1/disabled = true
 popup/item_1/separator = true
 popup/item_2/text = "AI-Random"

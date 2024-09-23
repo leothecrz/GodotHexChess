@@ -50,7 +50,7 @@ var MasterAIThread:Thread;
 var ThreadActive:bool = false;
 	
 	#References
-var tempDialog:AcceptDialog;
+var tempDialog:AcceptDialog = null;
 var ThinkingDialogRef:Node;
 
 ### Signals
@@ -67,7 +67,7 @@ signal MasterAIThreadDone();
 
 ## Connect Signal From Root
 func connectResizeToRoot() -> void:
-	get_tree().get_root().size_changed.connect(onResize);
+	#get_tree().get_root().size_changed.connect(onResize);
 	return;
 
 ##TODO: Implement Resize - Cascade scale factor to gui elements
@@ -79,11 +79,9 @@ func onResize() ->void:
 	AXIAL_Y_SCALE = 0.9395 * (viewRect.size.y/642.0);
 	PIECE_SCALE = 0.18 * (viewRect.size.y/642.0);
 	MOVE_SCALE = 0.015 * (viewRect.size.y/642.0);
-	
 	LeftPanel.onResize();
 	$PlayerColumn.onResize();
 	$Background.onResize();
-	
 	return;
 
 ## Convert Axial Cordinates To Viewport Cords
@@ -374,7 +372,7 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 
 
 ##
-func setConfirmTempDialog(type:AcceptDialog, input:String,method:Callable):
+func setConfirmTempDialog(type:AcceptDialog, input:String, method:Callable):
 	tempDialog = type;
 	tempDialog.confirmed.connect(method);
 	tempDialog.canceled.connect(killDialog);
@@ -386,7 +384,7 @@ func setConfirmTempDialog(type:AcceptDialog, input:String,method:Callable):
 
 ##
 func killDialog():
-	if(tempDialog):
+	if(tempDialog != null):
 		tempDialog.queue_free()
 		tempDialog = null;
 	return;
@@ -407,6 +405,7 @@ func forcedNewGameDialog():
 
 ##
 func resignCleanUp():
+	if(tempDialog): tempDialog.queue_free();
 	GameDataNode._resign();
 	activePieces.clear();
 	currentLegalsMoves.clear();
@@ -625,6 +624,7 @@ func closeSettingsDialog():
 
 ##
 func changeRes(choice:int):
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED);
 	match choice:
 		0: #Def
 			DisplayServer.window_set_size(Vector2i(1152,648));
@@ -633,9 +633,9 @@ func changeRes(choice:int):
 		2: #2
 			DisplayServer.window_set_size(Vector2i(2304,1296));
 		3: #Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED);
 		4: #Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN);
 	
 	
 	return;

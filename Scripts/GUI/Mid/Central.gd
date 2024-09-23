@@ -2,7 +2,7 @@ extends Control
 ###
 ###
 ### Vars
-@onready var tileMap:TileMap = $BoardTiles;
+@onready var tileMap:TileMapLayer = $BoardTiles;
 @onready var turnSignal:Sprite2D = $TurnSignal;
 ##
 
