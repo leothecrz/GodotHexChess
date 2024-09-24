@@ -26,7 +26,7 @@ extends Node
 # 50 move rule
 # 3 fold repatetion
 
-
+@onready var HE = $"../HexEngine";
 
 ### Constants
 
@@ -85,11 +85,6 @@ const DECODE_FEN_OFFSET = 70;
 const TYPE_MASK = 0b0111;
 const PAWN_START = [-4,-3,-2,-1,0,1,2,3,4];
 const PAWN_PROMOTE = [-5,-4,-3,-2,-1,0,1,2,3,4];
-
-const PROMOTE_SYM = "+";
-const TOP_SNEAK_CAPTURE_SYM = "-";
-const CAPTURE_SYM = "/";
-const INDEX_DELIM_SYM = ",";
 
 ### State
 
@@ -236,7 +231,6 @@ static func genTotalBitBoard (BBArray:Array) -> BitBoard:
 		returnBoard = tempBoard;
 	
 	return returnBoard;
-
 
 ## Bitboard
 
@@ -1743,6 +1737,8 @@ func initiateEngine(FEN_STRING) -> bool:
 	
 	initiateEngineAI();
 	
+	_t();
+	
 	return true;
 
 
@@ -1975,3 +1971,7 @@ func _getUndoIndex() -> int:
 
 func _getMoveHistorySize() -> int:
 	return historyStack.size();
+
+func _t() -> void:
+	HE.test();
+	pass;

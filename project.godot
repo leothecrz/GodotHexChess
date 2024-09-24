@@ -25,6 +25,7 @@ window/stretch/mode="canvas_items"
 [dotnet]
 
 project/assembly_name="Hex Chess"
+project/solution_directory="./Solution"
 
 [rendering]
 

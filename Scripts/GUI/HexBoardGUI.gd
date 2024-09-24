@@ -59,8 +59,6 @@ signal gameSwitchedSides(newSideTurn);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 
-signal MasterAIThreadDone();
-
 
 ## Utility
 

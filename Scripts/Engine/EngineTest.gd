@@ -139,13 +139,13 @@ func bitboardRangeTest() -> void:
 func runSweep(ERef:HexEngine):
 	var timeStart = Time.get_ticks_usec();
 	print("Running Test, Started at: ", Time.get_datetime_string_from_system());
-	
-	bitboardRangeTest();
+	ERef._t();
+	#bitboardRangeTest();
 	
 	#simpleMoveAndCapTest(ERef);
 
-	for i in range(1,5):
-		print("Depth %d:" % i, count_moves(i, ERef) );
+	#for i in range(1,5):
+		#print("Depth %d:" % i, count_moves(i, ERef) );
 
 	#Next Test
 	

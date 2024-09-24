@@ -1,6 +1,7 @@
-[gd_scene load_steps=16 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=17 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/HexBoardGUI.gd" id="1_dl4cn"]
+[ext_resource type="Script" path="res://Scripts/Engine/HexEngineSharp.cs" id="2_gq2xx"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/Central.gd" id="2_tcmm4"]
 [ext_resource type="Script" path="res://Scripts/Background.gd" id="4_ib0kl"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
@@ -46,6 +47,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dl4cn")
+
+[node name="HexEngine" type="Node" parent="."]
+script = ExtResource("2_gq2xx")
 
 [node name="ChessEngine" type="Node" parent="."]
 script = ExtResource("7_uqrw5")
