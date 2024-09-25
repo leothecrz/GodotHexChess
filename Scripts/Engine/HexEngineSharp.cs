@@ -1,7 +1,6 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 public partial class HexEngineSharp : Node
 {
@@ -131,6 +130,7 @@ public partial class HexEngineSharp : Node
 	public int stopTime;
 
 	private MoveGenerator moveGenerator;
+
 
 	//Statics
 
@@ -373,6 +373,52 @@ public partial class HexEngineSharp : Node
 		return (PIECES) i;
 	}
 
+	// Use the board to find the location of all pieces. 
+	// Intended to be ran only once at the begining.
+	private Dictionary<PIECES,List<Vector2I>>[] bbfindPieces()
+	{
+		Dictionary<PIECES,List<Vector2I>>[] pieceCords = new Dictionary<PIECES,List<Vector2I>>[] 
+		{
+			new Dictionary<PIECES, List<Vector2I>>()
+			{ 
+				{PIECES.PAWN, new List<Vector2I> {}},
+				{PIECES.KNIGHT, new List<Vector2I> {}},
+				{PIECES.ROOK, new List<Vector2I> {}},
+				{PIECES.BISHOP, new List<Vector2I> {}},
+				{PIECES.QUEEN, new List<Vector2I> {}},
+				{PIECES.KING, new List<Vector2I> {}} 
+			},
+			new Dictionary<PIECES, List<Vector2I>>()
+			{ 
+				{PIECES.PAWN, new List<Vector2I> {}},
+				{PIECES.KNIGHT, new List<Vector2I> {}},
+				{PIECES.ROOK, new List<Vector2I> {}},
+				{PIECES.BISHOP, new List<Vector2I> {}},
+				{PIECES.QUEEN, new List<Vector2I> {}},
+				{PIECES.KING, new List<Vector2I> {}} 
+			}
+		};
+		
+		int type = 0;
+		foreach( Bitboard128 bb in BLACK_BB)
+		{
+			type += 1;
+			List<int> pieceIndexes = bb._getIndexes();
+			foreach(int i in pieceIndexes)
+				pieceCords[(int)HexEngineSharp.SIDES.BLACK][(PIECES)type].Add(HexEngineSharp.IndexToQR(i));
+		}
+		
+		// type = 0;
+		// for bb:BitBoard in WHITE_BB:
+		// 	type += 1;
+		// 	var pieceIndexes:Array = bb._getIndexes();
+		// 	for i in pieceIndexes:
+		// 		pieceCords[SIDES.WHITE][type].append(HexEngine.IndexToQR(i));
+			
+		return pieceCords;
+	}
+
+
 	// Bitboard Update
 
 
@@ -571,7 +617,12 @@ public partial class HexEngineSharp : Node
 	}
 
 
-	// U
+
+	//
+
+
+
+	// Test
 
 	public void test()
 	{
