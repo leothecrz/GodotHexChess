@@ -175,6 +175,79 @@ public partial class HexEngineSharp : Node
 		var q = normalq - 5;
 		return new Vector2I(q, r);
 	}
+	public static int getSAxialCordFrom(Vector2I cords)
+	{
+		return (-1 * cords.X) - cords.Y;
+	}
+	public static int getAxialCordDist(Vector2I from, Vector2I to)
+	{
+		var dif = new Vector3I(from.X-to.X, from.Y-to.Y, getSAxialCordFrom(from)-getSAxialCordFrom(to));
+		return Math.Max( Math.Max( Math.Abs(dif.X), Math.Abs(dif.Y)), Math.Abs(dif.Z));
+	}
+	// public static void printActivePieces(Dictionary<PIECES, List<Vector2I>>[]AP)
+	// {
+	// 	for (int side = 0; side < AP.Length; side += 1)
+	// 	{
+	// 		GD.Print(Enum.GetNames(typeof (SIDES)).GetValue(side));
+	// 		foreach(PIECES piece in AP[side].Keys)
+	// 			GD.Print(Enum.GetName(typeof(PIECES), piece), " : ", AP[side][piece]);
+	// 		GD.Print("\n");
+	// 	}
+	// }
+	// set all values of given board to zero.
+	public static void resetBoard(Dictionary<int, Dictionary<int,int>> board)
+	{
+		foreach( int key in board.Keys)
+			foreach( int innerKey in board[key].Keys)
+				board[key][innerKey] = 0;
+		return;
+	}
+	// Count the amount of moves found
+	public static int countMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> movesList)
+	{
+		int count = 0;
+		foreach( Vector2I piece in movesList.Keys )
+			foreach ( MOVE_TYPES moveType in movesList[piece].Keys )
+				foreach ( Vector2I move in movesList[piece][moveType])
+					count += 1;
+		return count;
+	}
+	// Find Intersection Of Two Arrays. O(N^2)
+	public T[] intersectOfTwoArrays<T>(T[] ARR, T[] ARR1)
+	{
+		List<T> intersection = new List<T>();
+		foreach( T item in ARR)
+			if (Array.Exists(ARR1, e => e.Equals(item)))
+				intersection.Add(item);
+		return intersection.ToArray();
+	}
+	// Find Items Unique Only To ARR. O(N^2)
+	public T[] differenceOfTwoArrays<T>(T[] ARR, T[] ARR1)
+	{
+		List<T> diff = new List<T>();
+		foreach( T item in ARR)
+			if (!Array.Exists(ARR1, e => e.Equals(item)))
+				diff.Add(item);
+		return diff.ToArray();
+	}
+	// Print A Dictionary Board 
+	// func printBoard(board: Dictionary):
+	// 	var flipedKeys = board.keys();
+	// 	flipedKeys.reverse();
+	// 	for key in flipedKeys:
+	// 		var rowString = [];
+	// 		var offset = 12 - board[key].size();
+	// 		for i in range(offset):
+	// 			rowString.append("  ");
+
+	// 		for innerKey in board[key].keys():
+	// 			if board[key][innerKey] == 0:
+	// 				rowString.append( "   " )
+	// 			else:
+	// 				rowString.append( str((" %02d" % board[key][innerKey] )) )
+	// 			rowString.append(", ");
+	// 		print("\n","".join(rowString),"\n");
+	// 	return;
 
 
 	// Internal Gets
@@ -253,6 +326,151 @@ public partial class HexEngineSharp : Node
 	}
 
 
+	// Bitboard Checks
+
+
+	// Checks BIT_ALL for the existence of a piece at index
+	private bool bbIsIndexEmpty(int index)
+	{
+		Bitboard128 temp = Bitboard128.createSinglePieceBB(index);
+		Bitboard128 result = BIT_ALL.AND(temp);
+		bool status = result.IS_EMPTY();
+		result = null;
+		temp = null;
+		return status;
+	}
+	// Assumes Piece Exists. Check on which side bitboard the piece exist on.
+	private bool bbIsPieceWhite(int index)
+	{
+		Bitboard128 check = Bitboard128.createSinglePieceBB(index);
+		Bitboard128 result = BIT_WHITE.AND(check);
+		bool status = result.IS_EMPTY();
+		result = null;
+		check = null;
+		return !status;
+	}
+	// Assumes Piece Exists. Check on which type bitboard the piece exist on. Checks Opponent bitboard.
+	private PIECES bbPieceTypeOf(int index, bool isWhiteTrn)
+	{
+		int i = 0;
+		Bitboard128 temp = Bitboard128.createSinglePieceBB(index);
+		Bitboard128[] opponentBitBoards;
+		if(isWhiteTrn)
+			opponentBitBoards = BLACK_BB;
+		else
+			opponentBitBoards = WHITE_BB;
+
+		foreach (Bitboard128 bb in opponentBitBoards)
+		{
+			i += 1;
+			Bitboard128 result = temp.AND(bb);
+			var status = result.IS_EMPTY();
+			result = null;
+			if (!status) break;
+		}
+		
+		temp = null;
+		return (PIECES) i;
+	}
+
+	// Bitboard Update
+
+
+	// Update the selected sides type bitboard at (q,r)
+	private void add_IPieceToBitBoardsOf(int q, int r, int piece, bool updateWhite)
+	{
+		int index = HexEngineSharp.QRToIndex(q,r);
+		Bitboard128 insert = Bitboard128.createSinglePieceBB(index);
+		int type = (int) getPieceType(piece);
+
+		if(updateWhite)
+		{
+			var temp = WHITE_BB[type-1].OR(insert);
+			WHITE_BB[type-1] = null;
+			WHITE_BB[type-1] = temp;
+		}
+		else
+		{
+			var temp = BLACK_BB[type-1].OR(insert);
+			BLACK_BB[type-1] = null;
+			BLACK_BB[type-1] = temp;
+		}
+		
+		insert = null;
+		return;
+	}
+	// Update the bitboard at (q,r) using piece int
+	private void add_IPieceToBitBoards(int q, int r, int piece)
+	{
+		add_IPieceToBitBoardsOf(q, r, piece, isPieceWhite(piece));
+		return;
+	}
+	// Update the bitboard based on piece FEN STRING
+	private void addS_PieceToBitBoards(int q, int r, string c)
+	{
+		bool isBlack = true;
+		if(c == c.ToUpper())
+		{
+			isBlack = false;
+			c = c.ToLower();
+		}
+		PIECES piece = HexEngineSharp.PIECES.ZERO;
+		switch(c)
+		{
+			case "p": piece = HexEngineSharp.PIECES.PAWN; break;
+			case "n": piece = HexEngineSharp.PIECES.KNIGHT; break;
+			case "r": piece = HexEngineSharp.PIECES.ROOK; break;
+			case "b": piece = HexEngineSharp.PIECES.BISHOP; break;
+			case "q": piece = HexEngineSharp.PIECES.QUEEN; break;
+			case "k": piece = HexEngineSharp.PIECES.KING; break;
+		}
+		add_IPieceToBitBoards(q,r, getPieceInt(piece, isBlack));
+		return;
+	}
+	private void bbAddPieceOf(int index, bool isWhite, PIECES type)
+	{
+		Bitboard128[] activeBoard;
+		if(isWhite)
+			activeBoard = WHITE_BB;
+		else
+			activeBoard = BLACK_BB;
+		var pos = (int) type - 1;
+		var mask = Bitboard128.createSinglePieceBB(index);
+		var result = activeBoard[pos].OR(mask);
+		mask = null;
+		activeBoard[pos] = null;
+		activeBoard[pos] = result;
+		return;
+	}
+	// Assumes Piece Exists. Clears index of selected side.
+	private void bbClearIndexFrom(int index, bool isWhite)
+	{
+		PIECES type = bbPieceTypeOf(index, !isWhite);
+		Bitboard128[] activeBoard; if(isWhite) activeBoard = WHITE_BB; else activeBoard = BLACK_BB;
+		Bitboard128 mask = Bitboard128.createSinglePieceBB(index);
+		int pos = (int) type - 1;
+		Bitboard128 result = activeBoard[pos].XOR(mask);
+		mask = null;
+		activeBoard[pos] = null;
+		activeBoard[pos] = result;
+		return;
+	}
+	// Assumes Piece Exists. Clears index of selected side from selected type.
+	private void bbClearIndexOf(int index, bool isWhite, PIECES type)
+	{
+		Bitboard128[] activeBoard;
+		if(isWhite) activeBoard = WHITE_BB; else activeBoard = BLACK_BB;
+		Bitboard128 mask = Bitboard128.createSinglePieceBB(index);
+		int pos = (int) type - 1;
+		var result = activeBoard[pos].XOR(mask);
+		mask = null;
+		activeBoard[pos] = null;
+		activeBoard[pos] = result;
+		return;
+	}
+
+
+
 	// PAWN Position
 
 
@@ -304,7 +522,61 @@ public partial class HexEngineSharp : Node
 	}
 
 
-	//
+	// String Encoding
+
+
+	// Turn a vector (q,r) into a string representation of the position.
+	public static string encodeEnPassantFEN(int q, int r)
+	{
+		int rStr = 6 - r;
+		int qStr = 5 + q;
+		char qLetter = (char)(65 + qStr);
+		return $"{qLetter}{rStr}";
+	}
+	// Turn a string represenation of board postiion to a vector2i.
+	public static Vector2I decodeEnPassantFEN(string s)
+	{
+		int qStr = (int)s[0] - DECODE_FEN_OFFSET;
+		int rStr = int.Parse(s.Substring(1));
+		rStr += 6-(2*rStr);
+		return new Vector2I(qStr, rStr);
+	}
+
+
+	// Turn Modification
+
+
+	
+	public void incrementTurnNumber()
+	{
+		turnNumber += 1;
+		return;
+	}
+	public void decrementTurnNumber()
+	{
+		turnNumber -= 1;
+		return;
+	}
+	public void swapPlayerTurn()
+	{
+		isWhiteTurn = !isWhiteTurn;
+		return;
+	}
+	public void resetTurnFlags()
+	{
+		GameInCheck = false;
+		captureValid = false;
+		EnPassantCordsValid = false;
+		return;
+	}
+
+
+	// U
+
+	public void test()
+	{
+		GD.Print("TEST");
+	}
 
 }
 

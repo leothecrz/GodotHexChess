@@ -1737,6 +1737,8 @@ func initiateEngine(FEN_STRING) -> bool:
 	
 	initiateEngineAI();
 	
+	print(activePieces);
+	
 	_t();
 	
 	return true;

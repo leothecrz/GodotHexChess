@@ -15,7 +15,7 @@ public partial class AIBase : Node
 
     public AIBase(bool playswhite)
     {
-        PROMOTETO = HexEngineSharp.PIECES.QUEEN;
+        PROMOTETO = (int) HexEngineSharp.PIECES.QUEEN;
         side = 0;
         if ( playswhite ) side = 1;
         return;
@@ -46,16 +46,12 @@ public partial class AIBase : Node
         return PROMOTETO;
     }
 
-    public int _getTo()
+    public Vector2I _getTo()
     {
         return TO;
     }
 
-
-    
-
-
-    func _makeChoice(HexEngineSharp HexEngine)
+    public void _makeChoice(HexEngineSharp HexEngine)
     {
         return;
     }
