@@ -218,6 +218,7 @@ static func createSinglePieceBB (index:int) -> BitBoard:
 		back = 0;
 	else:
 		back = HexEngine.get2PowerN( index );
+		
 	return BitBoard.new(front,back);
 
 ## Create and return the Bitwise-OR total of all white pieces
@@ -294,10 +295,12 @@ func add_IPieceToBitBoardsOf(q:int, r:int, piece:int, updateWhite:bool) -> void:
 		var temp = WHITE_BB[type-1].OR(insert);
 		WHITE_BB[type-1].free();
 		WHITE_BB[type-1] = temp;
+		
 	else:
 		var temp = BLACK_BB[type-1].OR(insert);
 		BLACK_BB[type-1].free();
 		BLACK_BB[type-1] = temp;
+		
 	
 	insert.free();
 	return;
@@ -1737,9 +1740,14 @@ func initiateEngine(FEN_STRING) -> bool:
 	
 	initiateEngineAI();
 	
-	print(activePieces);
-	
 	_t();
+	
+	for bb in WHITE_BB:
+		print(bb);
+	print(" ");
+	for bb in BLACK_BB:
+		print(bb);
+	print("\n")
 	
 	return true;
 

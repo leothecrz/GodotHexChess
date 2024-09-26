@@ -1,6 +1,8 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 public partial class HexEngineSharp : Node
 {
@@ -52,57 +54,47 @@ public partial class HexEngineSharp : Node
 	const int TYPE_MASK = 0b0111;
 	public static readonly int[] PAWN_START 	= {-4, -3, -2, -1, 0, 1, 2, 3, 4};
 	public static readonly int[] PAWN_PROMOTE 	= {-5, -4, -3, -2, -1, 0, 1, 2 , 3, 4};
-
+	public static readonly int[] KNIGHT_MULTIPLERS = {-1, 1, -1, 1};
 	//State
 	//	Board
 	private Dictionary<int, Dictionary<int,int>> HexBoard;
 	private Dictionary<int, Dictionary<int,int>> WhiteAttackBoard;
 	private Dictionary<int, Dictionary<int,int>> BlackAttackBoard;
-
 	//BitBoard
 	private Bitboard128[] WHITE_BB;
 	private Bitboard128[] BLACK_BB;
 	private Bitboard128 BIT_WHITE;
 	private Bitboard128 BIT_BLACK;
 	private Bitboard128 BIT_ALL;
-
 	// Game Turn
 	private bool isWhiteTurn = true;
 	private int turnNumber = 1;
-
 	// Pieces
 	private Dictionary<Vector2I, List<Vector2I>> influencedPieces;
 	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces;
-	//var blockingPieces : Dictionary = {};
-	private Dictionary<PIECES, List<Vector2I>>[] activePieces;
-
+	private Dictionary<Vector2I, List<Vector2I>> blockingPieces;
+	private Dictionary<PIECES, List<Vector2I>>[] activePieces = null;
 	// Moves
-	private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves;
-
+	private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves = null;
 	// Check & Mate
-	private bool GameIsOver = false;
+	private bool GameIsOver = false ;
 	private bool GameInCheck = false;
 	private Vector2I GameInCheckFrom;
 	private List<Vector2I> GameInCheckMoves;
-
 	// Captures
 	//var blackCaptures : Array = [];
 	//var whiteCaptures : Array = [];
-
-	private PIECES captureType = PIECES.ZERO;
-	private int captureIndex = -1;
-	private bool captureValid  = false;
-
+	private PIECES captureType  = PIECES.ZERO;
+	private int captureIndex  = -1;
+	private bool captureValid   = false;
 	// UndoFlags and Data
-	private bool uncaptureValid = false;
-	private bool unpromoteValid = false;
-	private PIECES unpromoteType = PIECES.ZERO;
-	private int unpromoteIndex = -1;
-
-	private PIECES undoType = PIECES.ZERO ;
+	private bool uncaptureValid  = false;
+	private bool unpromoteValid  = false;
+	private PIECES unpromoteType  = PIECES.ZERO;
+	private int unpromoteIndex   = -1;
+	private PIECES undoType = PIECES.ZERO;
 	private int undoIndex = -1;
 	private Vector2I undoTo;
-
 	// EnPassant
 	private Vector2I EnPassantCords;
 	private Vector2I EnPassantTarget;
@@ -121,18 +113,17 @@ public partial class HexEngineSharp : Node
 	private int EnemyChoiceType;
 	private int EnemyChoiceIndex;
 	private Vector2I EnemyTo;
-
 	// History
 	private List<HistEntry> historyStack;
-
-	//Bitboard
+	//Testing
 	public int startTime;
 	public int stopTime;
+	//MoveGen
+	private static MoveGenerator moveGenerator = new MoveGenerator();
 
-	private MoveGenerator moveGenerator;
 
 
-	//Statics
+	//Static Functions
 
 
 	public static int QRToIndex (int q, int r)
@@ -221,6 +212,10 @@ public partial class HexEngineSharp : Node
 				intersection.Add(item);
 		return intersection.ToArray();
 	}
+	public List<T> intersectOfTwoList<T>(List<T> ARR, List<T> ARR1)
+	{
+		return ARR.Intersect(ARR1).ToList<T>();
+	}
 	// Find Items Unique Only To ARR. O(N^2)
 	public T[] differenceOfTwoArrays<T>(T[] ARR, T[] ARR1)
 	{
@@ -229,6 +224,12 @@ public partial class HexEngineSharp : Node
 			if (!Array.Exists(ARR1, e => e.Equals(item)))
 				diff.Add(item);
 		return diff.ToArray();
+	}
+	public List<T> differenceOfTwoList<T>(List<T> ARR, List<T> ARR1)
+	{
+		// T[] diffArray = differenceOfTwoArrays(ARR.ToArray(), ARR1.ToArray() )
+		// return new List<T> (diffArray);
+		return ARR.Except(ARR1).ToList();
 	}
 	// Print A Dictionary Board 
 	// func printBoard(board: Dictionary):
@@ -267,6 +268,59 @@ public partial class HexEngineSharp : Node
 		int res = (id & TYPE_MASK);
 		return (PIECES) res;
 	}
+	private  static bool charIsInt(char activeChar)
+	{
+		return (48 <= activeChar) && (activeChar <= 57);
+	}
+	public static Dictionary<MOVE_TYPES, List<Vector2I>> DeepCopyMoveTemplate(Dictionary<MOVE_TYPES, List<Vector2I>> original)
+	{
+		var copy = new Dictionary<MOVE_TYPES, List<Vector2I>>();
+		foreach (var kvp in original)
+		{
+			var newList = new List<Vector2I>(kvp.Value);
+			copy.Add(kvp.Key, newList);
+		}
+		return copy;
+	}
+	public static Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> DeepCopyLegalMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> original)
+	{
+		var copy = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>>();
+		foreach (var kvp in original)
+		{
+			var innerDictionaryCopy = new Dictionary<MOVE_TYPES, List<Vector2I>>();
+
+			foreach (var innerKvp in kvp.Value)
+			{
+				var newList = new List<Vector2I>(innerKvp.Value);
+
+				innerDictionaryCopy.Add(innerKvp.Key, newList);
+			}
+			copy.Add(kvp.Key, innerDictionaryCopy);
+		}
+		return copy;
+	}
+	public static Dictionary<MOVE_TYPES, List<Vector2I>> DeepCopyInnerDictionary(
+		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves,
+		Vector2I key)
+	{
+		if (!legalMoves.TryGetValue(key, out var innerDictionary))
+		{
+			return null;
+		}
+
+		var innerDictionaryCopy = new Dictionary<MOVE_TYPES, List<Vector2I>>();
+
+		foreach (var kvp in innerDictionary)
+		{
+			var newList = new List<Vector2I>(kvp.Value);
+
+			innerDictionaryCopy.Add(kvp.Key, newList);
+		}
+
+		return innerDictionaryCopy;
+	}
+
+
 
 
 	// Piece ID
@@ -400,21 +454,22 @@ public partial class HexEngineSharp : Node
 		};
 		
 		int type = 0;
-		foreach( Bitboard128 bb in BLACK_BB)
+		foreach( Bitboard128 bb in BLACK_BB )
 		{
 			type += 1;
 			List<int> pieceIndexes = bb._getIndexes();
 			foreach(int i in pieceIndexes)
 				pieceCords[(int)HexEngineSharp.SIDES.BLACK][(PIECES)type].Add(HexEngineSharp.IndexToQR(i));
 		}
-		
-		// type = 0;
-		// for bb:BitBoard in WHITE_BB:
-		// 	type += 1;
-		// 	var pieceIndexes:Array = bb._getIndexes();
-		// 	for i in pieceIndexes:
-		// 		pieceCords[SIDES.WHITE][type].append(HexEngine.IndexToQR(i));
-			
+		type = 0;
+		foreach( Bitboard128 bb in WHITE_BB)
+		{
+		 	type += 1;
+		 	List<int> pieceIndexes = bb._getIndexes();
+		 	foreach(int i in pieceIndexes)
+		 		pieceCords[(int)SIDES.WHITE][(PIECES)type].Add(HexEngineSharp.IndexToQR(i));
+		}
+
 		return pieceCords;
 	}
 
@@ -431,13 +486,13 @@ public partial class HexEngineSharp : Node
 
 		if(updateWhite)
 		{
-			var temp = WHITE_BB[type-1].OR(insert);
+			Bitboard128 temp = WHITE_BB[type-1].OR(insert);
 			WHITE_BB[type-1] = null;
 			WHITE_BB[type-1] = temp;
 		}
 		else
 		{
-			var temp = BLACK_BB[type-1].OR(insert);
+			Bitboard128 temp = BLACK_BB[type-1].OR(insert);
 			BLACK_BB[type-1] = null;
 			BLACK_BB[type-1] = temp;
 		}
@@ -452,23 +507,23 @@ public partial class HexEngineSharp : Node
 		return;
 	}
 	// Update the bitboard based on piece FEN STRING
-	private void addS_PieceToBitBoards(int q, int r, string c)
+	private void addS_PieceToBitBoards(int q, int r, char c)
 	{
 		bool isBlack = true;
-		if(c == c.ToUpper())
+		if(c < 'a')
 		{
 			isBlack = false;
-			c = c.ToLower();
+			c = (char) ( c + 32 );
 		}
 		PIECES piece = HexEngineSharp.PIECES.ZERO;
 		switch(c)
 		{
-			case "p": piece = HexEngineSharp.PIECES.PAWN; break;
-			case "n": piece = HexEngineSharp.PIECES.KNIGHT; break;
-			case "r": piece = HexEngineSharp.PIECES.ROOK; break;
-			case "b": piece = HexEngineSharp.PIECES.BISHOP; break;
-			case "q": piece = HexEngineSharp.PIECES.QUEEN; break;
-			case "k": piece = HexEngineSharp.PIECES.KING; break;
+			case 'p': piece = HexEngineSharp.PIECES.PAWN; break;
+			case 'n': piece = HexEngineSharp.PIECES.KNIGHT; break;
+			case 'r': piece = HexEngineSharp.PIECES.ROOK; break;
+			case 'b': piece = HexEngineSharp.PIECES.BISHOP; break;
+			case 'q': piece = HexEngineSharp.PIECES.QUEEN; break;
+			case 'k': piece = HexEngineSharp.PIECES.KING; break;
 		}
 		add_IPieceToBitBoards(q,r, getPieceInt(piece, isBlack));
 		return;
@@ -514,7 +569,6 @@ public partial class HexEngineSharp : Node
 		activeBoard[pos] = result;
 		return;
 	}
-
 
 
 	// PAWN Position
@@ -617,16 +671,664 @@ public partial class HexEngineSharp : Node
 	}
 
 
+	// Attack Board
 
-	//
+	private Dictionary<int,Dictionary<int,int>> createAttackBoard(int radius)
+	{
+		var rDictionary = new Dictionary<int,Dictionary<int,int>> {};
 
+		for( int q=-radius; q <= radius; q +=1 )
+		{
+			int negQ = q * -1;
+			int minRow = Math.Max(-radius, (negQ-radius));
+			int maxRow = Math.Min(radius, (negQ+radius));
+			rDictionary.Add(q, new Dictionary<int, int> {});
+			for(int r = minRow; r<= maxRow; r += 1 )
+				rDictionary[q].Add(r, 0);
+		}
+
+
+		return rDictionary;
+	}
+	// Based on the turn determine the appropriate board to update.
+	private void updateAttackBoard(int q, int r, int mod)
+	{
+		if(isWhiteTurn)
+			WhiteAttackBoard[q][r] += mod;
+		else
+			BlackAttackBoard[q][r] += mod;
+		return;
+	}
+	// Based on the turn determine the appropriate board to update.
+	private void updateOpposingAttackBoard(int q, int r, int mod)
+	{
+		if(!isWhiteTurn)
+			WhiteAttackBoard[q][r] += mod;
+		else
+			BlackAttackBoard[q][r] += mod;
+		return;
+	}
+	private void removePawnAttacks(Vector2I cords)
+	{
+		//FIX
+		var leftCaptureR = isWhiteTurn ?  cords.Y : cords.Y + 1;
+		var rightCaptureR = isWhiteTurn ? cords.Y-1 : cords.Y;
+		//Left Capture
+		if( Bitboard128.inBitboardRange(cords.X-1, leftCaptureR) )
+			updateAttackBoard(cords.X-1, leftCaptureR, -1);
+		//Right Capture
+		if( Bitboard128.inBitboardRange(cords.X+1, rightCaptureR) )
+			updateAttackBoard(cords.X+1, rightCaptureR, -1);
+		return;
+	}
+	private void removeAttacksFrom(Vector2I cords, PIECES id) 
+	{
+		if(id == PIECES.PAWN)
+		{
+			removePawnAttacks(cords);
+			return;
+		}
+				
+		foreach( MOVE_TYPES moveType in legalMoves[cords].Keys)
+			foreach( Vector2I move in legalMoves[cords][moveType])
+				updateAttackBoard(move.X,move.Y,-1);
+		
+		return;
+	}
+	// private void removeCapturedFromATBoard(PIECES pieceType, Vector2I cords)
+	// {
+	// 	isWhiteTurn = !isWhiteTurn;
+		
+	// 	var movedPiece = [{ pieceType : [Vector2i(cords)] }];
+	// 	if(isWhiteTurn):
+	// 		movedPiece.insert(0, {});
+			
+	// 	var savedMoves = legalMoves.
+	// 	legalMoves.clear();
+	// 	//bbfindLegalMovesFor(movedPiece);
+	// 	removeAttacksFrom(cords, pieceType);
+	// 	legalMoves = savedMoves;
+		
+	// 	isWhiteTurn = !isWhiteTurn;
+	// 	return;
+	// }
+
+
+	//  Board Search
+
+
+	// BoardState
+
+
+	// Fill The Board by translating a fen string. DOES NOT FULLY VERIFY FEN STRING -- (W I P)
+	private bool fillBoardwithFEN(string fenString)
+	{
+		//Board Status
+		initiateStateBitboards();
+		
+		string [] fenSections =  fenString.Split(' ');
+		if (fenSections.Length != 4)
+		{
+			GD.PushError("Not Enough Fen Sections");
+			return false;
+		}
+
+		string[] BoardColumns = fenSections[0].Split('/');
+		if (BoardColumns.Length != 11)
+		{
+			GD.PushError("Not all Hexboard columns are defined");
+			return false;
+		}
+			
+		Regex regex = new Regex("(?i)([pnrbqk]|[0-9]|/)*");
+		Match result = regex.Match(fenString);
+		if (!result.Success)
+		{
+			GD.PushError("Regex fail");
+			return false;
+		}
+		if( result.Value != fenSections[0] )
+		{
+			GD.PushError( $"{result.Value} {fenString} Invalid Board Description");
+			return false;
+		}
+	
+		for(int q=-HEX_BOARD_RADIUS; q <= HEX_BOARD_RADIUS; q+=1)
+		{
+			int mappedQ = q + HEX_BOARD_RADIUS;
+			string activeRow = BoardColumns[mappedQ];
+			
+			int r1 = Math.Max(-HEX_BOARD_RADIUS, -q-HEX_BOARD_RADIUS);
+			int r2 = Math.Min(HEX_BOARD_RADIUS, -q+HEX_BOARD_RADIUS);
+
+			for(int i=0; i < activeRow.Length; i += 1 )
+			{
+				char activeChar = activeRow[i];
+				if( charIsInt(activeChar) )
+				{
+					int pushDistance = (int) activeChar - '0';
+					while ( (i+1 < activeRow.Length) && charIsInt(activeRow[i+1]))
+					{
+						i += 1;
+						pushDistance *= 10;
+						pushDistance += (int)(activeRow[i] - '0');
+					}
+					r1 += pushDistance;
+				}
+				else
+				{
+					if(r1 <= r2)
+					{
+						addS_PieceToBitBoards(q,r1,activeChar);
+						r1 +=1 ;
+					}
+					else
+					{
+						GD.PushError("R1 Error");
+						return false;
+					}
+				}
+			}
+		}
+		generateCombinedStateBitboards();
+		
+		//Is White Turn
+		if(fenSections[1] == "w")
+			isWhiteTurn = true;
+		else if (fenSections[1] == "b")
+			isWhiteTurn = false;
+		else
+		{
+			GD.PushError("Regex fail");
+			return false;
+		}
+		//EnPassant Cords
+		if(fenSections[2] != "-")
+		{
+			EnPassantCordsValid = true;
+			EnPassantTarget = decodeEnPassantFEN(fenSections[2]);
+			EnPassantCords = new Vector2I(EnPassantTarget.X, EnPassantTarget.Y + (isWhiteTurn ? -1 : 1));
+		}
+		else
+		{
+			EnPassantCords = new Vector2I(-5,-5);
+			EnPassantTarget = new Vector2I(-5,-5);
+			EnPassantCordsValid = false;
+		}
+		// Turn Number
+		turnNumber = fenSections[3].ToInt();
+		if(turnNumber < 1)
+			turnNumber = 1;
+			
+		return true;
+	}
+
+
+	// Move Gen
+
+
+	// Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
+	private void bbcheckForBlockingOnVector(PIECES piece, Dictionary<string,Vector2I> dirSet, Dictionary<Vector2I, List<Vector2I>> bp, Vector2I cords)
+		{
+			var index = HexEngineSharp.QRToIndex(cords.X,cords.Y);
+			var isWhiteTrn = bbIsPieceWhite(index);
+			
+			foreach( string direction in dirSet.Keys )
+			{
+				List<Vector2I> LegalMoves = new List<Vector2I> {};
+				
+				Vector2I dirBlockingPiece = new Vector2I(HEX_BOARD_RADIUS+1, HEX_BOARD_RADIUS+1);
+				Vector2I activeVector = dirSet[direction];
+				
+				int checkingQ = cords.X + activeVector.X;
+				int checkingR = cords.Y + activeVector.Y;
+				
+				while ( Bitboard128.inBitboardRange(checkingQ,checkingR) )
+				{
+					index = HexEngineSharp.QRToIndex(checkingQ,checkingR);
+					if( bbIsIndexEmpty(index) )
+						if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
+							LegalMoves.Add(new Vector2I(checkingQ,checkingR)); // Track legal moves for the blocking pieces
+					else
+					{
+						if( bbIsPieceWhite(index) == isWhiteTrn ) // Friend Piece
+							if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1) break; // Two friendly pieces in a row. No Danger
+							else dirBlockingPiece = new Vector2I(checkingQ,checkingR); // First piece found
+
+						else //Unfriendly Piece Found	
+						{
+							PIECES val = bbPieceTypeOf(index, isWhiteTrn);
+							if ( (val == PIECES.QUEEN) || (val == piece) )
+								if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
+									LegalMoves.Add(new Vector2I(checkingQ,checkingR));
+									bp[dirBlockingPiece] = LegalMoves; // store blocking piece moves
+							break;
+						}
+					}
+
+					checkingQ += activeVector.X;
+					checkingR += activeVector.Y;
+				}
+			}
+			return;
+		}
+	// Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
+	private Dictionary<Vector2I, List<Vector2I>> bbcheckForBlockingPiecesFrom(Vector2I cords)
+	{
+		var blockingpieces = new Dictionary<Vector2I, List<Vector2I>>{};
+		bbcheckForBlockingOnVector(PIECES.ROOK, ROOK_VECTORS, blockingpieces, cords);
+		bbcheckForBlockingOnVector(PIECES.BISHOP, BISHOP_VECTORS, blockingpieces, cords);
+		return blockingpieces;
+	}
+	
+
+	// Pawn Moves
+
+	
+	private bool EnPassantLegal()
+	{
+		Vector2I kingCords = activePieces[(int)(isWhiteTurn ? SIDES.WHITE:SIDES.BLACK)][PIECES.KING][KING_INDEX];
+		Vector2I targetPos = new Vector2I(EnPassantCords.X, EnPassantCords.Y + ( isWhiteTurn ? 1 : -1));
+		
+		foreach( Vector2I piece in lastInfluencedPieces[targetPos])
+		{
+			int index = HexEngineSharp.QRToIndex(piece.X,piece.Y);
+			if(bbIsPieceWhite(index) == isWhiteTurn) continue;
+			PIECES type = bbPieceTypeOf(index, isWhiteTurn);
+			if(type == PIECES.ROOK || type == PIECES.QUEEN)
+			{
+				if ( piece.X == kingCords.X ) return false;
+				else if ( piece.Y == kingCords.Y ) return false;
+				else if ( getSAxialCordFrom(piece) == getSAxialCordFrom(kingCords) ) return false;
+			}
+			if(type == PIECES.BISHOP || type == PIECES.QUEEN)
+			{
+				var differenceS = getSAxialCordFrom(piece) - getSAxialCordFrom(kingCords);
+				if(piece.X - kingCords.X == piece.Y - kingCords.Y) return false;
+				else if(piece.X - kingCords.X == differenceS ) return false;
+				else if(piece.Y - kingCords.Y == differenceS ) return false;
+			}
+		}
+		return true;
+	}
+	// Calculate Pawn Capture Moves
+	private void bbfindCaptureMovesForPawn(Vector2I pawn, int qpos, int rpos)
+	{
+		if ( ! Bitboard128.inBitboardRange(qpos, rpos) ) return;
+			
+		Vector2I move = new Vector2I(qpos, rpos);
+		int index = HexEngineSharp.QRToIndex(qpos,rpos);
+		
+		if ( bbIsIndexEmpty(index) )
+			if( EnPassantCordsValid && (EnPassantCords.X == qpos) && (EnPassantCords.Y == rpos) )
+				if( EnPassantLegal() )
+					legalMoves[pawn][MOVE_TYPES.CAPTURE].Add(move);
+		else
+			if(bbIsPieceWhite(index) != isWhiteTurn)
+				if ( isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
+					legalMoves[pawn][MOVE_TYPES.PROMOTE].Add(move); // PROMOTE CAPTURE
+				else
+					legalMoves[pawn][MOVE_TYPES.CAPTURE].Add(move);
+		
+		updateAttackBoard(qpos, rpos, 1);
+		return;
+	}
+	// Calculate Pawn Foward Moves
+	private void bbfindFowardMovesForPawn(Vector2I pawn, int fowardR)
+	{
+		Vector2I move = new Vector2I(pawn.X,fowardR);
+		bool boolCanGoFoward = false;
+		// Foward Move
+		if (Bitboard128.inBitboardRange(pawn.X, fowardR))
+		{
+			int index = HexEngineSharp.QRToIndex(pawn.X,fowardR);
+			if(bbIsIndexEmpty(index))
+				if ( isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
+					legalMoves[pawn][MOVE_TYPES.PROMOTE].Add(move);
+				else
+					legalMoves[pawn][MOVE_TYPES.MOVES].Add(move);
+					boolCanGoFoward = true;
+		}
+		//Double Move From Start
+		if( boolCanGoFoward && ( isWhiteTurn ? isWhitePawnStart(pawn) : isBlackPawnStart(pawn) ) )
+		{
+			int doubleF = isWhiteTurn ? pawn.Y - 2 : pawn.Y + 2;
+			int index = HexEngineSharp.QRToIndex(pawn.X, doubleF);
+			if (bbIsIndexEmpty(index))
+				legalMoves[pawn][MOVE_TYPES.ENPASSANT].Add(new Vector2I(pawn.X, doubleF));
+		}
+		return;
+	}
+	// Calculate Pawn Moves
+	private void bbfindMovesForPawn(List<Vector2I> PawnArray)
+	{
+		foreach ( Vector2I pawn in PawnArray)
+		{
+			legalMoves[pawn] = DeepCopyMoveTemplate(PAWN_MOVE_TEMPLATE);
+
+			int fowardR = isWhiteTurn ? pawn.Y - 1 : pawn.Y + 1;
+			int leftCaptureR = isWhiteTurn ? pawn.Y : pawn.Y + 1;
+			int rightCaptureR = isWhiteTurn? pawn.Y-1 : pawn.Y;
+
+			//Foward Move
+			bbfindFowardMovesForPawn(pawn, fowardR);
+
+			//Left Capture
+			bbfindCaptureMovesForPawn(pawn, pawn.X-1, leftCaptureR);
+
+			//Right Capture
+			bbfindCaptureMovesForPawn(pawn, pawn.X+1, rightCaptureR);
+
+			// Not Efficient FIX LATER
+			if(  blockingPieces.ContainsKey(pawn) )
+			{
+				List<Vector2I> newLegalmoves = blockingPieces[pawn];
+				foreach( MOVE_TYPES moveType in legalMoves[pawn].Keys)
+					legalMoves[pawn][moveType] = intersectOfTwoList(newLegalmoves, legalMoves[pawn][moveType]);
+			}
+			// Not Efficient FIX LATER
+			if( GameInCheck )
+				foreach( MOVE_TYPES moveType in legalMoves[pawn].Keys)
+					legalMoves[pawn][moveType] = intersectOfTwoList(GameInCheckMoves, legalMoves[pawn][moveType]);
+		}
+		return;
+	}
+
+
+	// Knight Moves
+
+
+	//Calculate Knight Moves
+	private void  bbfindMovesForKnight(List<Vector2I> KnightArray)
+	{
+		foreach( Vector2I knight in KnightArray)
+		{
+			legalMoves[knight] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+			var invertAt2Counter = 0;
+			foreach( int m in KNIGHT_MULTIPLERS )
+			{
+				foreach( string dir in KNIGHT_VECTORS.Keys )
+				{
+					Vector2I activeVector = KNIGHT_VECTORS[dir];
+					int checkingQ = knight.X + (( (invertAt2Counter < 2) ? activeVector.X : activeVector.Y) * m);
+					int checkingR = knight.Y + (( (invertAt2Counter < 2) ? activeVector.Y : activeVector.X) * m);
+					if (Bitboard128.inBitboardRange(checkingQ,checkingR))
+					{
+						int index = HexEngineSharp.QRToIndex(checkingQ,checkingR);
+						updateAttackBoard(checkingQ, checkingR, 1);
+						if (bbIsIndexEmpty(index)) 
+							legalMoves[knight][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ,checkingR));
+						else if(bbIsPieceWhite(index) != isWhiteTurn)
+							legalMoves[knight][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ,checkingR));
+					}
+				}
+				invertAt2Counter += 1;
+			}
+				
+			//Not Efficient FIX LATER
+			if(  blockingPieces.ContainsKey(knight) )
+			{
+				List<Vector2I> newLegalmoves = blockingPieces[knight];
+				foreach( MOVE_TYPES moveType in legalMoves[knight].Keys)
+					legalMoves[knight][moveType] = intersectOfTwoList(newLegalmoves, legalMoves[knight][moveType]);
+			}
+			// Not Efficient FIX LATER
+			if( GameInCheck )
+				foreach(MOVE_TYPES moveType in legalMoves[knight].Keys)
+					legalMoves[knight][moveType] = intersectOfTwoList(GameInCheckMoves, legalMoves[knight][moveType]);
+		}
+		return;
+	}
+
+
+	// Rook Moves
+
+
+	// Calculate Rook Moves
+	private void bbfindMovesForRook(List<Vector2I> RookArray)
+	{
+		foreach( Vector2I rook in RookArray)
+		{
+			legalMoves[rook] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+			foreach(string dir in ROOK_VECTORS.Keys)
+			{
+
+				Vector2I activeVector = ROOK_VECTORS[dir];
+				int checkingQ = rook.X + activeVector.X;
+				int checkingR = rook.Y + activeVector.Y;
+				while (Bitboard128.inBitboardRange(checkingQ,checkingR))
+				{
+					var index = HexEngineSharp.QRToIndex(checkingQ,checkingR);
+					updateAttackBoard(checkingQ, checkingR, 1);
+					if( bbIsIndexEmpty(index) )
+						legalMoves[rook][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
+					else
+					{
+						Vector2I pos = new Vector2I(checkingQ,checkingR);
+						if(influencedPieces.ContainsKey(pos)) influencedPieces[pos].Add(rook);
+						else influencedPieces[pos] = new List<Vector2I> {rook};
+						
+						if( bbIsPieceWhite(index) != isWhiteTurn ) //Enemy
+						{ 
+							legalMoves[rook][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
+							//King Escape Fix
+							if( bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING )
+							{
+								checkingQ += activeVector.X;
+								checkingR += activeVector.Y;
+								if(Bitboard128.inBitboardRange(checkingQ, checkingR))
+									updateAttackBoard(checkingQ, checkingR, 1);
+							}
+						}
+						break;
+					}
+					checkingQ += activeVector.X;
+					checkingR += activeVector.Y;
+				}
+			}
+			// Not Efficient TODO: FIX LATER
+			if(  blockingPieces.ContainsKey(rook) )
+			{
+				List<Vector2I> newLegalmoves = blockingPieces[rook];
+				foreach( MOVE_TYPES moveType in legalMoves[rook].Keys)
+					legalMoves[rook][moveType] = intersectOfTwoList(newLegalmoves, legalMoves[rook][moveType]);
+			}
+			/// Not Efficient TODO: FIX LATER
+			if( GameInCheck )
+				foreach( MOVE_TYPES moveType in legalMoves[rook].Keys)
+					legalMoves[rook][moveType] = intersectOfTwoList(GameInCheckMoves, legalMoves[rook][moveType]);
+		}
+		return;
+	}
+
+
+	// Bishop Moves
+
+
+	// Calculate Bishop Moves
+	private void bbfindMovesForBishop(List<Vector2I> BishopArray)
+	{
+		foreach( Vector2I bishop in BishopArray)
+		{
+			legalMoves[bishop] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+			foreach( string dir in BISHOP_VECTORS.Keys)
+			{
+				Vector2I activeVector = BISHOP_VECTORS[dir];
+				int checkingQ = bishop.X + activeVector.X;
+				int checkingR = bishop.X + activeVector.Y;
+				while ( Bitboard128.inBitboardRange(checkingQ,checkingR) )
+				{
+					var index = HexEngineSharp.QRToIndex(checkingQ,checkingR);
+					updateAttackBoard(checkingQ, checkingR, 1);
+					if( bbIsIndexEmpty(index) )
+						legalMoves[bishop][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
+					else
+					{
+						Vector2I pos = new Vector2I(checkingQ,checkingR);
+						if(influencedPieces.ContainsKey(pos))
+							influencedPieces[pos].Add(bishop);
+						else
+							influencedPieces[pos] = new List<Vector2I> {bishop};
+						
+						if( bbIsPieceWhite(index) != isWhiteTurn ) // Enemy
+						{
+							legalMoves[bishop][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
+							//King Escape Fix
+							if(bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING)
+							{
+								checkingQ += activeVector.X;
+								checkingR += activeVector.Y;
+								if( Bitboard128.inBitboardRange(checkingQ,checkingR) )
+									updateAttackBoard(checkingQ, checkingR, 1);
+							}
+						}
+						break;
+					}
+					checkingQ += activeVector.X;
+					checkingR += activeVector.Y;
+				}
+			}
+			// Not Efficient FIX LATER
+			if(  blockingPieces.ContainsKey(bishop) )
+			{
+				var newLegalmoves = blockingPieces[bishop];
+				foreach( MOVE_TYPES moveType in legalMoves[bishop].Keys)
+					legalMoves[bishop][moveType] = intersectOfTwoList(newLegalmoves, legalMoves[bishop][moveType]);
+			}
+			// Not Efficient FIX LATER
+			if( GameInCheck )
+				foreach(MOVE_TYPES moveType in legalMoves[bishop].Keys)
+					legalMoves[bishop][moveType] = intersectOfTwoList(GameInCheckMoves, legalMoves[bishop][moveType]);
+		}
+		return;
+	}
+
+
+	// Queen Moves
+
+
+	// Calculate Queen Moves
+	private void bbfindMovesForQueen(List<Vector2I> QueenArray)
+	{
+		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> tempMoves = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> {};
+		
+		bbfindMovesForRook(QueenArray);
+		foreach(Vector2I queen in QueenArray)
+			tempMoves[queen] =  DeepCopyInnerDictionary(legalMoves, queen);
+
+		bbfindMovesForBishop(QueenArray);
+		
+		foreach( Vector2I queen in QueenArray)
+			foreach( MOVE_TYPES moveType in tempMoves[queen].Keys)
+				foreach( Vector2I move in tempMoves[queen][moveType])
+					legalMoves[queen][moveType].Add(move);
+		return;
+	}
+
+
+	// King Moves
+
+
+	// Calculate King Moves
+	private void  bbfindMovesForKing(List<Vector2I> KingArray)
+	{
+		foreach( Vector2I king in KingArray)
+		{
+			legalMoves[king] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+
+			foreach( string dir in KING_VECTORS.Keys)
+			{
+				Vector2I activeVector = KING_VECTORS[dir];
+				int checkingQ = king.X + activeVector.X;
+				int checkingR = king.Y + activeVector.Y;
+				
+				if(Bitboard128.inBitboardRange(checkingQ,checkingR))
+				{
+					updateAttackBoard(checkingQ, checkingR, 1);
+					if(isWhiteTurn)
+						if((BlackAttackBoard[checkingQ][checkingR] > 0))
+							continue;
+					else
+						if((WhiteAttackBoard[checkingQ][checkingR] > 0))
+							continue;
+					int index = HexEngineSharp.QRToIndex(checkingQ,checkingR);
+					if( bbIsIndexEmpty(index) )
+						legalMoves[king][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
+
+					else if( bbIsPieceWhite(index) != isWhiteTurn )
+						legalMoves[king][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
+				}
+			}
+
+			// Not Efficient FIX LATER
+			if( GameInCheck )
+			{
+				legalMoves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoList(GameInCheckMoves, legalMoves[king][MOVE_TYPES.CAPTURE]);
+				foreach( MOVE_TYPES moveType in legalMoves[king].Keys)
+				{
+					if(moveType == MOVE_TYPES.CAPTURE) continue;
+					legalMoves[king][moveType] = differenceOfTwoList(legalMoves[king][moveType], GameInCheckMoves);
+				}
+			}
+		}
+		return;
+	}
+
+
+	// Move
+
+
+	// Find the legal moves for a single player given an array of pieces
+	private void bbfindLegalMovesFor(Dictionary<PIECES, List<Vector2I>>[] ap)
+	{
+		//startTime = Time.get_ticks_usec();
+		Dictionary<PIECES, List<Vector2I>> pieces = ap[(int)(isWhiteTurn ? SIDES.WHITE : SIDES.BLACK)];
+		foreach ( PIECES pieceType in pieces.Keys )
+		{
+			List<Vector2I> singleTypePieces = pieces[pieceType];
+			
+			if(singleTypePieces.Count() == 0)
+				continue;
+				
+			switch (pieceType)
+			{
+				case PIECES.PAWN: bbfindMovesForPawn(singleTypePieces); break;
+				case PIECES.KNIGHT: bbfindMovesForKnight(singleTypePieces); break;
+				case PIECES.ROOK: bbfindMovesForRook(singleTypePieces); break;
+				case PIECES.BISHOP: bbfindMovesForBishop(singleTypePieces); break;
+				case PIECES.QUEEN: bbfindMovesForQueen(singleTypePieces); break;
+				case PIECES.KING: bbfindMovesForKing(singleTypePieces); break;
+			}
+		}
+		//stopTime = Time.get_ticks_usec();
+		return;
+	}
+
+
+
+	// Undo
+
+
+	//Init
+
+
+	// API
+
+
+	// Get
 
 
 	// Test
 
 	public void test()
 	{
-		GD.Print("TEST");
+		fillBoardwithFEN(DEFAULT_FEN_STRING);
+		foreach(Bitboard128 bb in WHITE_BB)
+			GD.Print(bb);
+		GD.Print(" ");
+		foreach(Bitboard128 bb in BLACK_BB)
+			GD.Print(bb);
+		GD.Print("\n");
 	}
 
 }
@@ -640,19 +1342,19 @@ class Bitboard128
 	public static readonly int[] COLUMN_MIN_R = {0, -1, -2, -3, -4, -5, -5, -5, -5, -5, -5};
 	public static readonly int[] COLUMN_MAX_R = {5, 5, 5, 5, 5, 5, 4, 3, 2, 1, 0};
 
-	private int front;
-	private int back;
+	private ulong front;
+	private ulong back;
 
 	/* QUICK Powers of 2
-	N must be below 64 */
-	public static int get2PowerN (int n)
+	N must be below 65 */
+	public static ulong get2PowerN (int n)
 	{
-		return 1 << n;
+		return ((ulong) 1) << n;
 	}
 	public static Bitboard128 createSinglePieceBB (int index)
 	{
-		int back = 0;
-		int front = 0;
+		ulong back;
+		ulong front = 0;
 		if(index > Bitboard128.INDEX_TRANSITION)
 		{
 			front = get2PowerN( index - Bitboard128.INDEX_OFFSET );
@@ -660,6 +1362,7 @@ class Bitboard128
 		}
 		else
 			back = get2PowerN( index );
+			
 		return new Bitboard128(front,back);
 	}
 	// Create and return the Bitwise-OR total of all BB
@@ -680,14 +1383,21 @@ class Bitboard128
 	}
 	public Bitboard128(int Front = 0 , int Back = 0)
 	{
+		front = (ulong) Front;
+		back = (ulong) Back;
+	}
+
+	public Bitboard128(ulong Front = 0 , ulong Back = 0)
+	{
 		front = Front;
 		back = Back;
 	}
-	public int _getF()
+
+	public ulong _getF()
 	{
 		return front;
 	}
-	public int _getB(){
+	public ulong _getB(){
 		return back;
 	}
 	public Bitboard128 XOR(Bitboard128 to)
@@ -717,8 +1427,8 @@ class Bitboard128
 	}
 	public List<int> _getIndexes()
 	{
-		int b = _getB();
-		int f = _getF();
+		ulong b = _getB();
+		ulong f = _getF();
 		List<int> indexes = new List<int> {};
 		int index = 0;
 		while(b > 0b0){
@@ -738,8 +1448,8 @@ class Bitboard128
 	}
 	public override string ToString()
     {
-        string frontBinary = Convert.ToString(front, 2).PadLeft(32, '0');
-    	string backBinary = Convert.ToString(back, 2).PadLeft(63, '0');
+        string frontBinary = Convert.ToString((long)front, 2).PadLeft(32, '0');
+    	string backBinary = Convert.ToString((long)back, 2).PadLeft(INDEX_OFFSET, '0');
     	return $"{frontBinary} {backBinary}";
     }
 	public String ToStringNonBin()

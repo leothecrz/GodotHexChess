@@ -1,6 +1,15 @@
 using Godot;
 using System;
+using System.Runtime.CompilerServices;
 
-public partial class MoveGenerator : Node
+public class MoveGenerator
 {
+
+	public MoveGenerator()
+	{
+		// MOVE GENERATION
+	}
+
+	
+
 }
