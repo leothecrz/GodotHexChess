@@ -78,21 +78,21 @@ func _flipTopSneak() -> void:
 func _getCPieceType() -> int:
 	return cPiece
 
-func _setCPieceType ( type:int )-> void:
+func _setCPieceType ( type:int ) -> void:
 	cPiece = type;
 
 
 func _getCIndex () -> int:
 	return cIndex
 
-func _setCIndex ( i:int )-> void:
+func _setCIndex ( i:int ) -> void:
 	cIndex = i;
 
 
 func _getPPieceType() -> int:
 	return pPiece
 
-func _setPPieceType ( type:int )-> void:
+func _setPPieceType ( type:int ) -> void:
 	pPiece = type;
 
 

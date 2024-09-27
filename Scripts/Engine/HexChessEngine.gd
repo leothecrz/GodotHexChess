@@ -1427,7 +1427,7 @@ func handleMove(cords:Vector2i, moveType:MOVE_TYPES, moveIndex:int, promoteTo:PI
 		MOVE_TYPES.PROMOTE:
 			if(moveTo.x != cords.x):
 				histEntry._flipCapture();
-				histEntry._setCType(captureType);
+				histEntry._setCPieceType(captureType);
 				histEntry._setCIndex(captureIndex);
 				handleMoveCapture(moveTo, pieceType);
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
@@ -1463,7 +1463,6 @@ func handleMove(cords:Vector2i, moveType:MOVE_TYPES, moveIndex:int, promoteTo:PI
 				moveHistMod = "-%d,%d" % [captureType,captureIndex];
 				histEntry._flipTopSneak();
 			else:
-				
 				moveHistMod = "/%d,%d" % [captureType,captureIndex];
 			histEntry._setCIndex(captureIndex);
 			histEntry._setCPieceType(captureType);
@@ -1739,15 +1738,6 @@ func initiateEngine(FEN_STRING) -> bool:
 	generateNextLegalMoves();
 	
 	initiateEngineAI();
-	
-	_t();
-	
-	for bb in WHITE_BB:
-		print(bb);
-	print(" ");
-	for bb in BLACK_BB:
-		print(bb);
-	print("\n")
 	
 	return true;
 

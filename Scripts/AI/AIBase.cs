@@ -3,28 +3,18 @@ using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-public partial class AIBase : Node
+public abstract partial class AIBase : Node
     {
 
-    private int side;
-    private Vector2I TO;
-    private Vector2I CORDS;
-    private int MOVETYPE;
-    private int MOVEINDEX;
-    private int PROMOTETO;
+    protected int side;
+    protected Vector2I TO;
+    protected Vector2I CORDS;
+    protected int MOVETYPE;
+    protected int MOVEINDEX;
+    protected int PROMOTETO;
 
-    public AIBase(bool playswhite)
-    {
-        PROMOTETO = (int) HexEngineSharp.PIECES.QUEEN;
-        side = 0;
-        if ( playswhite ) side = 1;
-        return;
-    }
+    // GETTERS
 
-    
-    // GETTER
-
-    
     public Vector2I _getCords()
     {
         return CORDS;
@@ -51,8 +41,7 @@ public partial class AIBase : Node
         return TO;
     }
 
-    public void _makeChoice(HexEngineSharp HexEngine)
-    {
-        return;
-    }
+	//REQUIRED
+
+    public abstract void _makeChoice(HexEngineSharp HexEngine);
 }
