@@ -1317,6 +1317,10 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String, 
 
 	blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
 	legalMoves.clear();
+	
+	clearCombinedBIT();
+	calculateCombinedBIT();
+	
 	bbfindLegalMovesFor(movedPiece);
 
 	if(checkIFCordsUnderAttack(kingCords, legalMoves)):
@@ -1325,8 +1329,8 @@ func handleMoveState(cords:Vector2i, lastCords:Vector2i, historyPreview:String, 
 		#print(('black' if isWhiteTurn else 'white').to_upper(), " is in check.");
 		#print("Game In Check Moves: ", GameInCheckMoves);
 	
-	clearCombinedBIT();
-	calculateCombinedBIT();
+	#clearCombinedBIT();
+	#calculateCombinedBIT();
 
 	addInflunceFrom(cords)
 
@@ -1369,6 +1373,9 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 	var moveToIndex = 	HexEngine.QRToIndex(moveTo.x,moveTo.y);
 	captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 	captureValid = true;
+
+	if(captureType == PIECES.KING):
+		print("GD ", moveTo, " ", pieceType); 
 
 	## ENPASSANT FIX
 	if(pieceType == PIECES.PAWN && bbIsIndexEmpty(moveToIndex)):
@@ -1523,6 +1530,7 @@ func generateNextLegalMoves():
 	
 	blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[SIDES.WHITE if isWhiteTurn else SIDES.BLACK][PIECES.KING][0]);
 	legalMoves.clear();
+	
 	lastInfluencedPieces = influencedPieces
 	influencedPieces = {};
 		
@@ -1788,6 +1796,7 @@ func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> voi
 	resetTurnFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
 	
+	#HE._makeMove(cords, moveType, moveIndex, promoteTo);
 	return;
 
 ## Pass To AI
@@ -1820,6 +1829,9 @@ func _resign():
 	if(GameIsOver):
 		return;
 	GameIsOver = true;
+	
+	#HE._resign();
+	
 	return
 
 ## Undo Move PUBLIC CALL
@@ -1871,6 +1883,7 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> bool:
+	#HE._initDefault();
 	return initiateEngine(DEFAULT_FEN_STRING);
 
 

@@ -824,19 +824,16 @@ public partial class HexEngineSharp : Node
 
 	private Dictionary<int,Dictionary<int,int>> createAttackBoard(int radius)
 	{
-		var rDictionary = new Dictionary<int,Dictionary<int,int>> {};
-
+		var rDictionary = new Dictionary<int,Dictionary<int,int>>(2*radius);
 		for( int q=-radius; q <= radius; q +=1 )
 		{
 			int negQ = q * -1;
 			int minRow = Math.Max(-radius, (negQ-radius));
 			int maxRow = Math.Min(radius, (negQ+radius));
-			rDictionary.Add(q, new Dictionary<int, int> {});
+			rDictionary.Add(q, new Dictionary<int, int>(maxRow-minRow));
 			for(int r = minRow; r<= maxRow; r += 1 )
 				rDictionary[q].Add(r, 0);
 		}
-
-
 		return rDictionary;
 	}
 	// Based on the turn determine the appropriate board to update.
@@ -880,7 +877,7 @@ public partial class HexEngineSharp : Node
 				
 		foreach( MOVE_TYPES moveType in legalMoves[cords].Keys)
 			foreach( Vector2I move in legalMoves[cords][moveType])
-				updateAttackBoard(move.X,move.Y,-1);
+				updateAttackBoard(move.X, move.Y, -1);
 		
 		return;
 	}
@@ -1431,6 +1428,7 @@ public partial class HexEngineSharp : Node
 		
 		blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[(int)(isWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][0]);
 		legalMoves.Clear();
+		
 		lastInfluencedPieces = influencedPieces;
 		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};
 			
@@ -1474,7 +1472,7 @@ public partial class HexEngineSharp : Node
 	private Dictionary<PIECES, List<Vector2I>>[] setupActiveForSingle(PIECES type, Vector2I cords, Vector2I lastCords)
 	{
 		var movedPiece = new Dictionary<PIECES, List<Vector2I>>[2];
-		var internalDictionary = new Dictionary<PIECES, List<Vector2I>> {};
+		var internalDictionary = new Dictionary<PIECES, List<Vector2I>> {{type, new List<Vector2I>{cords}}};
 		//[{ type : [Vector2i(cords)] }];
 		
 		if (influencedPieces.ContainsKey(lastCords))
@@ -1635,6 +1633,10 @@ public partial class HexEngineSharp : Node
 
 		blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[(int)(isWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX]);
 		legalMoves = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> {};
+		
+		clearCombinedStateBitboards();
+		generateCombinedStateBitboards();
+
 		bbfindLegalMovesFor(movedPiece);
 
 		if(checkIFCordsUnderAttack(kingCords, legalMoves))
@@ -1643,8 +1645,8 @@ public partial class HexEngineSharp : Node
 			fillInCheckMoves(pieceType, cords, kingCords, true);
 		}
 		
-		clearCombinedStateBitboards();
-		generateCombinedStateBitboards();
+		// clearCombinedStateBitboards();
+		// generateCombinedStateBitboards();
 
 		addInflunceFrom(cords);
 
@@ -1689,11 +1691,9 @@ public partial class HexEngineSharp : Node
 	{
 		var revertEnPassant = false;
 		var moveToIndex = 	HexEngineSharp.QRToIndex(moveTo.X, moveTo.Y);
-		captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
+		var type = bbPieceTypeOf(moveToIndex, isWhiteTurn);
+		captureType = type;
 		captureValid = true;
-
-		if(captureType == PIECES.KING)
-			GD.Print(moveTo, " ", pieceType); 
 
 		// ENPASSANT FIX
 		if(pieceType == PIECES.PAWN && bbIsIndexEmpty(moveToIndex))
@@ -1702,6 +1702,16 @@ public partial class HexEngineSharp : Node
 			moveToIndex = HexEngineSharp.QRToIndex(moveTo.X, moveTo.Y);
 			captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 			revertEnPassant = true;
+		}
+
+		if(captureType == PIECES.KING)
+		{
+			GD.Print("Sharp ", moveTo, " ", pieceType); 
+			foreach(HistEntry hist in historyStack)
+			{
+				GD.Print(hist);
+			}
+			GD.Print(" ");
 		}
 
 		bbClearIndexOf(HexEngineSharp.QRToIndex(moveTo.X,moveTo.Y),!isWhiteTurn,captureType);
@@ -2028,11 +2038,13 @@ public partial class HexEngineSharp : Node
 			GD.PushWarning("Game Is Over");
 			return;
 		}
-		if(! legalMoves.ContainsKey(cords))
+
+		if(!legalMoves.ContainsKey(cords))
 		{
-			GD.PushWarning("Game Is Over");
+			GD.PushWarning("Invalid Move Attempted");
 			return;
 		}
+
 		if(EnemyIsAI)
 			if (bypassMoveLock && (EnemyPlaysWhite == isWhiteTurn))
 			{
@@ -2042,7 +2054,6 @@ public partial class HexEngineSharp : Node
 
 		resetTurnFlags();
 		handleMove(cords, moveType, moveIndex, promoteTo);
-		
 		return;
 	}
 	public void _passToAI()
@@ -2160,11 +2171,10 @@ public partial class HexEngineSharp : Node
 	public void test()
 	{
 		GD.Print("Test");
-		count_moves(3);
+		count_moves(2);
 		GD.Print("HexEngineSharp Moves Counted:");
 		GD.Print("Counter: ", counter);
 		GD.Print(": ", totalTime, "\n");
-		
 	}
 
 	
