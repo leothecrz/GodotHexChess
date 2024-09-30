@@ -1373,16 +1373,16 @@ func handleMoveCapture(moveTo, pieceType) -> bool:
 	var moveToIndex = 	HexEngine.QRToIndex(moveTo.x,moveTo.y);
 	captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 	captureValid = true;
-
-	if(captureType == PIECES.KING):
-		print("GD ", moveTo, " ", pieceType); 
-
+	
 	## ENPASSANT FIX
 	if(pieceType == PIECES.PAWN && bbIsIndexEmpty(moveToIndex)):
 		moveTo.y += 1 if isWhiteTurn else -1;
 		moveToIndex = 	HexEngine.QRToIndex(moveTo.x,moveTo.y);
 		captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
 		revertEnPassant = true;
+
+	if(captureType == PIECES.KING):
+		print("GD ", moveTo, " ", pieceType); 
 
 	bbClearIndexOf(HexEngine.QRToIndex(moveTo.x,moveTo.y),!isWhiteTurn,captureType);
 	

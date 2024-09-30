@@ -87,7 +87,8 @@ func trymove(depth, ref:HexEngine) -> void:
 	for piece in legalmoves.keys():
 		for movetype in legalmoves[piece]:
 			var index:int = 0;
-			for move in legalmoves[piece][movetype]:
+			for move in legalmoves[piece][movetype]: 
+				#logfile.store_string("%v, %s, %v\n" % [piece, ref.MOVE_TYPES.keys()[movetype], move]);
 				counter += 1;
 				var WAB = ref._duplicateWAB();
 				var BAB = ref._duplicateBAB();
@@ -100,16 +101,18 @@ func trymove(depth, ref:HexEngine) -> void:
 				index += 1;
 	return ;
 	
-
+var logfile;
 var counter:int;
 ##
 func count_moves(depth:int, ref:HexEngine) -> int:
+	#logfile = FileAccess.open("gdlog.txt", FileAccess.WRITE);
 	if (depth <= 0):
 		return 0;
 	counter = 0;
 	ref._initDefault();
 	trymove(depth, ref);
 	ref._resign();
+	#logfile.close();
 	return counter;
 
 ##

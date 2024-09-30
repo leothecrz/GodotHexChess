@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -1102,15 +1103,21 @@ public partial class HexEngineSharp : Node
 		int index = HexEngineSharp.QRToIndex(qpos,rpos);
 		
 		if ( bbIsIndexEmpty(index) )
+		{
 			if( EnPassantCordsValid && (EnPassantCords.X == qpos) && (EnPassantCords.Y == rpos) )
 				if( EnPassantLegal() )
 					legalMoves[pawn][MOVE_TYPES.CAPTURE].Add(move);
+		}
 		else
+		{
 			if(bbIsPieceWhite(index) != isWhiteTurn)
+			{
 				if ( isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
 					legalMoves[pawn][MOVE_TYPES.PROMOTE].Add(move); // PROMOTE CAPTURE
 				else
 					legalMoves[pawn][MOVE_TYPES.CAPTURE].Add(move);
+			}
+		}
 		
 		updateAttackBoard(qpos, rpos, 1);
 		return;
@@ -1125,11 +1132,15 @@ public partial class HexEngineSharp : Node
 		{
 			int index = HexEngineSharp.QRToIndex(pawn.X,fowardR);
 			if(bbIsIndexEmpty(index))
+			{
 				if ( isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
 					legalMoves[pawn][MOVE_TYPES.PROMOTE].Add(move);
 				else
+				{
 					legalMoves[pawn][MOVE_TYPES.MOVES].Add(move);
 					boolCanGoFoward = true;
+				}
+			}
 		}
 		//Double Move From Start
 		if( boolCanGoFoward && ( isWhiteTurn ? isWhitePawnStart(pawn) : isBlackPawnStart(pawn) ) )
@@ -2192,6 +2203,11 @@ public partial class HexEngineSharp : Node
 				int index = 0;
 				foreach(Vector2I move in legalmoves[piece][movetype])
 				{
+					
+					using (StreamWriter writer = new StreamWriter(path, append: true))
+					{
+					 	writer.WriteLine($"{piece}, {movetype}, {move}");
+					}
 					counter += 1;
 					var WAB = _duplicateWAB();
 					var BAB = _duplicateBAB();
@@ -2202,7 +2218,7 @@ public partial class HexEngineSharp : Node
 					trymove(depth-1);
 					_undoLastMove(false);
 					_restoreState(WAB,BAB,BP,InPi,legalmoves);
-					index += 1;
+					
 				}
 			}
 		}
@@ -2211,6 +2227,8 @@ public partial class HexEngineSharp : Node
 
 	private int counter;
 	private ulong totalTime;
+
+	private string path = "sharplog.txt";
 
 	private int count_moves(int depth)
 	{
