@@ -3,6 +3,7 @@ using System;
 
 using HexChess;
 using static HexChess.HexConst;
+using System.ComponentModel.DataAnnotations.Schema;
 
 public partial class MinMaxAI : AIBase
 {
@@ -21,6 +22,15 @@ public partial class MinMaxAI : AIBase
 		
 		return;
 	}
+
+
+	private void Tabl()
+	{
+		
+	}
+
+
+
 
 	public override void _makeChoice(HexEngineSharp HexEngine)
 	{
