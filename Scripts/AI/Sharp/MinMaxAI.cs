@@ -1,6 +1,9 @@
 using Godot;
 using System;
 
+using HexChess;
+using static HexChess.HexConst;
+
 public partial class MinMaxAI : AIBase
 {
 
@@ -8,7 +11,7 @@ public partial class MinMaxAI : AIBase
 	
 	public MinMaxAI(bool playswhite, int maxdepth)
 	{
-		this.side = (int)( playswhite ? HexEngineSharp.SIDES.WHITE : HexEngineSharp.SIDES.BLACK );
+		this.side = (int)( playswhite ? SIDES.WHITE : SIDES.BLACK );
 		maxDepth = maxdepth;
 		// For Promote moves should check if knight or queen is best choice (WIP)
 		PROMOTETO = 5;

@@ -315,16 +315,22 @@ func syncMasterAIThreadToMain():
 	if(ThinkingDialogRef):
 		ThinkingDialogRef.queue_free();
 	
-	var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
-	var j:int =  GameDataNode._getEnemyChoiceType() - 1;
-	var k:int = GameDataNode._getEnemyChoiceIndex();
+	#var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
+	var i:int = GameDataNode.SIDES.BLACK if(EngineNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
+	#var j:int =  GameDataNode._getEnemyChoiceType() - 1;
+	var j:int =  EngineNode._getEnemyChoiceType() - 1;
+	#var k:int = GameDataNode._getEnemyChoiceIndex();
+	var k:int = EngineNode._getEnemyChoiceIndex();
 	var ref:Node = ChessPiecesNode.get_child(i);
 	ref = ref.get_child(j)
 	ref = ref.get_child(k);
-	var to:Vector2i = GameDataNode._getEnemyTo();
+	#var to:Vector2i = GameDataNode._getEnemyTo();
+	var to:Vector2i = EngineNode._getEnemyTo();
 	
-	if (GameDataNode._getEnemyPromoted()):
-		prepareChessPieceNode(i,GameDataNode._getEnemyPTo()-1, GameDataNode._getEnemyPTo(), to);
+	#if (GameDataNode._getEnemyPromoted()):
+	if (EngineNode._getEnemyPromoted()):
+		#prepareChessPieceNode(i,GameDataNode._getEnemyPTo()-1, GameDataNode._getEnemyPTo(), to);
+		prepareChessPieceNode(i,EngineNode._getEnemyPTo()-1, EngineNode._getEnemyPTo(), to);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 		pass;
@@ -338,15 +344,18 @@ func syncMasterAIThreadToMain():
 
 ##
 func passAIToNewThread():
-	GameDataNode._passToAI();
+	#GameDataNode._passToAI();
+	EngineNode._passToAI();
 	syncMasterAIThreadToMain.call_deferred();
 	return;
 
 ##
 func allowAITurn():
-	if(  not GameDataNode._getIsEnemyAI() ):
+	#if(  not GameDataNode._getIsEnemyAI() ):
+	if(  not EngineNode._getIsEnemyAI() ):
 		return;
-	if( GameDataNode._getGameOverStatus() ): ##TODO Handle AI GAME END
+	#if( GameDataNode._getGameOverStatus() ): ##TODO Handle AI GAME END
+	if( EngineNode._getGameOverStatus() ):
 		return
 	
 	pieceSelectedLockOthers.emit();
@@ -464,7 +473,7 @@ func startGame() -> void:
 	
 	GameStartTime = Time.get_ticks_msec();
 	#if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
-	if( EngineNode._getIsEnemyAI and EngineNode._getEnemyIsWhite() ):
+	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ):
 		allowAITurn();
 		
 	return;
@@ -621,7 +630,8 @@ func _selectSide_OnItemSelect(index:int) -> void:
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
 	
-	GameDataNode._setEnemy(GameDataNode._getEnemyType(), selectedSide != 0);
+	#GameDataNode._setEnemy(GameDataNode._getEnemyType(), selectedSide != 0);
+	EngineNode._setEnemy(EngineNode._getEnemyType(), selectedSide != 0);
 	#print("Type: ", GameDataNode._getEnemyType());
 	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
 	return;
@@ -629,13 +639,15 @@ func _selectSide_OnItemSelect(index:int) -> void:
 ##
 func _on_enemy_select_item_selected(index:int) -> void:
 	if(activePieces):
-		EnemySelect._setSelected(GameDataNode._getEnemyType());
+		#EnemySelect._setSelected(GameDataNode._getEnemyType());
+		EnemySelect._setSelected(EngineNode._getEnemyType());
 		return; 
 		
 	var type:int = index;
 	if(index > 1):
 		type = index - 1;
-	GameDataNode._setEnemy(type, selectedSide != 0);
+	#GameDataNode._setEnemy(type, selectedSide != 0);
+	EngineNode._setEnemy(type, selectedSide != 0);
 	
 	minHistSize = 1;
 	if(type == 0):
