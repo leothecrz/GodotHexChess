@@ -21,6 +21,7 @@ const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 
 	# Node Ref
 @onready var GameDataNode:HexEngine = $ChessEngine;
+@onready var EngineNode:HexEngineSharp = $HCE;
 @onready var MoveGUI = $MoveGUI;
 @onready var ChessPiecesNode = $PiecesContainer;
 @onready var LeftPanel = $LeftPanel;
@@ -42,8 +43,8 @@ var selectedSide:int;
 var isRotatedWhiteDown:bool = true;
 
 	# Temp State
-var activePieces:Array;
-var currentLegalsMoves:Dictionary;
+var activePieces;
+var currentLegalMoves:Dictionary;
 
 	#Threads
 var MasterAIThread:Thread;
@@ -81,6 +82,8 @@ func onResize() ->void:
 	$PlayerColumn.onResize();
 	$Background.onResize();
 	return;
+
+
 
 ## Convert Axial Cordinates To Viewport Cords
 ##	i=y/(3/2*s);
@@ -154,23 +157,31 @@ func spawnActivePieces() -> void:
 
 ## Destroy gui element of captured piece
 func updateScenceTree_OfCapture() -> void:	
-	var i:int = GameDataNode.SIDES.WHITE if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
-	var j:int =  GameDataNode._getCaptureType() - 1;
-	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(GameDataNode._getCaptureIndex())
-	ref.get_parent().remove_child(ref); ## 
+	#var i:int = GameDataNode.SIDES.WHITE if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
+	var i:int = GameDataNode.SIDES.WHITE if(EngineNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
+	#var j:int =  GameDataNode._getCaptureType() - 1;
+	var j:int =  EngineNode._getCaptureType() - 1;
+	#var index:int = GameDataNode._getCaptureIndex();
+	var index = EngineNode._getCaptureIndex()
+	
+	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(index);
+	ref.get_parent().remove_child(ref);
 	ref.queue_free();
+	
 	return;
 
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
 func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
 	var ref:Node;
-	var i:int = GameDataNode.SIDES.WHITE if (GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
+	#var i:int = GameDataNode.SIDES.WHITE if (GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
+	var i:int = GameDataNode.SIDES.WHITE if (EngineNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
 	for pawnIndex in range( activePieces[i][GameDataNode.PIECES.PAWN].size() ):
 		if (activePieces[i][GameDataNode.PIECES.PAWN][pawnIndex] == cords):
 			ref = ChessPiecesNode.get_child(i).get_child(GameDataNode.PIECES.PAWN-1).get_child(pawnIndex);
 			break;
 	
-	prepareChessPieceNode(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords);
+	#prepareChessPieceNode(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords);
+	prepareChessPieceNode(ref.side, pTo-1, EngineNode.getPieceType(pTo), ref.pieceCords);
 
 	ref.get_parent().remove_child(ref);	
 	ref.queue_free();
@@ -185,33 +196,43 @@ func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pT
 
 ## Get new state data from engine
 func updateGUI_Elements() -> void:
-	if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
+	if(EngineNode._getGameInCheck() != LeftPanel._getLabelState()):
+	#if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
 		LeftPanel._swapLabelState();
 
-	if(GameDataNode._getIsWhiteTurn()):
+	if(EngineNode._getIsWhiteTurn()):
+	#if(GameDataNode._getIsWhiteTurn()):
 		emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
 		BoardControler.setSignalWhite();
 	else:
 		emit_signal("gameSwitchedSides", GameDataNode.SIDES.BLACK);
 		BoardControler.setSignalBlack();
 
-	if(GameDataNode._getGameOverStatus()):
-		if(GameDataNode._getGameInCheck()):
+	#if(GameDataNode._getGameOverStatus()):
+	#	if(GameDataNode._getGameInCheck()):
+	if(EngineNode._getGameOverStatus()):
+		if(EngineNode._getGameInCheck()):
+			#setConfirmTempDialog(AcceptDialog.new(),\
+			#"%s has won by CheckMate." % ["White" if GameDataNode._getIsBlackTurn() else "Black"],\
+			#killDialog);
 			setConfirmTempDialog(AcceptDialog.new(),\
-			"%s has won by CheckMate." % ["White" if GameDataNode._getIsBlackTurn() else "Black"],\
-			 killDialog);
+			"%s has won by CheckMate." % ["White" if EngineNode._getIsBlackTurn() else "Black"],\
+			killDialog);
 		else:
 			setConfirmTempDialog(AcceptDialog.new(),\
-			 "StaleMate. Game ends in a draw.",\
-			 killDialog);
+			"StaleMate. Game ends in a draw.",\
+			killDialog);
 		
 	return;
 
 ## Handle post move gui updates
 func syncToEngine() -> void:
-	activePieces = GameDataNode._getActivePieces()
-	currentLegalsMoves = GameDataNode._getMoves()
-	if(GameDataNode._getCaptureValid()):
+	#activePieces = GameDataNode._getActivePieces()
+	activePieces = EngineNode._getActivePieces();
+	#currentLegalMoves = GameDataNode._getMoves()
+	currentLegalMoves = EngineNode._getMoves();
+	#if(GameDataNode._getCaptureValid()):
+	if(EngineNode._getCaptureValid()):
 		updateScenceTree_OfCapture();
 	updateGUI_Elements();
 	return;
@@ -238,7 +259,9 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
 		
-	GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
+	#GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
+	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
+	
 	syncToEngine();
 	return;
 
@@ -314,7 +337,7 @@ func syncMasterAIThreadToMain():
 	return;
 
 ##
-func passAIToNewThread():	
+func passAIToNewThread():
 	GameDataNode._passToAI();
 	syncMasterAIThreadToMain.call_deferred();
 	return;
@@ -360,8 +383,8 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	pieceSelectedLockOthers.emit();
 	var thisPiecesMoves = {};
-	for key in currentLegalsMoves[CORDS].keys():
-		thisPiecesMoves[key] = currentLegalsMoves[CORDS][key];
+	for key in currentLegalMoves[CORDS].keys():
+		thisPiecesMoves[key] = currentLegalMoves[CORDS][key];
 	spawnMoves(thisPiecesMoves, CORDS);
 	return;
 
@@ -404,9 +427,10 @@ func forcedNewGameDialog():
 ##
 func resignCleanUp():
 	if(tempDialog): tempDialog.queue_free();
-	GameDataNode._resign();
+	#GameDataNode._resign();
+	EngineNode._resign();
 	activePieces.clear();
-	currentLegalsMoves.clear();
+	currentLegalMoves.clear();
 	BoardControler.setSignalWhite();
 	
 	for colorNodes in ChessPiecesNode.get_children():
@@ -424,27 +448,39 @@ func resignCleanUp():
 
 ##
 func startGame() -> void:
-	GameDataNode._initDefault();
-	activePieces = GameDataNode._getActivePieces();
-	currentLegalsMoves = GameDataNode._getMoves();
+	
+	#GameDataNode._initDefault();
+	EngineNode._initDefault();
+	
+	#activePieces = GameDataNode._getActivePieces();
+	activePieces = EngineNode._getActivePieces();
+	
+	#var GDMOVES = GameDataNode._getMoves();
+	currentLegalMoves = EngineNode._getMoves();
+	
 	spawnActivePieces();
 	
 	emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
-	GameStartTime = Time.get_ticks_msec();
 	
-	if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
+	GameStartTime = Time.get_ticks_msec();
+	#if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
+	if( EngineNode._getIsEnemyAI and EngineNode._getEnemyIsWhite() ):
 		allowAITurn();
-		pass;
+		
 	return;
 
 ##
 func undoCapture():
-	if( not GameDataNode._getUncaptureValid() ):
+	#if( not GameDataNode._getUncaptureValid() ):
+	if( not EngineNode._getUncaptureValid() ):
 		return;
 	##Undo Uncapture
-	var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
-	var cType = GameDataNode._getCaptureType();
-	var cIndex = GameDataNode._getCaptureIndex();
+	var captureSideToUndo = GameDataNode.SIDES.BLACK if EngineNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
+	#var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
+	var cType = EngineNode._getCaptureType();
+	var cIndex = EngineNode._getCaptureIndex();
+	#var cType = GameDataNode._getCaptureType();
+	#var cIndex = GameDataNode._getCaptureIndex();
 	var newPos = activePieces[captureSideToUndo][cType][cIndex];
 	
 	var newPieceScene = preloadChessPiece(captureSideToUndo, cType, newPos);
@@ -470,14 +506,17 @@ func undoCapture():
 ##
 func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	var newPos;
-	if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
+	#if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
+	if(not EngineNode._getUnpromoteValid()):
 		newPos = activePieces[sideToUndo][uType][uIndex];
 		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
 		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
 		return;
 	##Undo Promotion
-	var pType = GameDataNode._getUnpromoteType(); # promoted type
-	var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
+	#var pType = GameDataNode._getUnpromoteType(); # promoted type
+	#var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
+	var pType = EngineNode._getUnpromoteType();
+	var pIndex = EngineNode._getUnpromoteIndex();
 	newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex] ;
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
@@ -492,12 +531,17 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 
 ##
 func syncUndo():
-	var uType:int = GameDataNode._getUndoType();
-	var uIndex:int = GameDataNode._getUndoIndex();
-	var sideToUndo:int = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
+	#var uType:int = GameDataNode._getUndoType();
+	var uType:int = EngineNode._getUndoType();
+	#var uIndex:int = GameDataNode._getUndoIndex();
+	var uIndex:int = EngineNode._getUndoIndex();
+	#var sideToUndo:int = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
+	var sideToUndo:int = GameDataNode.SIDES.WHITE if EngineNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
 	
-	activePieces = GameDataNode._getActivePieces();
-	currentLegalsMoves = GameDataNode._getMoves();
+	#activePieces = GameDataNode._getActivePieces();
+	#currentLegalMoves = GameDataNode._getMoves();
+	activePieces = EngineNode._getActivePieces();
+	currentLegalMoves = EngineNode._getMoves();
 	
 	undoPromoteOrDefault(uType, uIndex, sideToUndo);
 	undoCapture();
@@ -506,9 +550,11 @@ func syncUndo():
 
 ##
 func undoAI():
-	if(not GameDataNode._getIsEnemyAI()):
+	#if(not GameDataNode._getIsEnemyAI()):
+	if(not EngineNode._getIsEnemyAI()):
 		return;
-	GameDataNode._undoLastMove();
+	#GameDataNode._undoLastMove();
+	EngineNode._undoLastMove(true);
 	syncUndo();
 	return
 
@@ -527,7 +573,8 @@ func _newGame_OnButtonPress() -> void:
 
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
-	if(GameDataNode._getGameOverStatus()):
+	if(EngineNode._getGameOverStatus()):
+	#if(GameDataNode._getGameOverStatus()):
 		resignCleanUp();
 		return;
 	setConfirmTempDialog(ConfirmationDialog.new(), "Resign the match?", resignCleanUp);
@@ -535,10 +582,12 @@ func _resign_OnButtonPress() -> void:
 
 ## Undo Button Pressed
 func _on_undo_pressed():
-	if(GameDataNode._getMoveHistorySize() < minHistSize):
+	#if(GameDataNode._getMoveHistorySize() < minHistSize):
+	if(EngineNode._getMoveHistorySize() < minHistSize):
 		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
 		return;
-	GameDataNode._undoLastMove();
+	#GameDataNode._undoLastMove();
+	EngineNode._undoLastMove(true);
 	syncUndo();
 	undoAI();
 	return;

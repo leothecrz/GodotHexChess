@@ -2,10 +2,10 @@ using Godot;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
+[GlobalClass]
 public partial class HexEngineSharp : Node
 {
 	public enum PIECES {ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING};
@@ -172,16 +172,16 @@ public partial class HexEngineSharp : Node
 		var dif = new Vector3I(from.X-to.X, from.Y-to.Y, getSAxialCordFrom(from)-getSAxialCordFrom(to));
 		return Math.Max( Math.Max( Math.Abs(dif.X), Math.Abs(dif.Y)), Math.Abs(dif.Z));
 	}
-	// public static void printActivePieces(Dictionary<PIECES, List<Vector2I>>[]AP)
-	// {
-	// 	for (int side = 0; side < AP.Length; side += 1)
-	// 	{
-	// 		GD.Print(Enum.GetNames(typeof (SIDES)).GetValue(side));
-	// 		foreach(PIECES piece in AP[side].Keys)
-	// 			GD.Print(Enum.GetName(typeof(PIECES), piece), " : ", AP[side][piece]);
-	// 		GD.Print("\n");
-	// 	}
-	// }
+	public static void printActivePieces(Dictionary<PIECES, List<Vector2I>>[]AP)
+	{
+		for (int side = 0; side < AP.Length; side += 1)
+		{
+			GD.Print(Enum.GetNames(typeof (SIDES)).GetValue(side));
+			foreach(PIECES piece in AP[side].Keys)
+				GD.Print(Enum.GetName(typeof(PIECES), piece), " : ", AP[side][piece]);
+			GD.Print("\n");
+		}
+	}
 	// set all values of given board to zero.
 	public static void resetBoard(Dictionary<int, Dictionary<int,int>> board)
 	{
@@ -2011,6 +2011,10 @@ public partial class HexEngineSharp : Node
 
 		initiateEngineAI();
 
+		GD.Print("Init Done");
+		GD.Print(activePieces);
+
+
 		return true;		
 	}
 
@@ -2104,7 +2108,7 @@ public partial class HexEngineSharp : Node
 		return;
 	}
 	// Undo Move PUBLIC CALL
-	private bool _undoLastMove(bool genMoves = true)
+	public bool _undoLastMove(bool genMoves = true)
 	{
 		if(historyStack.Count < 1)
 			return false;
@@ -2157,25 +2161,113 @@ public partial class HexEngineSharp : Node
 		return true;
 	}
 	//START DEFAULT GAME PUBLIC CALL
-	private bool _initDefault()
+	public bool _initDefault()
 	{
 		return initiateEngine(DEFAULT_FEN_STRING);
 	}
 
 
 	// Get
-
-	private bool _getGameOverStatus()
+	public bool _getUncaptureValid()
+	{
+		return uncaptureValid;
+	}
+	public bool _getUnpromoteValid()
+	{
+		return unpromoteValid;
+	}
+	public bool _getIsWhiteTurn()
+	{
+		return isWhiteTurn;
+	}
+	public bool _getIsBlackTurn()
+	{
+		return !isWhiteTurn;
+	}
+	public bool _getEnemyIsWhite()
+	{
+		return EnemyPlaysWhite;
+	} 
+	public bool _getIsEnemyAI()
+	{
+		return EnemyIsAI;
+	}
+	public bool _getGameOverStatus()
 	{
 		return GameIsOver;
 	}
-
-
-	private Dictionary<Vector2I,Dictionary<MOVE_TYPES, List<Vector2I>>> _getMoves()
+	public bool _getCaptureValid()
 	{
-		return legalMoves;
-	} 
+		return captureValid;
+	}
+	public bool _getGameInCheck()
+	{
+		return GameInCheck;
+	}
+
+	public int _getCaptureType()
+	{
+		return (int) captureType;
+	}
+	public int _getCaptureIndex()
+	{
+		return captureIndex;
+	}
+	public int _getMoveHistorySize()
+	{
+		return historyStack.Count;
+	}
+	public int _getUndoType()
+	{
+		return (int) undoType;
+	}
+	public int _getUndoIndex()
+	{
+		return undoIndex;
+	}
+
+	// GDSCRIPT INTERACTIONS
+
 	
+	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> _getActivePieces()
+	{
+		var gdReturn = new Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>>();
+		foreach(var side in activePieces)
+		{
+			var innerDictionary = new Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>();
+			foreach(var key in side.Keys)
+			{
+				var innerList = new Godot.Collections.Array<Vector2I>();
+				foreach(var piece in side[key])
+				{
+					innerList.Add(piece);
+				}
+				innerDictionary.Add(key, innerList);
+			}
+			gdReturn.Add(innerDictionary);
+		}
+		return gdReturn;
+	}
+	public Godot.Collections.Dictionary<Vector2I,Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>> _getMoves()
+	{
+		var gdReturn = new Godot.Collections.Dictionary<Vector2I,Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>>();
+		foreach(var key in legalMoves.Keys)
+		{
+			var innerDictionary = new Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>();
+			foreach(var innerkey in legalMoves[key].Keys)
+			{
+				var innerList = new Godot.Collections.Array<Vector2I>();
+				foreach(var piece in legalMoves[key][innerkey])
+				{
+					innerList.Add(piece);
+				}
+				innerDictionary.Add(innerkey, innerList);
+			}
+			gdReturn.Add(key, innerDictionary);
+		}
+		return gdReturn;
+	} 
+
 
 	// Test
 
@@ -2195,7 +2287,7 @@ public partial class HexEngineSharp : Node
 		{
 			return;
 		}
-		var legalmoves = DeepCopyLegalMoves(_getMoves());
+		var legalmoves = DeepCopyLegalMoves(legalMoves);
 		foreach( Vector2I piece in legalmoves.Keys)
 		{
 			foreach(MOVE_TYPES movetype in legalmoves[piece].Keys)
@@ -2204,10 +2296,10 @@ public partial class HexEngineSharp : Node
 				foreach(Vector2I move in legalmoves[piece][movetype])
 				{
 					
-					using (StreamWriter writer = new StreamWriter(path, append: true))
-					{
-					 	writer.WriteLine($"{piece}, {movetype}, {move}");
-					}
+					// using (StreamWriter writer = new StreamWriter(path, append: true))
+					// {
+					//  	writer.WriteLine($"{piece}, {movetype}, {move}");
+					// }
 					counter += 1;
 					var WAB = _duplicateWAB();
 					var BAB = _duplicateBAB();

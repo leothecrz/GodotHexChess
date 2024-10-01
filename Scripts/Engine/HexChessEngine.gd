@@ -26,7 +26,7 @@ extends Node
 # 50 move rule
 # 3 fold repatetion
 
-@onready var HE = $"../HexEngine";
+@onready var HE = $"../HCE";
 
 ### Constants
 
@@ -1796,7 +1796,7 @@ func _makeMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:PIECES) -> voi
 	resetTurnFlags();
 	handleMove(cords, moveType, moveIndex, promoteTo);
 	
-	#HE._makeMove(cords, moveType, moveIndex, promoteTo);
+	HE._makeMove(cords, moveType, moveIndex, promoteTo);
 	return;
 
 ## Pass To AI
@@ -1830,7 +1830,7 @@ func _resign():
 		return;
 	GameIsOver = true;
 	
-	#HE._resign();
+	HE._resign();
 	
 	return
 
@@ -1883,7 +1883,7 @@ func _undoLastMove(genMoves:bool=true) -> bool:
 
 ## START DEFAULT GAME PUBLIC CALL
 func _initDefault() -> bool:
-	#HE._initDefault();
+	HE._initDefault();
 	return initiateEngine(DEFAULT_FEN_STRING);
 
 

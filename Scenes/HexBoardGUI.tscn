@@ -48,7 +48,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dl4cn")
 
-[node name="HexEngine" type="Node" parent="."]
+[node name="HCE" type="Node" parent="."]
 script = ExtResource("2_gq2xx")
 
 [node name="ChessEngine" type="Node" parent="."]
