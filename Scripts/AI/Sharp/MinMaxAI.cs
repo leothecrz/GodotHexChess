@@ -126,25 +126,25 @@ public partial class MinMaxAI : AIBase
 		//Push King
 		Vector2I WhiteKing = hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.KING][0];
 		Vector2I BlackKing = hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.KING][0];
-		var dist = HexEngineSharp.getAxialCordDist(WhiteKing,new Vector2I(0,0));
+		var dist = getAxialCordDist(WhiteKing,new Vector2I(0,0));
 		H += dist * KING_DIST_VALUE;
-		dist = HexEngineSharp.getAxialCordDist(BlackKing,new Vector2I(0,0));
+		dist = getAxialCordDist(BlackKing,new Vector2I(0,0));
 		H -= dist * KING_DIST_VALUE;
 		//Push Pawns
 		foreach( Vector2I pawn in hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.PAWN])
 		{
 			if(pawn.X >= 0)
-				H -= DIST_VALUE * HexEngineSharp.getAxialCordDist(pawn, new Vector2I(pawn.X, -1*HEX_BOARD_RADIUS));
+				H -= DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, -1*HEX_BOARD_RADIUS));
 			else
-				H -= DIST_VALUE * HexEngineSharp.getAxialCordDist(pawn, new Vector2I(pawn.X, (-1*HEX_BOARD_RADIUS)-pawn.X));
+				H -= DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, (-1*HEX_BOARD_RADIUS)-pawn.X));
 		}
 		foreach( Vector2I pawn in hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.PAWN])
 		{
 			if(pawn.X <= 0)
 				// axial dist is negative
-				H += DIST_VALUE * HexEngineSharp.getAxialCordDist(pawn, new Vector2I(pawn.X, HEX_BOARD_RADIUS));
+				H += DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, HEX_BOARD_RADIUS));
 			else
-				H += DIST_VALUE * HexEngineSharp.getAxialCordDist(pawn, new Vector2I(pawn.X, HEX_BOARD_RADIUS-pawn.X));
+				H += DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, HEX_BOARD_RADIUS-pawn.X));
 		}
 		return H;
 	}
@@ -177,7 +177,7 @@ public partial class MinMaxAI : AIBase
 			
 		int index = 0;
 		long value = long.MinValue;
-		var legalmoves = HexEngineSharp.DeepCopyLegalMoves(hexEngine._getmoves());
+		var legalmoves = DeepCopyLegalMoves(hexEngine._getmoves());
 		
 		//Insert Move Ordering Here
 		foreach( Vector2I piece in legalmoves.Keys )
@@ -228,7 +228,7 @@ public partial class MinMaxAI : AIBase
 		var start = Time.GetTicksUsec();
 		var isMaxPlayer = side == (int) SIDES.BLACK;
 		long BestValue = long.MinValue;
-		var legalmoves = HexEngineSharp.DeepCopyLegalMoves( hexEngine._getmoves() );
+		var legalmoves = DeepCopyLegalMoves( hexEngine._getmoves() );
 
 		hexEngine._disableAIMoveLock();
 		CORDS = new Vector2I(-6,-6);

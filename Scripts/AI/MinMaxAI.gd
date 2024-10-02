@@ -4,7 +4,7 @@ class_name MinMaxAI;
 const MIN_INT = -9223372036854775808;
 const MAX_INT = 9223372036854775807;
 
-const DIST_VALUE = 10000;
+const DIST_VALUE:int = 10000;
 const KING_DIST_VALUE = DIST_VALUE / 5;
 const CHECK_VAL = 15000;
 
@@ -51,14 +51,14 @@ func _init(playswhite:bool, maxdepth:int):
 
 ##
 func getPositionHash(ref:HexEngine, isWTurn:bool) -> int:
-	var hash = whiteTurnHashValue if isWTurn else blackTurnHashValue;
+	var h = whiteTurnHashValue if isWTurn else blackTurnHashValue;
 	
-	for side:Dictionary in ref._getActivePieces():
-		for type:int in side.keys():
-			for piece:Vector2i in side[type]:
-				hash ^= hashBoardValues[piece][type-1];
+	for s:Dictionary in ref._getActivePieces():
+		for type:int in s.keys():
+			for piece:Vector2i in s[type]:
+				h ^= hashBoardValues[piece][type-1];
 	
-	return hash;
+	return h;
 
 ## Create A hexagonal board with axial cordinates. (Q,R). Centers At 0,0.
 func createTranspositionBoard(radius : int) -> Dictionary:
@@ -291,7 +291,7 @@ class TableEntry:
 	func _init(val:int, dep:int, t:int):
 		value = val;
 		depth = dep;
-		type = t;
+		type = ENTRY_TYPE.values()[t];
 		return;
 	
 	##
