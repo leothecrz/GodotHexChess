@@ -27,9 +27,9 @@ public partial class HexEngineSharp : Node
 	private int turnNumber = 1;
 
 	// Pieces
-	private Dictionary<Vector2I, List<Vector2I>> influencedPieces;
-	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces;
-	private Dictionary<Vector2I, List<Vector2I>> blockingPieces;
+	private Dictionary<Vector2I, List<Vector2I>> influencedPieces = null;
+	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces = null;
+	private Dictionary<Vector2I, List<Vector2I>> blockingPieces = null;
 	private Dictionary<PIECES, List<Vector2I>>[] activePieces = null;
 
 	// Moves
@@ -1958,7 +1958,7 @@ public partial class HexEngineSharp : Node
 				EnemyAI = new RandomAI(EnemyPlaysWhite);
 				break;
 			case ENEMY_TYPES.MIN_MAX:
-				EnemyAI = new MinMaxAI(EnemyPlaysWhite, 3);
+				EnemyAI = new MinMaxAI(EnemyPlaysWhite, 5);
 				break;
 			case ENEMY_TYPES.NN:
 				GD.PushWarning("NN Agent not yet implemented, using RNG");
@@ -2238,6 +2238,10 @@ public partial class HexEngineSharp : Node
 		return legalMoves;
 	}
 
+	public Dictionary<PIECES, List<Vector2I>>[] _getAP()
+	{
+		return activePieces;
+	}
 
 	// GDSCRIPT INTERACTIONS
 
