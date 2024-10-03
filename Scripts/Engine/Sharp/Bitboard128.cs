@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace HexChess
 {
-	class Bitboard128 
+	public class Bitboard128 
 	{
 		public const int INDEX_TRANSITION = 62;
 		public const int INDEX_OFFSET = 63;

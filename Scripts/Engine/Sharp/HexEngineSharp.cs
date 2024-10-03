@@ -1,6 +1,6 @@
 using Godot;
+
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -16,11 +16,7 @@ public partial class HexEngineSharp : Node
 	private Dictionary<int, Dictionary<int,int>> BlackAttackBoard;
 	
 	//BitBoard
-	private Bitboard128[] WHITE_BB;
-	private Bitboard128[] BLACK_BB;
-	private Bitboard128 BIT_WHITE;
-	private Bitboard128 BIT_BLACK;
-	private Bitboard128 BIT_ALL;
+	private BitboardState BitState;
 
 	// Game Turn
 	private bool isWhiteTurn = true;
@@ -85,256 +81,8 @@ public partial class HexEngineSharp : Node
 	public ulong stopTime;
 
 
-	//Static Functions
-
-
-
 	// Piece ID
 
-
-	public static bool isPieceWhite(int id)
-	{
-		int mask = 0b1000;
-		if ((id & mask) != 0)
-			return true;
-		return false;
-	}
-	public static bool isPieceFriendly(int val, bool isWhiteTrn)
-	{
-		return (isWhiteTrn == isPieceWhite(val));
-	}
-	public static bool isPieceKing(int id)
-	{ 		
-		return getPieceType(id) == PIECES.KING;
-	}
-
-
-	// Bitboards
-
-
-	private void initiateStateBitboards()
-	{
-		int size = Enum.GetValues(typeof(PIECES)).Length - 1;
-		WHITE_BB = new Bitboard128[size];
-		BLACK_BB = new Bitboard128[size];
-		for(int i=0; i<size; i+=1)
-		{
-			WHITE_BB[i] = new Bitboard128(0,0);
-			BLACK_BB[i] = new Bitboard128(0,0);
-		}
-	}
-	private void clearCombinedStateBitboards()
-	{
-		BIT_ALL = null;
-		BIT_BLACK = null;
-		BIT_WHITE = null;
-	}
-	private void clearStateBitboard()
-	{
-		for (int i=0 ; i < WHITE_BB.Length; i+=1)
-		{
-			WHITE_BB[i] = null;
-			BLACK_BB[i] = null;
-		}
-		
-	}
-	private void generateCombinedStateBitboards()
-	{
-		BIT_WHITE = Bitboard128.genTotalBitBoard(WHITE_BB);
-		BIT_BLACK = Bitboard128.genTotalBitBoard(BLACK_BB);
-		BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
-	}
-
-
-	// Bitboard Checks
-
-
-	// Checks BIT_ALL for the existence of a piece at index
-	private bool bbIsIndexEmpty(int index)
-	{
-		Bitboard128 temp = Bitboard128.createSinglePieceBB(index);
-		Bitboard128 result = BIT_ALL.AND(temp);
-		bool status = result.IS_EMPTY();
-		result = null;
-		temp = null;
-		return status;
-	}
-	// Assumes Piece Exists. Check on which side bitboard the piece exist on.
-	private bool bbIsPieceWhite(int index)
-	{
-		Bitboard128 check = Bitboard128.createSinglePieceBB(index);
-		Bitboard128 result = BIT_WHITE.AND(check);
-		bool status = result.IS_EMPTY();
-		result = null;
-		check = null;
-		return !status;
-	}
-	// Assumes Piece Exists. Check on which type bitboard the piece exist on. Checks Opponent bitboard.
-	private PIECES bbPieceTypeOf(int index, bool isWhiteTrn)
-	{
-		int i = 0;
-		Bitboard128 temp = Bitboard128.createSinglePieceBB(index);
-		Bitboard128[] opponentBitBoards;
-		if(isWhiteTrn)
-			opponentBitBoards = BLACK_BB;
-		else
-			opponentBitBoards = WHITE_BB;
-
-		foreach (Bitboard128 bb in opponentBitBoards)
-		{
-			i += 1;
-			Bitboard128 result = temp.AND(bb);
-			var status = result.IS_EMPTY();
-			result = null;
-			if (!status) break;
-		}
-		
-		temp = null;
-		return (PIECES) i;
-	}
-
-	// Use the board to find the location of all pieces. 
-	// Intended to be ran only once at the begining.
-	private Dictionary<PIECES,List<Vector2I>>[] bbfindPieces()
-	{
-		Dictionary<PIECES,List<Vector2I>>[] pieceCords = new Dictionary<PIECES,List<Vector2I>>[] 
-		{
-			new Dictionary<PIECES, List<Vector2I>>()
-			{ 
-				{PIECES.PAWN, new List<Vector2I> {}},
-				{PIECES.KNIGHT, new List<Vector2I> {}},
-				{PIECES.ROOK, new List<Vector2I> {}},
-				{PIECES.BISHOP, new List<Vector2I> {}},
-				{PIECES.QUEEN, new List<Vector2I> {}},
-				{PIECES.KING, new List<Vector2I> {}} 
-			},
-			new Dictionary<PIECES, List<Vector2I>>()
-			{ 
-				{PIECES.PAWN, new List<Vector2I> {}},
-				{PIECES.KNIGHT, new List<Vector2I> {}},
-				{PIECES.ROOK, new List<Vector2I> {}},
-				{PIECES.BISHOP, new List<Vector2I> {}},
-				{PIECES.QUEEN, new List<Vector2I> {}},
-				{PIECES.KING, new List<Vector2I> {}} 
-			}
-		};
-		
-		int type = 0;
-		foreach( Bitboard128 bb in BLACK_BB )
-		{
-			type += 1;
-			List<int> pieceIndexes = bb._getIndexes();
-			foreach(int i in pieceIndexes)
-				pieceCords[(int)SIDES.BLACK][(PIECES)type].Add(IndexToQR(i));
-		}
-		type = 0;
-		foreach( Bitboard128 bb in WHITE_BB)
-		{
-		 	type += 1;
-		 	List<int> pieceIndexes = bb._getIndexes();
-		 	foreach(int i in pieceIndexes)
-		 		pieceCords[(int)SIDES.WHITE][(PIECES)type].Add(IndexToQR(i));
-		}
-
-		return pieceCords;
-	}
-
-
-	// Bitboard Update
-
-
-	// Update the selected sides type bitboard at (q,r)
-	private void add_IPieceToBitBoardsOf(int q, int r, int piece, bool updateWhite)
-	{
-		int index = QRToIndex(q,r);
-		Bitboard128 insert = Bitboard128.createSinglePieceBB(index);
-		int type = (int) getPieceType(piece);
-
-		if(updateWhite)
-		{
-			Bitboard128 temp = WHITE_BB[type-1].OR(insert);
-			WHITE_BB[type-1] = null;
-			WHITE_BB[type-1] = temp;
-		}
-		else
-		{
-			Bitboard128 temp = BLACK_BB[type-1].OR(insert);
-			BLACK_BB[type-1] = null;
-			BLACK_BB[type-1] = temp;
-		}
-		
-		insert = null;
-		return;
-	}
-	// Update the bitboard at (q,r) using piece int
-	private void add_IPieceToBitBoards(int q, int r, int piece)
-	{
-		add_IPieceToBitBoardsOf(q, r, piece, isPieceWhite(piece));
-		return;
-	}
-	// Update the bitboard based on piece FEN STRING
-	private void addS_PieceToBitBoards(int q, int r, char c)
-	{
-		bool isBlack = true;
-		if(c < 'a')
-		{
-			isBlack = false;
-			c = (char) ( c + 32 );
-		}
-		PIECES piece = PIECES.ZERO;
-		switch(c)
-		{
-			case 'p': piece = PIECES.PAWN; break;
-			case 'n': piece = PIECES.KNIGHT; break;
-			case 'r': piece = PIECES.ROOK; break;
-			case 'b': piece = PIECES.BISHOP; break;
-			case 'q': piece = PIECES.QUEEN; break;
-			case 'k': piece = PIECES.KING; break;
-		}
-		add_IPieceToBitBoards(q,r, getPieceInt(piece, isBlack));
-		return;
-	}
-	private void bbAddPieceOf(int index, bool isWhite, PIECES type)
-	{
-		Bitboard128[] activeBoard;
-		if(isWhite)
-			activeBoard = WHITE_BB;
-		else
-			activeBoard = BLACK_BB;
-		var pos = (int) type - 1;
-		var mask = Bitboard128.createSinglePieceBB(index);
-		var result = activeBoard[pos].OR(mask);
-		mask = null;
-		activeBoard[pos] = null;
-		activeBoard[pos] = result;
-		return;
-	}
-	// Assumes Piece Exists. Clears index of selected side.
-	private void bbClearIndexFrom(int index, bool isWhite)
-	{
-		PIECES type = bbPieceTypeOf(index, !isWhite);
-		Bitboard128[] activeBoard; if(isWhite) activeBoard = WHITE_BB; else activeBoard = BLACK_BB;
-		Bitboard128 mask = Bitboard128.createSinglePieceBB(index);
-		int pos = (int) type - 1;
-		Bitboard128 result = activeBoard[pos].XOR(mask);
-		mask = null;
-		activeBoard[pos] = null;
-		activeBoard[pos] = result;
-		return;
-	}
-	// Assumes Piece Exists. Clears index of selected side from selected type.
-	private void bbClearIndexOf(int index, bool isWhite, PIECES type)
-	{
-		Bitboard128[] activeBoard;
-		if(isWhite) activeBoard = WHITE_BB; else activeBoard = BLACK_BB;
-		Bitboard128 mask = Bitboard128.createSinglePieceBB(index);
-		int pos = (int) type - 1;
-		var result = activeBoard[pos].XOR(mask);
-		mask = null;
-		activeBoard[pos] = null;
-		activeBoard[pos] = result;
-		return;
-	}
 
 
 	// PAWN Position
@@ -473,16 +221,18 @@ public partial class HexEngineSharp : Node
 		if( Bitboard128.inBitboardRange(qpos, leftCaptureR) )
 		{
 			int index = QRToIndex(qpos, leftCaptureR);
-			if( ! bbIsIndexEmpty(index) && (bbIsPieceWhite(index) != isWTurn))
-				if(bbPieceTypeOf(index, isWTurn) == PIECES.PAWN)
+			if( (!BitState.IsIndexEmpty(index)) && 
+				(BitState.IsPieceWhite(index) != isWTurn) )
+				if(BitState.PieceTypeOf(index, isWTurn) == PIECES.PAWN)
 					lst.Add(new Vector2I(qpos, leftCaptureR));
 		}
 		qpos = pos.X + 1;
 		if( Bitboard128.inBitboardRange(qpos, rightCaptureR) )
 		{
 			int index = QRToIndex(qpos, rightCaptureR);
-			if( ! bbIsIndexEmpty(index) && bbIsPieceWhite(index) != isWTurn)
-				if(bbPieceTypeOf(index, isWTurn) == PIECES.PAWN)
+			if( (!BitState.IsIndexEmpty(index)) &&
+			 (BitState.IsPieceWhite(index) != isWTurn) )
+				if(BitState.PieceTypeOf(index, isWTurn) == PIECES.PAWN)
 					lst.Add(new Vector2I(qpos, rightCaptureR));
 		}
 		return lst;
@@ -499,8 +249,8 @@ public partial class HexEngineSharp : Node
 				if (Bitboard128.inBitboardRange(checkingQ,checkingR))
 				{
 					int index = QRToIndex(checkingQ, checkingR);
-					if( ! bbIsIndexEmpty(index) && (bbIsPieceWhite(index) != isWTurn) )
-						if(bbPieceTypeOf(index, isWTurn) == PIECES.KNIGHT)
+					if( ! BitState.IsIndexEmpty(index) && (BitState.IsPieceWhite(index) != isWTurn) )
+						if(BitState.PieceTypeOf(index, isWTurn) == PIECES.KNIGHT)
 							lst.Add(new Vector2I(checkingQ, checkingR));
 				}
 			}
@@ -520,10 +270,10 @@ public partial class HexEngineSharp : Node
 			while ( Bitboard128.inBitboardRange(checkingQ, checkingR) )
 			{
 				int index = QRToIndex(checkingQ, checkingR);
-				if (bbIsIndexEmpty(index)){}
-				else if (bbIsPieceWhite(index) != isWTurn)
+				if (BitState.IsIndexEmpty(index)){}
+				else if (BitState.IsPieceWhite(index) != isWTurn)
 				{
-					if ( checkFor.Contains( bbPieceTypeOf(index, isWTurn)))
+					if ( checkFor.Contains( BitState.PieceTypeOf(index, isWTurn)))
 						lst.Add(new Vector2I(checkingQ, checkingR));
 					break;
 				}
@@ -641,7 +391,7 @@ public partial class HexEngineSharp : Node
 	private bool fillBoardwithFEN(string fenString)
 	{
 		//Board Status
-		initiateStateBitboards();
+		BitState = new BitboardState();
 		
 		string [] fenSections =  fenString.Split(' ');
 		if (fenSections.Length != 4)
@@ -696,7 +446,7 @@ public partial class HexEngineSharp : Node
 				{
 					if(r1 <= r2)
 					{
-						addS_PieceToBitBoards(q,r1,activeChar);
+						BitState.addS_PieceToBitBoards(q,r1,activeChar);
 						r1 +=1 ;
 					}
 					else
@@ -707,7 +457,7 @@ public partial class HexEngineSharp : Node
 				}
 			}
 		}
-		generateCombinedStateBitboards();
+		BitState.generateCombinedStateBitboards();
 		
 		//Is White Turn
 		if(fenSections[1] == "w")
@@ -748,7 +498,7 @@ public partial class HexEngineSharp : Node
 	private void bbcheckForBlockingOnVector(PIECES piece, Dictionary<string,Vector2I> dirSet, Dictionary<Vector2I, List<Vector2I>> bp, Vector2I cords)
 		{
 			var index = QRToIndex(cords.X,cords.Y);
-			var isWhiteTrn = bbIsPieceWhite(index);
+			var isWhiteTrn = BitState.IsPieceWhite(index);
 			
 			foreach( string direction in dirSet.Keys )
 			{
@@ -763,18 +513,18 @@ public partial class HexEngineSharp : Node
 				while ( Bitboard128.inBitboardRange(checkingQ,checkingR) )
 				{
 					index = QRToIndex(checkingQ,checkingR);
-					if( bbIsIndexEmpty(index) )
+					if( BitState.IsIndexEmpty(index) )
 						if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
 							LegalMoves.Add(new Vector2I(checkingQ,checkingR)); // Track legal moves for the blocking pieces
 					else
 					{
-						if( bbIsPieceWhite(index) == isWhiteTrn ) // Friend Piece
+						if( BitState.IsPieceWhite(index) == isWhiteTrn ) // Friend Piece
 							if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1) break; // Two friendly pieces in a row. No Danger
 							else dirBlockingPiece = new Vector2I(checkingQ,checkingR); // First piece found
 
 						else //Unfriendly Piece Found	
 						{
-							PIECES val = bbPieceTypeOf(index, isWhiteTrn);
+							PIECES val = BitState.PieceTypeOf(index, isWhiteTrn);
 							if ( (val == PIECES.QUEEN) || (val == piece) )
 								if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
 									LegalMoves.Add(new Vector2I(checkingQ,checkingR));
@@ -810,8 +560,8 @@ public partial class HexEngineSharp : Node
 		foreach( Vector2I piece in lastInfluencedPieces[targetPos])
 		{
 			int index = QRToIndex(piece.X,piece.Y);
-			if(bbIsPieceWhite(index) == isWhiteTurn) continue;
-			PIECES type = bbPieceTypeOf(index, isWhiteTurn);
+			if(BitState.IsPieceWhite(index) == isWhiteTurn) continue;
+			PIECES type = BitState.PieceTypeOf(index, isWhiteTurn);
 			if(type == PIECES.ROOK || type == PIECES.QUEEN)
 			{
 				if ( piece.X == kingCords.X ) return false;
@@ -836,7 +586,7 @@ public partial class HexEngineSharp : Node
 		Vector2I move = new Vector2I(qpos, rpos);
 		int index = QRToIndex(qpos,rpos);
 		
-		if ( bbIsIndexEmpty(index) )
+		if ( BitState.IsIndexEmpty(index) )
 		{
 			if( EnPassantCordsValid && (EnPassantCords.X == qpos) && (EnPassantCords.Y == rpos) )
 				if( EnPassantLegal() )
@@ -844,7 +594,7 @@ public partial class HexEngineSharp : Node
 		}
 		else
 		{
-			if(bbIsPieceWhite(index) != isWhiteTurn)
+			if(BitState.IsPieceWhite(index) != isWhiteTurn)
 			{
 				if ( isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
 					legalMoves[pawn][MOVE_TYPES.PROMOTE].Add(move); // PROMOTE CAPTURE
@@ -865,7 +615,7 @@ public partial class HexEngineSharp : Node
 		if (Bitboard128.inBitboardRange(pawn.X, fowardR))
 		{
 			int index = QRToIndex(pawn.X,fowardR);
-			if(bbIsIndexEmpty(index))
+			if(BitState.IsIndexEmpty(index))
 			{
 				if ( isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
 					legalMoves[pawn][MOVE_TYPES.PROMOTE].Add(move);
@@ -881,7 +631,7 @@ public partial class HexEngineSharp : Node
 		{
 			int doubleF = isWhiteTurn ? pawn.Y - 2 : pawn.Y + 2;
 			int index = QRToIndex(pawn.X, doubleF);
-			if (bbIsIndexEmpty(index))
+			if (BitState.IsIndexEmpty(index))
 				legalMoves[pawn][MOVE_TYPES.ENPASSANT].Add(new Vector2I(pawn.X, doubleF));
 		}
 		return;
@@ -942,9 +692,9 @@ public partial class HexEngineSharp : Node
 					{
 						int index = QRToIndex(checkingQ,checkingR);
 						updateAttackBoard(checkingQ, checkingR, 1);
-						if (bbIsIndexEmpty(index)) 
+						if (BitState.IsIndexEmpty(index)) 
 							legalMoves[knight][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ,checkingR));
-						else if(bbIsPieceWhite(index) != isWhiteTurn)
+						else if(BitState.IsPieceWhite(index) != isWhiteTurn)
 							legalMoves[knight][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ,checkingR));
 					}
 				}
@@ -985,7 +735,7 @@ public partial class HexEngineSharp : Node
 				{
 					var index = QRToIndex(checkingQ,checkingR);
 					updateAttackBoard(checkingQ, checkingR, 1);
-					if( bbIsIndexEmpty(index) )
+					if( BitState.IsIndexEmpty(index) )
 						legalMoves[rook][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
 					else
 					{
@@ -993,11 +743,11 @@ public partial class HexEngineSharp : Node
 						if(influencedPieces.ContainsKey(pos)) influencedPieces[pos].Add(rook);
 						else influencedPieces[pos] = new List<Vector2I> {rook};
 						
-						if( bbIsPieceWhite(index) != isWhiteTurn ) //Enemy
+						if( BitState.IsPieceWhite(index) != isWhiteTurn ) //Enemy
 						{ 
 							legalMoves[rook][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
 							//King Escape Fix
-							if( bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING )
+							if( BitState.PieceTypeOf(index, isWhiteTurn) == PIECES.KING )
 							{
 								checkingQ += activeVector.X;
 								checkingR += activeVector.Y;
@@ -1044,7 +794,7 @@ public partial class HexEngineSharp : Node
 				{
 					var index = QRToIndex(checkingQ,checkingR);
 					updateAttackBoard(checkingQ, checkingR, 1);
-					if( bbIsIndexEmpty(index) )
+					if( BitState.IsIndexEmpty(index) )
 						legalMoves[bishop][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
 					else
 					{
@@ -1054,11 +804,11 @@ public partial class HexEngineSharp : Node
 						else
 							influencedPieces[pos] = new List<Vector2I> {bishop};
 						
-						if( bbIsPieceWhite(index) != isWhiteTurn ) // Enemy
+						if( BitState.IsPieceWhite(index) != isWhiteTurn ) // Enemy
 						{
 							legalMoves[bishop][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
 							//King Escape Fix
-							if(bbPieceTypeOf(index, isWhiteTurn) == PIECES.KING)
+							if(BitState.PieceTypeOf(index, isWhiteTurn) == PIECES.KING)
 							{
 								checkingQ += activeVector.X;
 								checkingR += activeVector.Y;
@@ -1137,11 +887,11 @@ public partial class HexEngineSharp : Node
 							continue;
 					}
 					int index = QRToIndex(checkingQ,checkingR);
-					if( bbIsIndexEmpty(index) )
+					if( BitState.IsIndexEmpty(index) )
 					{
 						legalMoves[king][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
 					}
-					else if( bbIsPieceWhite(index) != isWhiteTurn )
+					else if( BitState.IsPieceWhite(index) != isWhiteTurn )
 						legalMoves[king][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
 				}
 			}
@@ -1225,8 +975,8 @@ public partial class HexEngineSharp : Node
 			foreach( Vector2I item in influencedPieces[lastCords] )
 			{
 				var index = QRToIndex(item.X,item.Y);
-				if (bbIsPieceWhite(index) != isWhiteTurn) continue;
-				var inPieceType = bbPieceTypeOf(index, !isWhiteTurn);
+				if (BitState.IsPieceWhite(index) != isWhiteTurn) continue;
+				var inPieceType = BitState.PieceTypeOf(index, !isWhiteTurn);
 				if ( internalDictionary.ContainsKey(inPieceType) )
 					internalDictionary[inPieceType].Add(item);
 				else
@@ -1258,7 +1008,7 @@ public partial class HexEngineSharp : Node
 			moveToCords.X += direction.X;
 			moveToCords.Y += direction.Y;
 			if( Bitboard128.inBitboardRange(moveToCords.X, moveToCords.Y) )
-				if(! bbIsIndexEmpty(QRToIndex(moveToCords.X, moveToCords.Y)))
+				if(! BitState.IsIndexEmpty(QRToIndex(moveToCords.X, moveToCords.Y)))
 					break;
 			else
 				break;
@@ -1294,7 +1044,7 @@ public partial class HexEngineSharp : Node
 			moveToCords.X += direction.X;
 			moveToCords.Y += direction.Y;
 			if ( Bitboard128.inBitboardRange(moveToCords.X, moveToCords.Y) )
-				if(! bbIsIndexEmpty(QRToIndex(moveToCords.X, moveToCords.Y))) break;
+				if(! BitState.IsIndexEmpty(QRToIndex(moveToCords.X, moveToCords.Y))) break;
 			else break;
 		}
 		return;
@@ -1339,7 +1089,7 @@ public partial class HexEngineSharp : Node
 			var checking = new Vector2I(cords.X,cords.Y) + v;
 			while (Bitboard128.inBitboardRange(checking.X, checking.Y))
 			{
-				if(! bbIsIndexEmpty(QRToIndex(checking.X,checking.Y)))
+				if(! BitState.IsIndexEmpty(QRToIndex(checking.X,checking.Y)))
 				{
 					if(influencedPieces.ContainsKey(cords))
 						influencedPieces[cords].Add(checking);
@@ -1356,7 +1106,7 @@ public partial class HexEngineSharp : Node
 			var checking = new Vector2I(cords.X,cords.Y) + v;
 			while (Bitboard128.inBitboardRange(checking.X, checking.Y))
 			{
-				if(! bbIsIndexEmpty(QRToIndex(checking.X,checking.Y)))
+				if(! BitState.IsIndexEmpty(QRToIndex(checking.X,checking.Y)))
 				{
 					if(influencedPieces.ContainsKey(cords))
 						influencedPieces[cords].Add(checking);
@@ -1371,7 +1121,7 @@ public partial class HexEngineSharp : Node
 	}
 	private void handleMoveState(Vector2I cords, Vector2I lastCords, HistEntry hist)
 	{
-		var pieceType = bbPieceTypeOf(QRToIndex(cords.X,cords.Y), !isWhiteTurn);
+		var pieceType = BitState.PieceTypeOf(QRToIndex(cords.X,cords.Y), !isWhiteTurn);
 		var movedPiece = setupActiveForSingle(pieceType, cords, lastCords);
 		var mateStatus = UNDO_FLAGS.NONE;
 		Vector2I kingCords = activePieces[(int)(isWhiteTurn ?  SIDES.BLACK : SIDES.WHITE)][PIECES.KING][KING_INDEX];
@@ -1379,8 +1129,8 @@ public partial class HexEngineSharp : Node
 		blockingPieces = bbcheckForBlockingPiecesFrom(activePieces[(int)(isWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX]);
 		legalMoves = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> {};
 		
-		clearCombinedStateBitboards();
-		generateCombinedStateBitboards();
+		BitState.clearCombinedStateBitboards();
+		BitState.generateCombinedStateBitboards();
 
 		bbfindLegalMovesFor(movedPiece);
 
@@ -1436,16 +1186,16 @@ public partial class HexEngineSharp : Node
 	{
 		var revertEnPassant = false;
 		var moveToIndex = 	QRToIndex(moveTo.X, moveTo.Y);
-		var type = bbPieceTypeOf(moveToIndex, isWhiteTurn);
+		var type = BitState.PieceTypeOf(moveToIndex, isWhiteTurn);
 		captureType = type;
 		captureValid = true;
 
 		// ENPASSANT FIX
-		if(pieceType == PIECES.PAWN && bbIsIndexEmpty(moveToIndex))
+		if(pieceType == PIECES.PAWN && BitState.IsIndexEmpty(moveToIndex))
 		{
 			moveTo.Y += isWhiteTurn ?  1 : -1;
 			moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
-			captureType = bbPieceTypeOf(moveToIndex, isWhiteTurn);
+			captureType = BitState.PieceTypeOf(moveToIndex, isWhiteTurn);
 			revertEnPassant = true;
 		}
 
@@ -1459,7 +1209,7 @@ public partial class HexEngineSharp : Node
 			GD.Print(" ");
 		}
 
-		bbClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!isWhiteTurn,captureType);
+		BitState.ClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!isWhiteTurn,captureType);
 		
 		var opColor = (int)(isWhiteTurn ? SIDES.BLACK : SIDES.WHITE);
 		int i = 0;
@@ -1487,7 +1237,7 @@ public partial class HexEngineSharp : Node
 	}
 	private void handleMove(Vector2I cords, MOVE_TYPES moveType, int moveIndex, PIECES promoteTo)
 	{
-		PIECES pieceType = bbPieceTypeOf(QRToIndex(cords.X,cords.Y), !isWhiteTurn);
+		PIECES pieceType = BitState.PieceTypeOf(QRToIndex(cords.X,cords.Y), !isWhiteTurn);
 		int pieceVal = getPieceInt(pieceType, !isWhiteTurn);
 		int previousPieceVal = pieceVal;
 		
@@ -1496,7 +1246,7 @@ public partial class HexEngineSharp : Node
 		
 
 		var index = QRToIndex(cords.X,cords.Y);
-		bbClearIndexFrom(index, isWhiteTurn);
+		BitState.ClearIndexFrom(index, isWhiteTurn);
 
 		HistEntry histEntry = new HistEntry(pieceVal, cords, moveTo);
 
@@ -1548,7 +1298,7 @@ public partial class HexEngineSharp : Node
 			case MOVE_TYPES.MOVES: break;
 		}
 
-		add_IPieceToBitBoardsOf(moveTo.X,moveTo.Y,(int)pieceType,isWhiteTurn);
+		BitState.add_IPieceToBitBoardsOf(moveTo.X,moveTo.Y,(int)pieceType,isWhiteTurn);
 		
 		// Update Piece List
 		for(int i = 0; i < activePieces[selfColor][pieceType].Count; i += 1)
@@ -1580,8 +1330,8 @@ public partial class HexEngineSharp : Node
 		
 		if(hist._getPromote())
 		{
-			bbAddPieceOf(QRToIndex(to.X, to.Y), isWhiteTurn, PIECES.PAWN);
-			bbClearIndexOf(QRToIndex(to.X, to.Y), isWhiteTurn, (PIECES) hist._getPPieceType());
+			BitState.AddPieceOf(QRToIndex(to.X, to.Y), isWhiteTurn, PIECES.PAWN);
+			BitState.ClearIndexOf(QRToIndex(to.X, to.Y), isWhiteTurn, (PIECES) hist._getPPieceType());
 			
 			int size = activePieces[selfSide][(PIECES) hist._getPPieceType()].Count;
 			activePieces[selfSide][(PIECES) hist._getPPieceType()].RemoveAt(size-1);
@@ -1595,7 +1345,7 @@ public partial class HexEngineSharp : Node
 		{
 			if(hist._getIsCaptureTopSneak())
 				to.Y += isWhiteTurn ? 1 :-1;
-			bbAddPieceOf(QRToIndex(to.X, to.Y), !isWhiteTurn, (PIECES) hist._getCPieceType());
+			BitState.AddPieceOf(QRToIndex(to.X, to.Y), !isWhiteTurn, (PIECES) hist._getCPieceType());
 			activePieces[(int)(isWhiteTurn ? SIDES.BLACK : SIDES.WHITE)][(PIECES)hist._getCPieceType()].Insert( hist._getCIndex(), new Vector2I(to.X,to.Y) );
 				
 			uncaptureValid = true;
@@ -1623,7 +1373,7 @@ public partial class HexEngineSharp : Node
 			GameInCheck = true;
 			foreach(Vector2I atk in attacker)
 			{
-				PIECES pieceType = bbPieceTypeOf(QRToIndex(atk.X, atk.Y), isWhiteTurn);
+				PIECES pieceType = BitState.PieceTypeOf(QRToIndex(atk.X, atk.Y), isWhiteTurn);
 				fillInCheckMoves(pieceType, atk, kingCords, false);
 			}
 		}	
@@ -1740,7 +1490,7 @@ public partial class HexEngineSharp : Node
 		captureValid = false;
 		GameInCheckFrom = new Vector2I(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 
-		activePieces = bbfindPieces();
+		activePieces = BitState.bbfindPieces();
 
 		generateNextLegalMoves();
 
@@ -1809,7 +1559,7 @@ public partial class HexEngineSharp : Node
 		
 		EnemyAI._makeChoice(this);
 		
-		EnemyChoiceType = bbPieceTypeOf(QRToIndex(EnemyAI._getCords().X,EnemyAI._getCords().Y),  !isWhiteTurn);
+		EnemyChoiceType = BitState.PieceTypeOf(QRToIndex(EnemyAI._getCords().X,EnemyAI._getCords().Y),  !isWhiteTurn);
 		
 		EnemyTo = EnemyAI._getTo();
 		
@@ -1831,8 +1581,8 @@ public partial class HexEngineSharp : Node
 	// RESIGN PUBLIC 
 	private void _resign()
 	{
-		clearCombinedStateBitboards();
-		clearStateBitboard();
+		BitState.clearCombinedStateBitboards();
+		BitState.clearStateBitboard();
 		if(GameIsOver)
 			return;
 		GameIsOver = true;
@@ -1859,8 +1609,8 @@ public partial class HexEngineSharp : Node
 		int index = 0;
 		
 		// Default Undo
-		bbClearIndexOf(QRToIndex(UndoNewTo.X,UndoNewTo.Y), isWhiteTurn, pieceType);
-		bbAddPieceOf(QRToIndex(UndoNewFrom.X,UndoNewFrom.Y), isWhiteTurn, pieceType);
+		BitState.ClearIndexOf(QRToIndex(UndoNewTo.X,UndoNewTo.Y), isWhiteTurn, pieceType);
+		BitState.AddPieceOf(QRToIndex(UndoNewFrom.X,UndoNewFrom.Y), isWhiteTurn, pieceType);
 		
 		foreach( Vector2I pieceCords in activePieces[selfColor][pieceType] )
 		{
@@ -1882,8 +1632,8 @@ public partial class HexEngineSharp : Node
 		
 		addInflunceFrom(UndoNewFrom);
 		
-		clearCombinedStateBitboards();
-		generateCombinedStateBitboards();
+		BitState.clearCombinedStateBitboards();
+		BitState.generateCombinedStateBitboards();
 		
 		activeMove = null;
 		
