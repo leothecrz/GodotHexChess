@@ -289,23 +289,96 @@ namespace HexChess
 		}
 
 
-	//ID
+		// ID
 
-	public static bool isPieceWhite(int id)
-	{
-		int mask = 0b1000;
-		if ((id & mask) != 0)
-			return true;
-		return false;
-	}
-	public static bool isPieceFriendly(int val, bool isWhiteTrn)
-	{
-		return (isWhiteTrn == isPieceWhite(val));
-	}
-	public static bool isPieceKing(int id)
-	{ 		
-		return getPieceType(id) == PIECES.KING;
-	}
+
+		public static bool isPieceWhite(int id)
+		{
+			int mask = 0b1000;
+			if ((id & mask) != 0)
+				return true;
+			return false;
+		}
+		public static bool isPieceFriendly(int val, bool isWhiteTrn)
+		{
+			return (isWhiteTrn == isPieceWhite(val));
+		}
+		public static bool isPieceKing(int id)
+		{ 		
+			return getPieceType(id) == PIECES.KING;
+		}
+
+
+		// POS
+
+
+		public static bool isBlackPawnStart(Vector2I cords)
+		{
+			int r = -1;
+			foreach( int q in PAWN_START){
+				if( q > 0 )
+					r -= 1;
+				if((cords.X == q) && (cords.Y == r))
+					return true;
+			}
+			return false;
+		}
+		public static bool isWhitePawnStart(Vector2I cords)
+		{
+			int r = 5;
+			foreach( int q in PAWN_START){
+				if ((cords.X == q) && (cords.Y == r))
+					return true;
+				if ( q < 0 )
+					r -= 1;
+			}
+			return false;
+		}
+		public static bool isWhitePawnPromotion(Vector2I cords)
+		{
+			int r = 0;
+			foreach ( int q in PAWN_PROMOTE)
+			{
+				if ((cords.X == q) && (cords.Y == r))
+					return true;
+				if(r > -5)
+					r -= 1;
+			}
+			return false;
+		}
+		public static bool isBlackPawnPromotion(Vector2I cords)
+		{
+			int r = 5;
+			foreach (int q in PAWN_PROMOTE)
+			{
+				if ((cords.X == q) && (cords.Y == r))
+					return true;
+				if(q >= 0)
+					r -= 1;
+			}
+			return false;
+		}
+
+
+		// String Encoding
+
+
+		// Turn a vector (q,r) into a string representation of the position.
+		public static string encodeEnPassantFEN(int q, int r)
+		{
+			int rStr = 6 - r;
+			int qStr = 5 + q;
+			char qLetter = (char)(65 + qStr);
+			return $"{qLetter}{rStr}";
+		}
+		// Turn a string represenation of board postiion to a vector2i.
+		public static Vector2I decodeEnPassantFEN(string s)
+		{
+			int qStr = (int)s[0] - DECODE_FEN_OFFSET;
+			int rStr = int.Parse(s.Substring(1));
+			rStr += 6-(2*rStr);
+			return new Vector2I(qStr, rStr);
+		}
 
 
 	}
