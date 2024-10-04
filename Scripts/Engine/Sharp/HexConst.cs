@@ -381,5 +381,34 @@ namespace HexChess
 		}
 
 
+		// Moves Search 
+
+
+		// Check if an active piece appears in the capture moves of any piece.
+		public static bool checkIFCordsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
+		{
+			foreach( Vector2I piece in enemyMoves.Keys)
+			{
+				foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.CAPTURE] )
+					if(move == Cords)
+						return true;
+				if(enemyMoves[piece].Count == 4) // is pawn moves
+					foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.PROMOTE])
+						if(move == Cords)
+							return true;
+			}
+			return false;
+		}
+		// Check what piece contains in their capture moves the cords piece.
+		public static Vector2I checkWHERECordsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
+		{
+			foreach( Vector2I piece in enemyMoves.Keys)
+				foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.CAPTURE] )
+					if(move == Cords)
+						return piece;
+			return new Vector2I(-HEX_BOARD_RADIUS, -HEX_BOARD_RADIUS);
+		}
+
+
 	}
 }
