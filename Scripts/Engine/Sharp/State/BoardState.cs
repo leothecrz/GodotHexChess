@@ -55,6 +55,19 @@ namespace HexChess
 		return;
 	}
 
+	public void nextTurn()
+	{
+		swapPlayerTurn();
+		incrementTurnNumber();
+	}
+
+	public void resetTurnFlags()
+	{
+		isCheck = false;
+		captureValid = false;
+		EnPassantCordsValid = false;
+		return;
+	}
 
 }
 }
