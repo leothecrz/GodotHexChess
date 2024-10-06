@@ -34,5 +34,9 @@ namespace HexChess
 		//	CheckMate Test:
 		public const string CHECK_TEST_ONE   = "q6/7/8/9/10/k8K1/10/9/8/7/q5 w - 20";
 		public const string CHECK_TEST_TWO   = "6/7/8/9/10/11/10/9/8/7/6 w - 1";
+
+		public const string EXPOSE_TEST_FEN_STRING = "6/7/1p4P1/9/q2p2P2Q/4p1P4/k2p2P2K/9/1p4P1/7/6 w - 1" ;
+
+
 	}
 }

@@ -602,21 +602,28 @@ public class HexMoveGenerator
 				{
 					index = QRToIndex(checkingQ,checkingR);
 					if( BBRef.IsIndexEmpty(index) )
+					{
 						if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
 							LegalMoves.Add(new Vector2I(checkingQ,checkingR)); // Track legal moves for the blocking pieces
+					}
 					else
 					{
 						if( BBRef.IsPieceWhite(index) == isWhiteTrn ) // Friend Piece
+						{
 							if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1) break; // Two friendly pieces in a row. No Danger
 							else dirBlockingPiece = new Vector2I(checkingQ,checkingR); // First piece found
-
+						}
 						else //Unfriendly Piece Found	
 						{
 							PIECES val = BBRef.PieceTypeOf(index, isWhiteTrn);
 							if ( (val == PIECES.QUEEN) || (val == piece) )
+							{
 								if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
+								{
 									LegalMoves.Add(new Vector2I(checkingQ,checkingR));
 									bp[dirBlockingPiece] = LegalMoves; // store blocking piece moves
+								}
+							}
 							break;
 						}
 					}

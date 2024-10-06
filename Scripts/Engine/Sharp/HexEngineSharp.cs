@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 
 using HexChess;
 using static HexChess.HexConst;
+using static HexChess.FENConst;
 
 [GlobalClass]
 public partial class HexEngineSharp : Node
@@ -760,7 +761,7 @@ public partial class HexEngineSharp : Node
 	//START DEFAULT GAME PUBLIC CALL
 	public bool _initDefault()
 	{
-		return initiateEngine(FENConst.DEFAULT_FEN_STRING);
+		return initiateEngine(EXPOSE_TEST_FEN_STRING);
 	}
 
 
