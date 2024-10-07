@@ -57,13 +57,11 @@ namespace HexChess
 			front = (ulong) Front;
 			back = (ulong) Back;
 		}
-
 		public Bitboard128(ulong Front = 0 , ulong Back = 0)
 		{
 			front = Front;
 			back = Back;
 		}
-
 		public ulong _getF()
 		{
 			return front;

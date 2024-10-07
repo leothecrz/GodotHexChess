@@ -37,6 +37,7 @@ namespace HexChess
 
 		public const string EXPOSE_TEST_FEN_STRING = "6/7/1p4P1/9/q2p2P2Q/4p1P4/k2p2P2K/9/1p4P1/7/6 w - 1" ;
 
+		public const string INDEX_TEST   = "3K2/7/8/9/10/5R5/10/9/8/7/2k3 w - 1";
 
 	}
 }

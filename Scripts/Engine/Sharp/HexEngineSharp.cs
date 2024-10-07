@@ -247,7 +247,7 @@ public partial class HexEngineSharp : Node
 		return true;
 	}
 
-
+	//
 	private void handleMoveState(Vector2I cords, Vector2I lastCords, HistEntry hist)
 	{
 		UNDO_FLAGS mateStatus = UNDO_FLAGS.NONE;
@@ -440,8 +440,6 @@ public partial class HexEngineSharp : Node
 
 
 	// Move Undo
-
-	
 	private void undoSubCleanFlags(Vector2I from, Vector2I to, HistEntry hist)
 	{
 		var selfSide = (int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK );
@@ -761,7 +759,15 @@ public partial class HexEngineSharp : Node
 	//START DEFAULT GAME PUBLIC CALL
 	public bool _initDefault()
 	{
-		return initiateEngine(EXPOSE_TEST_FEN_STRING);
+		//var testing = new List<int> {46, 47, 48, 49, 50, 35, 26, 18, 11, 5, 56, 66, 75, 83, 90, 44, 43, 42, 41, 40, 34, 24, 15, 7, 0, 55, 64, 72, 79, 85 };
+		Bitboard128 test = new Bitboard128(0,0);
+		//foreach(int i in testing)
+		//{
+		test = test.OR(Bitboard128.createSinglePieceBB(90));
+		//}
+		GD.Print(test);
+
+		return initiateEngine(INDEX_TEST);
 	}
 
 
@@ -842,6 +848,10 @@ public partial class HexEngineSharp : Node
 	{
 		return Enemy.EnemyChoiceIndex;
 	}
+	public int _getEnemyType()
+	{
+		return (int) Enemy.EnemyType;
+	}
 	//
 	public Vector2I _getEnemyTo()
 	{
@@ -858,13 +868,8 @@ public partial class HexEngineSharp : Node
 		return activePieces;
 	}
 
-	public int _getEnemyType()
-	{
-		return (int) Enemy.EnemyType;
-	}
-
+	
 	//STRICT GDSCRIPT INTERACTIONS
-
 	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> _getActivePieces()
 	{
 		var gdReturn = new Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>>();
@@ -906,8 +911,6 @@ public partial class HexEngineSharp : Node
 
 
 	// Test
-
-
 	public void test()
 	{
 		GD.Print("Test");
@@ -965,5 +968,6 @@ public partial class HexEngineSharp : Node
 		_resign();
 		return counter;
 	}
+
 
 }

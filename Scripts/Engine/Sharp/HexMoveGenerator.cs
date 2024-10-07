@@ -53,7 +53,7 @@ public class HexMoveGenerator
 	}
 
 
-	//Statics
+	//Static
 	public static Dictionary<int,Dictionary<int,int>> createAttackBoard(int radius)
 	{
 		var rDictionary = new Dictionary<int,Dictionary<int,int>>(2*radius);
@@ -70,7 +70,7 @@ public class HexMoveGenerator
 	}
 
 
-	// Based on the turn determine the appropriate board to update.
+	//Based on the turn determine the appropriate board to update.
 	private void updateAttackBoard(int q, int r, int mod, bool modw)
 	{
 		if(modw)
@@ -199,6 +199,12 @@ public class HexMoveGenerator
 			findMovesForPawn(pawn);
 		return;
 	}
+	
+	private void pawnMaskFrom(int index)
+	{
+		
+	}
+	
 	// Knight Moves
 	private void findMovesforKnight(Vector2I knight)
 	{
@@ -244,9 +250,12 @@ public class HexMoveGenerator
 			findMovesforKnight(knight);
 		return;
 	}
+	
+	
 	// Rook Moves
 	private void findMovesForRook(Vector2I rook)
 	{
+		GD.Print(rook);
 		moves[rook] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
 		foreach(string dir in ROOK_VECTORS.Keys)
 		{
@@ -256,6 +265,7 @@ public class HexMoveGenerator
 			while (Bitboard128.inBitboardRange(checkingQ,checkingR))
 			{
 				var index = QRToIndex(checkingQ,checkingR);
+				GD.Print(index);
 				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
 				if( BBRef.IsIndexEmpty(index) )
 					moves[rook][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
@@ -305,6 +315,8 @@ public class HexMoveGenerator
 			findMovesForRook(rook);
 		return;
 	}
+	
+	
 	// Bishop Moves
 	private void findMovesForBishop(Vector2I bishop)
 	{
@@ -370,6 +382,8 @@ public class HexMoveGenerator
 		}
 		return;
 	}
+	
+	
 	// Queen Moves
 	private void findMovesForQueens(List<Vector2I> QueenArray)
 	{
@@ -387,10 +401,13 @@ public class HexMoveGenerator
 
 		return;
 	}
+	
+	
 	// King Moves
 	private void findMovesForKing(Vector2I king)
 	{
 		moves[king] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+
 		foreach( string dir in KING_VECTORS.Keys)
 		{
 			Vector2I activeVector = KING_VECTORS[dir];
@@ -413,6 +430,7 @@ public class HexMoveGenerator
 			}
 
 			int index = QRToIndex(checkingQ,checkingR);
+
 			if( BBRef.IsIndexEmpty(index) )
 			{
 				moves[king][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
@@ -475,9 +493,7 @@ public class HexMoveGenerator
 	}
 
 
-		// Attack Board
-
-
+	// Attack Board
 	private void removePawnAttacks(Vector2I cords)
 	{
 		//FIX
@@ -649,7 +665,6 @@ public class HexMoveGenerator
 
 
 	//
-
 	private void fillRookCheckMoves(Vector2I kingCords, Vector2I moveToCords)
 	{
 		var deltaQ = kingCords.X - moveToCords.X;
