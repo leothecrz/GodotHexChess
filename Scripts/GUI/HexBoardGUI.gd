@@ -22,15 +22,17 @@ const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 	# Node Ref
 @onready var GameDataNode:HexEngine = $ChessEngine;
 @onready var EngineNode:HexEngineSharp = $HCE;
+
 @onready var MoveGUI = $MoveGUI;
 @onready var ChessPiecesNode = $PiecesContainer;
-@onready var LeftPanel = $LeftPanel;
 @onready var TAndFrom = $ToAndFromGUI;
+
 @onready var SettingsDialog = $SettingsDialog;
+
 @onready var BGMusicPlayer = $BGMusic;
 
 @onready var BoardControler = $Background/Central;
-
+@onready var LeftPanel = $LeftPanel;
 @onready var SideSelect = $PlayerColumn/ColumnBack/GameButtons/SideSelect;
 @onready var EnemySelect = $PlayerColumn/ColumnBack/GameButtons/EnemySelect;
 
