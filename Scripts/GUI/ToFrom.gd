@@ -9,9 +9,9 @@ func setVis(vis:bool) -> void:
 	return;
 
 func moveFrom(x : int, y : int):
-	FROM.position = Vector2i(x,y);
+	FROM.set_position(Vector2i(x,y));
 	pass;
 	
 func moveTo(x : int, y : int):
-	TO.position = Vector2i(x,y);
+	TO.set_position(Vector2i(x,y));
 	pass;

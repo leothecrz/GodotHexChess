@@ -43,6 +43,9 @@ func moveTo(cords:Vector2):
 	transform.origin = cords;
 	return;
 
+func _getPieceCords():
+	return pieceCords;
+
 # Move to cords
 func _setPieceCords(cords:Vector2i, pos:Vector2):
 	pieceCords = cords;

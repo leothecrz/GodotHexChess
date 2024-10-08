@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=18 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://Scripts/Engine/GD/HexChessEngine.gd" id="7_uqrw5"]
 [ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
 [ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
+[ext_resource type="Script" path="res://Scripts/GUI/ToFrom.gd" id="13_at1p6"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_754bx"]
 texture = ExtResource("6_mxkma")
@@ -366,6 +367,23 @@ History
 [/font_size] 
 [/center]"
 
+[node name="ToAndFromGUI" type="Node" parent="."]
+script = ExtResource("13_at1p6")
+
+[node name="To" type="Sprite2D" parent="ToAndFromGUI"]
+visible = false
+modulate = Color(1, 0, 0, 0.392157)
+position = Vector2(722, 409)
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("4_p44o5")
+
+[node name="From" type="Sprite2D" parent="ToAndFromGUI"]
+visible = false
+modulate = Color(0, 0, 1, 0.392157)
+position = Vector2(429, 409)
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("4_p44o5")
+
 [node name="MoveGUI" type="Node" parent="."]
 
 [node name="PiecesContainer" type="Node" parent="."]
@@ -397,20 +415,6 @@ History
 [node name="Queens" type="Node" parent="PiecesContainer/White"]
 
 [node name="King" type="Node" parent="PiecesContainer/White"]
-
-[node name="ToAndFromGUI" type="Node" parent="."]
-
-[node name="To" type="Sprite2D" parent="ToAndFromGUI"]
-modulate = Color(1, 0, 0, 0.588235)
-position = Vector2(722, 409)
-scale = Vector2(1.05, 1.05)
-texture = ExtResource("4_p44o5")
-
-[node name="From" type="Sprite2D" parent="ToAndFromGUI"]
-modulate = Color(0, 0, 1, 0.588235)
-position = Vector2(429, 409)
-scale = Vector2(1.05, 1.05)
-texture = ExtResource("4_p44o5")
 
 [node name="SettingsDialog" parent="." instance=ExtResource("8_avrf3")]
 visible = false

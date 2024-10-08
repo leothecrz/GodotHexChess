@@ -760,14 +760,14 @@ public partial class HexEngineSharp : Node
 	public bool _initDefault()
 	{
 		//var testing = new List<int> {46, 47, 48, 49, 50, 35, 26, 18, 11, 5, 56, 66, 75, 83, 90, 44, 43, 42, 41, 40, 34, 24, 15, 7, 0, 55, 64, 72, 79, 85 };
-		Bitboard128 test = new Bitboard128(0,0);
+		// Bitboard128 test = new Bitboard128(0,0);
 		//foreach(int i in testing)
 		//{
-		test = test.OR(Bitboard128.createSinglePieceBB(90));
+		// test = test.OR(Bitboard128.createSinglePieceBB(90));
 		//}
-		GD.Print(test);
+		// GD.Print(test);
 
-		return initiateEngine(INDEX_TEST);
+		return initiateEngine(DEFAULT_FEN_STRING);
 	}
 
 

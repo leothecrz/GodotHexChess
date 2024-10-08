@@ -264,6 +264,13 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	#GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	
+	TAndFrom.setVis(true);
+	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveFrom(from.x,from.y);
+	var toV = currentLegalMoves[cords][moveType][moveIndex];
+	var to =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toV) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveTo(to.x,to.y)
+
 	syncToEngine();
 	return;
 
@@ -329,13 +336,18 @@ func syncMasterAIThreadToMain():
 	#var to:Vector2i = GameDataNode._getEnemyTo();
 	var to:Vector2i = EngineNode._getEnemyTo();
 	
+	TAndFrom.setVis(true);
+	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveFrom(from.x,from.y);
+	var toV =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveTo(toV.x,toV.y)
+	
 	#if (GameDataNode._getEnemyPromoted()):
 	if (EngineNode._getEnemyPromoted()):
 		#prepareChessPieceNode(i,GameDataNode._getEnemyPTo()-1, GameDataNode._getEnemyPTo(), to);
 		prepareChessPieceNode(i,EngineNode._getEnemyPTo()-1, EngineNode._getEnemyPTo(), to);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
-		pass;
 	else:
 		ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to*(1 if isRotatedWhiteDown else -1))));
 	
@@ -362,6 +374,7 @@ func allowAITurn():
 	
 	pieceSelectedLockOthers.emit();
 	
+	TAndFrom.setVis(false);
 	ThinkingDialogRef = preload("res://Scenes/AI_Turn_Diolog.tscn").instantiate();
 	ThinkingDialogRef.z_index = 1;
 	add_child(ThinkingDialogRef);
@@ -443,6 +456,7 @@ func resignCleanUp():
 	activePieces.clear();
 	currentLegalMoves.clear();
 	BoardControler.setSignalWhite();
+	TAndFrom.setVis(false);
 	
 	for colorNodes in ChessPiecesNode.get_children():
 		for pieceNodes in colorNodes.get_children():

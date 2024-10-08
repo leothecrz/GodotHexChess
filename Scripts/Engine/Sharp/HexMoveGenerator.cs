@@ -256,7 +256,6 @@ public class HexMoveGenerator
 	// Rook Moves
 	private void findMovesForRook(Vector2I rook)
 	{
-		GD.Print(rook);
 		moves[rook] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
 		foreach(string dir in ROOK_VECTORS.Keys)
 		{
@@ -266,7 +265,6 @@ public class HexMoveGenerator
 			while (Bitboard128.inBitboardRange(checkingQ,checkingR))
 			{
 				var index = QRToIndex(checkingQ,checkingR);
-				GD.Print(index);
 				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
 				if( BBRef.IsIndexEmpty(index) )
 					moves[rook][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
