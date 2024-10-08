@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://dpk8skvfvafhc"]
 
-[ext_resource type="Script" path="res://Scripts/AI_Turn_Diolog.gd" id="1_i4y7p"]
+[ext_resource type="Script" path="res://Scripts/GUI/Dialog/AI_Turn_Dialog.gd" id="1_i4y7p"]
 [ext_resource type="Texture2D" uid="uid://jtn71wfqppv4" path="res://Images/Spinning.png" id="1_kyspi"]
 
 [node name="AITurnDiolog" type="Control"]

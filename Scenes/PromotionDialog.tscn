@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=3 uid="uid://dcswr2x8v2pmq"]
 
-[ext_resource type="Script" path="res://Scripts/GUI/PromotionDialog.gd" id="1_6v1g2"]
+[ext_resource type="Script" path="res://Scripts/GUI/Dialog/PromotionDialog.gd" id="1_6v1g2"]
 [ext_resource type="ButtonGroup" uid="uid://dnhog44arg4nm" path="res://ButtonGroups/PromotionDialog.tres" id="1_16i12"]
 [ext_resource type="Texture2D" uid="uid://b3v70gamlfti5" path="res://Images/1pxArt.png" id="3_8bk58"]
 

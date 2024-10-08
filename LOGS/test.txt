@@ -1,0 +1,13 @@
+Sharp (1, -4) ROOK
+P:4, from:(0,-3), to:(-2,-2) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:False top:False type:0 index:0
+P:11, from:(-2,3), to:(-2,-1) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:True top:False type:1 index:2
+P:6, from:(1,-5), to:(1,-4) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:False top:False type:0 index:0
+P:11, from:(-4,5), to:(-2,3) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:True top:False type:4 index:1
+P:4, from:(-3,2), to:(-2,3) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:True top:False type:1 index:0
+P:10, from:(-2,5), to:(-3,3) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:False top:False type:0 index:0
+P:4, from:(0,-4), to:(-3,2) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:True top:False type:1 index:0
+P:11, from:(-3,5), to:(-4,5) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:True top:False type:5 index:0
+P:5, from:(-4,2), to:(-4,5) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:True top:False type:1 index:0
+P:9, from:(-3,4), to:(-3,2) -- e:True c:False o:False -- p:False type:0 index:0 -- cap:False top:False type:0 index:0
+P:5, from:(-1,-4), to:(-4,2) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:True top:False type:5 index:0
+P:13, from:(-1,5), to:(-4,2) -- e:False c:False o:False -- p:False type:0 index:0 -- cap:False top:False type:0 index:0

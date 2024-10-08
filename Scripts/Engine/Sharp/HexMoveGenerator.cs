@@ -200,9 +200,10 @@ public class HexMoveGenerator
 		return;
 	}
 	
-	private void pawnMaskFrom(int index)
+	private Bitboard128 pawnMaskFrom(int index)
 	{
 		
+		return null;
 	}
 	
 	// Knight Moves

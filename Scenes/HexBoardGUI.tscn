@@ -1,16 +1,16 @@
 [gd_scene load_steps=17 format=4 uid="uid://8egy1g11ynam"]
 
-[ext_resource type="Script" path="res://Scripts/GUI/HexBoardGUI.gd" id="1_dl4cn"]
+[ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/Central.gd" id="2_tcmm4"]
-[ext_resource type="Script" path="res://Scripts/Background.gd" id="4_ib0kl"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/Background.gd" id="4_ib0kl"]
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scripts/GUI/Left/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/GUI/Right/SideSelect.gd" id="5_ref6b"]
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Texture2D" uid="uid://b7ynqeqd2uut2" path="res://Images/PerfectHexagon.png" id="6_mxkma"]
-[ext_resource type="Script" path="res://Scripts/PlayerColumn.gd" id="7_la6xt"]
-[ext_resource type="Script" path="res://Scripts/Engine/HexChessEngine.gd" id="7_uqrw5"]
+[ext_resource type="Script" path="res://Scripts/GUI/Right/PlayerColumn.gd" id="7_la6xt"]
+[ext_resource type="Script" path="res://Scripts/Engine/GD/HexChessEngine.gd" id="7_uqrw5"]
 [ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
 [ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
 
@@ -25,11 +25,10 @@ texture_region_size = Vector2i(65, 57)
 0:0/next_alternative_id = 5
 0:0/0 = 0
 0:0/1 = 1
-0:0/1/modulate = Color(0.12549, 0.180392, 0.662745, 1)
+0:0/1/modulate = Color(0.111197, 0.111197, 0.111197, 1)
 0:0/2 = 2
-0:0/2/modulate = Color(0.960784, 0.294118, 0, 1)
+0:0/2/modulate = Color(0.489622, 0.489622, 0.489622, 1)
 0:0/3 = 3
-0:0/3/modulate = Color(1, 1, 0.513726, 1)
 
 [sub_resource type="TileSet" id="TileSet_7e04f"]
 tile_shape = 3
@@ -400,6 +399,18 @@ History
 [node name="King" type="Node" parent="PiecesContainer/White"]
 
 [node name="ToAndFromGUI" type="Node" parent="."]
+
+[node name="To" type="Sprite2D" parent="ToAndFromGUI"]
+modulate = Color(1, 0, 0, 0.588235)
+position = Vector2(722, 409)
+scale = Vector2(1.05, 1.05)
+texture = ExtResource("4_p44o5")
+
+[node name="From" type="Sprite2D" parent="ToAndFromGUI"]
+modulate = Color(0, 0, 1, 0.588235)
+position = Vector2(429, 409)
+scale = Vector2(1.05, 1.05)
+texture = ExtResource("4_p44o5")
 
 [node name="SettingsDialog" parent="." instance=ExtResource("8_avrf3")]
 visible = false
