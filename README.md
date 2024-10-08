@@ -18,8 +18,8 @@ A Simple twist on chess, its played on a hexagonal board.
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/your-username/hexagonal-chess.git
-    cd hexagonal-chess
+    git clone https://github.com/leothecrz/GodotHexChess.git
+    cd GodotHexChess
     ```
 
 2. **Open the project in Godot**:
