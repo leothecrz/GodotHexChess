@@ -867,8 +867,27 @@ public partial class HexEngineSharp : Node
 	{
 		return activePieces;
 	}
+	//
+	public Godot.Collections.Array<String> _getHistTop()
+	{	
+		Godot.Collections.Array<String> Histtop = new Godot.Collections.Array<string>();
+		Stack<HistEntry> topStore = new Stack<HistEntry>();
+		for (int i = 0; i < 5; i++)
+		{
+			if(historyStack.Count == 0)
+				break;
+			var top = historyStack.Pop();
+			topStore.Push(top);
+			Histtop.Add(top.simpleString());
+		}
+		
+		while(topStore.Count != 0)
+			historyStack.Push(topStore.Pop());
+		
+		
+		return Histtop;
+	}
 
-	
 	//STRICT GDSCRIPT INTERACTIONS
 	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> _getActivePieces()
 	{

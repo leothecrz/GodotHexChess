@@ -1,5 +1,8 @@
 
 using Godot;
+
+using static HexChess.HexConst;
+
 namespace HexChess
 {
 	class HistEntry
@@ -119,6 +122,10 @@ namespace HexChess
 		public Vector2I _getTo(){
 			return to;
 		}
+		public string simpleString()
+		{
+			return $"{piece} {encodeEnPassantFEN(from.X,from.Y)} {encodeEnPassantFEN(to.X,to.Y)}";
+		} 
 		public override string ToString()
 		{
 			return $"P:{piece}, from:({from.X},{from.Y}), to:({to.X},{to.Y}) -- e:{enPassant} c:{check} o:{over} -- p:{promote} type:{pPiece} index:{pIndex} -- cap:{capture} top:{captureTopSneak} type:{cPiece} index:{cIndex}";

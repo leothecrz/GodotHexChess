@@ -209,7 +209,9 @@ func updateGUI_Elements() -> void:
 			setConfirmTempDialog(AcceptDialog.new(),\
 			"StaleMate. Game ends in a draw.",\
 			killDialog);
-		
+	
+	
+	LeftPanel._updateHist(EngineNode._getHistTop());
 	return;
 
 ## Handle post move gui updates
@@ -436,7 +438,7 @@ func resignCleanUp():
 		for pieceNodes in colorNodes.get_children():
 			for piece in pieceNodes.get_children():
 				piece.queue_free();
-	
+	LeftPanel._updateHist([]);
 	if(LeftPanel._getLabelState()):
 		LeftPanel._swapLabelState();
 	return;

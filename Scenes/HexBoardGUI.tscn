@@ -254,30 +254,20 @@ anchors_preset = 0
 offset_right = 230.0
 offset_bottom = 322.0
 
-[node name="CheckLabel" type="RichTextLabel" parent="StaticGUI/Left/BG/InCheck"]
+[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Left/BG/InCheck"]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-bbcode_enabled = true
-text = "
-
-[center]
-[font_size=40]
-You Are
-In Check
-[/font_size] 
-[/center]"
+modulate = Color(0.763723, 0.3167, 0.431369, 1)
+z_index = 1
+position = Vector2(306, 54)
+scale = Vector2(0.135, 0.135)
+texture = ExtResource("6_dt4tv")
 
 [node name="MoveHistory" type="Control" parent="StaticGUI/Left/BG"]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_top = -322.0
+offset_top = -222.0
 offset_right = 230.0
 grow_vertical = 0
 script = ExtResource("5_scl7f")
@@ -290,14 +280,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
-text = "
-
-[center]
-[font_size=40]
-History
-(WIP)
-[/font_size] 
-[/center]"
+text = "[center][font_size=28] LAST 5 MOVES[/font_size][/center]"
 
 [node name="MenuBar" type="MenuBar" parent="StaticGUI/Left/BG"]
 layout_mode = 1
