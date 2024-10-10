@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=18 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
 [ext_resource type="Script" path="res://Scripts/GUI/Left/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/GUI/Right/SideSelect.gd" id="5_ref6b"]
+[ext_resource type="Script" path="res://Scripts/GUI/Left/move_history.gd" id="5_scl7f"]
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Texture2D" uid="uid://b7ynqeqd2uut2" path="res://Images/PerfectHexagon.png" id="6_mxkma"]
 [ext_resource type="Script" path="res://Scripts/Engine/GD/HexChessEngine.gd" id="7_uqrw5"]
@@ -279,6 +280,7 @@ anchor_bottom = 1.0
 offset_top = -322.0
 offset_right = 230.0
 grow_vertical = 0
+script = ExtResource("5_scl7f")
 
 [node name="History" type="RichTextLabel" parent="StaticGUI/Left/BG/MoveHistory"]
 layout_mode = 1
