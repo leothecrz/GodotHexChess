@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=17 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/HexBoardGUI.gd" id="1_dl4cn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -9,7 +9,6 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Right/SideSelect.gd" id="5_ref6b"]
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Texture2D" uid="uid://b7ynqeqd2uut2" path="res://Images/PerfectHexagon.png" id="6_mxkma"]
-[ext_resource type="Script" path="res://Scripts/GUI/Right/PlayerColumn.gd" id="7_la6xt"]
 [ext_resource type="Script" path="res://Scripts/Engine/GD/HexChessEngine.gd" id="7_uqrw5"]
 [ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
 [ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
@@ -48,20 +47,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dl4cn")
 
-[node name="HCE" type="Node" parent="."]
-script = ExtResource("2_gq2xx")
-
-[node name="ChessEngine" type="Node" parent="."]
-script = ExtResource("7_uqrw5")
-
-[node name="BGMusic" type="AudioStreamPlayer" parent="."]
-bus = &"Music"
-script = ExtResource("10_5jr73")
-
-[node name="SoundSource" type="AudioStreamPlayer" parent="."]
-bus = &"Sound"
-
-[node name="Background" type="ColorRect" parent="."]
+[node name="StaticGUI" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -71,45 +57,14 @@ grow_vertical = 2
 color = Color(0, 0.0509804, 0.0509804, 1)
 script = ExtResource("4_ib0kl")
 
-[node name="Central" type="Control" parent="Background"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("2_tcmm4")
-
-[node name="BoardBack" type="ColorRect" parent="Background/Central"]
-layout_mode = 0
-offset_left = -324.0
-offset_top = -324.0
-offset_right = 324.0
-offset_bottom = 324.0
-color = Color(1, 1, 1, 0.156863)
-
-[node name="BoardTiles" type="TileMapLayer" parent="Background/Central"]
-use_parent_material = true
-position = Vector2(-33, 0)
-tile_map_data = PackedByteArray("AAD7//3/BAAAAAAAAQD7//7/BAAAAAAAAwD7////BAAAAAAAAgD7/wAABAAAAAAAAQD7/wEABAAAAAAAAwD7/wIABAAAAAAAAgD8//z/BAAAAAAAAwD8//3/BAAAAAAAAgD8//7/BAAAAAAAAQD8////BAAAAAAAAwD8/wAABAAAAAAAAgD8/wEABAAAAAAAAQD8/wIABAAAAAAAAwD9//z/BAAAAAAAAgD9//3/BAAAAAAAAQD9//7/BAAAAAAAAwD9////BAAAAAAAAgD9/wAABAAAAAAAAQD9/wEABAAAAAAAAwD9/wIABAAAAAAAAgD9/wMABAAAAAAAAQD+//v/BAAAAAAAAQD+//z/BAAAAAAAAwD+//3/BAAAAAAAAgD+//7/BAAAAAAAAQD+////BAAAAAAAAwD+/wAABAAAAAAAAgD+/wEABAAAAAAAAQD+/wIABAAAAAAAAwD+/wMABAAAAAAAAgD///v/BAAAAAAAAwD///z/BAAAAAAAAgD///3/BAAAAAAAAQD///7/BAAAAAAAAwD/////BAAAAAAAAgD//wAABAAAAAAAAQD//wEABAAAAAAAAwD//wIABAAAAAAAAgD//wMABAAAAAAAAQAAAPv/BAAAAAAAAQAAAPz/BAAAAAAAAwAAAP3/BAAAAAAAAgAAAP7/BAAAAAAAAQAAAP//BAAAAAAAAwAAAAAABAAAAAAAAgAAAAEABAAAAAAAAQAAAAIABAAAAAAAAwABAPz/BAAAAAAAAgABAP3/BAAAAAAAAQABAP7/BAAAAAAAAwABAP//BAAAAAAAAgABAAAABAAAAAAAAQABAAEABAAAAAAAAwABAAIABAAAAAAAAgABAAQABAAAAAAAAwACAPz/BAAAAAAAAwACAP3/BAAAAAAAAgACAP7/BAAAAAAAAQACAP//BAAAAAAAAwACAAAABAAAAAAAAgACAAEABAAAAAAAAQACAAIABAAAAAAAAwACAAMABAAAAAAAAgADAP3/BAAAAAAAAQADAP7/BAAAAAAAAwADAP//BAAAAAAAAgADAAAABAAAAAAAAQADAAEABAAAAAAAAwADAAIABAAAAAAAAgADAAMABAAAAAAAAQAEAP7/BAAAAAAAAQAEAP//BAAAAAAAAwAEAAAABAAAAAAAAgAEAAEABAAAAAAAAQAEAAIABAAAAAAAAwAAAPr/BAAAAAAAAgABAPv/BAAAAAAAAwACAPv/BAAAAAAAAQADAPz/BAAAAAAAAgAEAPz/BAAAAAAAAwAFAP3/BAAAAAAAAQAFAP7/BAAAAAAAAwAFAP//BAAAAAAAAgAFAAAABAAAAAAAAQAFAAEABAAAAAAAAwAFAAIABAAAAAAAAgAAAAQABAAAAAAAAQD//wQABAAAAAAAAwAAAAMABAAAAAAAAgABAAMABAAAAAAAAQAEAP3/BAAAAAAAAgA=")
-tile_set = SubResource("TileSet_7e04f")
-
-[node name="TurnSignal" type="Sprite2D" parent="Background/Central"]
-position = Vector2(-270, -270)
-scale = Vector2(0.2, 0.2)
-texture = ExtResource("6_dt4tv")
-
-[node name="PlayerColumn" type="Control" parent="."]
+[node name="Right" type="Control" parent="StaticGUI"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 grow_horizontal = 0
-script = ExtResource("7_la6xt")
 
-[node name="ColumnBack" type="ColorRect" parent="PlayerColumn"]
+[node name="BG" type="ColorRect" parent="StaticGUI/Right"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -119,21 +74,7 @@ offset_bottom = 648.0
 grow_horizontal = 0
 color = Color(1, 1, 1, 0.0588235)
 
-[node name="TurnInfo" type="Control" parent="PlayerColumn/ColumnBack"]
-layout_mode = 1
-anchors_preset = 0
-offset_right = 230.0
-offset_bottom = 322.0
-
-[node name="Info" type="RichTextLabel" parent="PlayerColumn/ColumnBack/TurnInfo"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="GameButtons" type="Control" parent="PlayerColumn/ColumnBack"]
+[node name="Buttons" type="Control" parent="StaticGUI/Right/BG"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -146,23 +87,7 @@ offset_bottom = 322.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="RUN_TEST" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -43.0
-offset_top = -361.0
-offset_right = 43.0
-offset_bottom = -330.0
-grow_horizontal = 2
-grow_vertical = 2
-tooltip_text = "Start a new game."
-text = "RUN_TEST"
-
-[node name="Undo" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="Undo" type="Button" parent="StaticGUI/Right/BG/Buttons"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -178,7 +103,7 @@ grow_vertical = 2
 text = "Undo
 "
 
-[node name="NewGameButton" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="NewGameButton" type="Button" parent="StaticGUI/Right/BG/Buttons"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -194,7 +119,7 @@ grow_vertical = 2
 tooltip_text = "Start a new game."
 text = "New Game"
 
-[node name="ResignButton" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="ResignButton" type="Button" parent="StaticGUI/Right/BG/Buttons"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -210,7 +135,7 @@ grow_vertical = 2
 tooltip_text = "Resign from the game."
 text = "Resign"
 
-[node name="Settings" type="Button" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="Settings" type="Button" parent="StaticGUI/Right/BG/Buttons"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -226,17 +151,22 @@ grow_vertical = 2
 text = "Settings
 "
 
-[node name="SideSelect" type="OptionButton" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="Options" type="Control" parent="StaticGUI/Right/BG"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SideSelect" type="OptionButton" parent="StaticGUI/Right/BG/Options"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -45.5
-offset_top = -141.0
-offset_right = 45.5
-offset_bottom = -110.0
+offset_left = 49.5
+offset_top = 324.0
+offset_right = 140.5
+offset_bottom = 355.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
@@ -247,7 +177,7 @@ popup/item_1/text = "Black"
 popup/item_1/id = 1
 script = ExtResource("5_ref6b")
 
-[node name="Label" type="Label" parent="PlayerColumn/ColumnBack/GameButtons/SideSelect"]
+[node name="Label" type="Label" parent="StaticGUI/Right/BG/Options/SideSelect"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -262,17 +192,17 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Play As:"
 
-[node name="EnemySelect" type="OptionButton" parent="PlayerColumn/ColumnBack/GameButtons"]
+[node name="EnemySelect" type="OptionButton" parent="StaticGUI/Right/BG/Options"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -65.5
-offset_top = -211.0
-offset_right = 65.5
-offset_bottom = -180.0
+offset_left = 29.5
+offset_top = 254.0
+offset_right = 160.5
+offset_bottom = 285.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
@@ -291,7 +221,7 @@ popup/item_4/text = "AI-NN"
 popup/item_4/id = 3
 script = ExtResource("5_ref6b")
 
-[node name="Label" type="Label" parent="PlayerColumn/ColumnBack/GameButtons/EnemySelect"]
+[node name="Label" type="Label" parent="StaticGUI/Right/BG/Options/EnemySelect"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -306,24 +236,24 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Play Against:"
 
-[node name="LeftPanel" type="Control" parent="."]
+[node name="Left" type="Control" parent="StaticGUI"]
 layout_mode = 1
 anchors_preset = 0
 script = ExtResource("5_ermre")
 
-[node name="ColumnBack" type="ColorRect" parent="LeftPanel"]
+[node name="BG" type="ColorRect" parent="StaticGUI/Left"]
 layout_mode = 0
 offset_right = 230.0
 offset_bottom = 648.0
 color = Color(1, 1, 1, 0.0588235)
 
-[node name="InCheck" type="Control" parent="LeftPanel/ColumnBack"]
+[node name="InCheck" type="Control" parent="StaticGUI/Left/BG"]
 layout_mode = 1
 anchors_preset = 0
 offset_right = 230.0
 offset_bottom = 322.0
 
-[node name="CheckLabel" type="RichTextLabel" parent="LeftPanel/ColumnBack/InCheck"]
+[node name="CheckLabel" type="RichTextLabel" parent="StaticGUI/Left/BG/InCheck"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -341,7 +271,7 @@ In Check
 [/font_size] 
 [/center]"
 
-[node name="MoveHistory" type="Control" parent="LeftPanel/ColumnBack"]
+[node name="MoveHistory" type="Control" parent="StaticGUI/Left/BG"]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -350,7 +280,7 @@ offset_top = -322.0
 offset_right = 230.0
 grow_vertical = 0
 
-[node name="History" type="RichTextLabel" parent="LeftPanel/ColumnBack/MoveHistory"]
+[node name="History" type="RichTextLabel" parent="StaticGUI/Left/BG/MoveHistory"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -367,17 +297,88 @@ History
 [/font_size] 
 [/center]"
 
-[node name="ToAndFromGUI" type="Node" parent="."]
+[node name="MenuBar" type="MenuBar" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 40.0
+offset_top = 2.0
+offset_right = -39.0
+offset_bottom = 33.0
+grow_horizontal = 2
+
+[node name="History" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+size = Vector2i(139, 100)
+item_count = 1
+item_0/text = "Get Full History"
+
+[node name="FEN" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+size = Vector2i(137, 100)
+item_count = 2
+item_0/text = "Start From FEN"
+item_1/text = "Get FEN"
+item_1/id = 1
+
+[node name="Test" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+item_count = 2
+item_0/text = "Evaluate Board"
+item_1/text = "Run Engine Suite"
+item_1/id = 1
+
+[node name="Mid" type="Control" parent="StaticGUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_tcmm4")
+
+[node name="BG" type="ColorRect" parent="StaticGUI/Mid"]
+layout_mode = 0
+offset_left = -324.0
+offset_top = -324.0
+offset_right = 324.0
+offset_bottom = 324.0
+color = Color(1, 1, 1, 0.156863)
+
+[node name="HexBoard" type="TileMapLayer" parent="StaticGUI/Mid"]
+use_parent_material = true
+position = Vector2(-33, 0)
+tile_map_data = PackedByteArray("AAD7//3/BAAAAAAAAQD7//7/BAAAAAAAAwD7////BAAAAAAAAgD7/wAABAAAAAAAAQD7/wEABAAAAAAAAwD7/wIABAAAAAAAAgD8//z/BAAAAAAAAwD8//3/BAAAAAAAAgD8//7/BAAAAAAAAQD8////BAAAAAAAAwD8/wAABAAAAAAAAgD8/wEABAAAAAAAAQD8/wIABAAAAAAAAwD9//z/BAAAAAAAAgD9//3/BAAAAAAAAQD9//7/BAAAAAAAAwD9////BAAAAAAAAgD9/wAABAAAAAAAAQD9/wEABAAAAAAAAwD9/wIABAAAAAAAAgD9/wMABAAAAAAAAQD+//v/BAAAAAAAAQD+//z/BAAAAAAAAwD+//3/BAAAAAAAAgD+//7/BAAAAAAAAQD+////BAAAAAAAAwD+/wAABAAAAAAAAgD+/wEABAAAAAAAAQD+/wIABAAAAAAAAwD+/wMABAAAAAAAAgD///v/BAAAAAAAAwD///z/BAAAAAAAAgD///3/BAAAAAAAAQD///7/BAAAAAAAAwD/////BAAAAAAAAgD//wAABAAAAAAAAQD//wEABAAAAAAAAwD//wIABAAAAAAAAgD//wMABAAAAAAAAQAAAPv/BAAAAAAAAQAAAPz/BAAAAAAAAwAAAP3/BAAAAAAAAgAAAP7/BAAAAAAAAQAAAP//BAAAAAAAAwAAAAAABAAAAAAAAgAAAAEABAAAAAAAAQAAAAIABAAAAAAAAwABAPz/BAAAAAAAAgABAP3/BAAAAAAAAQABAP7/BAAAAAAAAwABAP//BAAAAAAAAgABAAAABAAAAAAAAQABAAEABAAAAAAAAwABAAIABAAAAAAAAgABAAQABAAAAAAAAwACAPz/BAAAAAAAAwACAP3/BAAAAAAAAgACAP7/BAAAAAAAAQACAP//BAAAAAAAAwACAAAABAAAAAAAAgACAAEABAAAAAAAAQACAAIABAAAAAAAAwACAAMABAAAAAAAAgADAP3/BAAAAAAAAQADAP7/BAAAAAAAAwADAP//BAAAAAAAAgADAAAABAAAAAAAAQADAAEABAAAAAAAAwADAAIABAAAAAAAAgADAAMABAAAAAAAAQAEAP7/BAAAAAAAAQAEAP//BAAAAAAAAwAEAAAABAAAAAAAAgAEAAEABAAAAAAAAQAEAAIABAAAAAAAAwAAAPr/BAAAAAAAAgABAPv/BAAAAAAAAwACAPv/BAAAAAAAAQADAPz/BAAAAAAAAgAEAPz/BAAAAAAAAwAFAP3/BAAAAAAAAQAFAP7/BAAAAAAAAwAFAP//BAAAAAAAAgAFAAAABAAAAAAAAQAFAAEABAAAAAAAAwAFAAIABAAAAAAAAgAAAAQABAAAAAAAAQD//wQABAAAAAAAAwAAAAMABAAAAAAAAgABAAMABAAAAAAAAQAEAP3/BAAAAAAAAgA=")
+tile_set = SubResource("TileSet_7e04f")
+
+[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Mid"]
+position = Vector2(-270, -270)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("6_dt4tv")
+
+[node name="HCE" type="Node" parent="."]
+script = ExtResource("2_gq2xx")
+
+[node name="ChessEngine" type="Node" parent="."]
+script = ExtResource("7_uqrw5")
+
+[node name="BGMusic" type="AudioStreamPlayer" parent="."]
+bus = &"Music"
+script = ExtResource("10_5jr73")
+
+[node name="SoundSource" type="AudioStreamPlayer" parent="."]
+bus = &"Sound"
+
+[node name="PosGUI" type="Node" parent="."]
 script = ExtResource("13_at1p6")
 
-[node name="To" type="Sprite2D" parent="ToAndFromGUI"]
+[node name="To" type="Sprite2D" parent="PosGUI"]
 visible = false
 modulate = Color(1, 0, 0, 0.392157)
 position = Vector2(722, 409)
 scale = Vector2(1.1, 1.1)
 texture = ExtResource("4_p44o5")
 
-[node name="From" type="Sprite2D" parent="ToAndFromGUI"]
+[node name="From" type="Sprite2D" parent="PosGUI"]
 visible = false
 modulate = Color(0, 0, 1, 0.392157)
 position = Vector2(429, 409)
@@ -420,12 +421,14 @@ texture = ExtResource("4_p44o5")
 visible = false
 layout_mode = 1
 
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Undo" to="." method="_on_undo_pressed"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/NewGameButton" to="." method="_newGame_OnButtonPress"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/ResignButton" to="." method="_resign_OnButtonPress"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Settings" to="." method="_on_settings_pressed"]
+[connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
+[connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/History" to="." method="_on_history_id_pressed"]
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/FEN" to="." method="_on_fen_id_pressed"]
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/Test" to="." method="_on_test_id_pressed"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
-[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/RUN_TEST" to="." method="_on_run_test_pressed"]
-[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Undo" to="." method="_on_undo_pressed"]
-[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/NewGameButton" to="." method="_newGame_OnButtonPress"]
-[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/ResignButton" to="." method="_resign_OnButtonPress"]
-[connection signal="pressed" from="PlayerColumn/ColumnBack/GameButtons/Settings" to="." method="_on_settings_pressed"]
-[connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/SideSelect" to="." method="_selectSide_OnItemSelect"]
-[connection signal="item_selected" from="PlayerColumn/ColumnBack/GameButtons/EnemySelect" to="." method="_on_enemy_select_item_selected"]
 [connection signal="settingsUpdated" from="SettingsDialog" to="." method="_on_settings_dialog_settings_updated"]

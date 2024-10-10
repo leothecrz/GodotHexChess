@@ -696,7 +696,7 @@ public partial class HexEngineSharp : Node
 		return;
 	}
 	// RESIGN PUBLIC 
-	private void _resign()
+	public void _resign()
 	{
 		BitBoards.clearCombinedStateBitboards();
 		BitBoards.clearStateBitboard();
@@ -911,63 +911,20 @@ public partial class HexEngineSharp : Node
 
 
 	// Test
-	public void test()
+	public void _test(int type)
 	{
-		GD.Print("Test");
-		count_moves(2);
-		GD.Print("HexEngineSharp Moves Counted:");
-		GD.Print("Counter: ", counter);
-		GD.Print(": ", totalTime, "\n");
-	}
-	private void trymove(int depth)
-	{
-		if(depth == 0 || _getGameOverStatus())
+		
+		HexTester Tester = new HexTester(this);
+		switch (type)
 		{
-			return;
+			case 0:
+				Tester.runFullSuite();
+			break;
 		}
-		var legalmoves = DeepCopyLegalMoves(legalMoves);
-		foreach( Vector2I piece in legalmoves.Keys)
-		{
-			foreach(MOVE_TYPES movetype in legalmoves[piece].Keys)
-			{
-				int index = 0;
-				foreach(Vector2I move in legalmoves[piece][movetype])
-				{
-					
-					// using (StreamWriter writer = new StreamWriter(path, append: true))
-					// {
-					//  	writer.WriteLine($"{piece}, {movetype}, {move}");
-					// }
-					counter += 1;
-					var WAB = _duplicateWAB();
-					var BAB = _duplicateBAB();
-					var BP = _duplicateBP();
-					var InPi = _duplicateIP();
-					_makeMove(piece, movetype, index, PIECES.QUEEN);
-					totalTime += (mGen.stopTime - mGen.startTime);
-					trymove(depth-1);
-					_undoLastMove(false);
-					_restoreState(WAB,BAB,BP,InPi,legalmoves);
-					
-				}
-			}
-		}
-		return ;
-	}	
-	private int counter;
-	private ulong totalTime;
-	private string path = "sharplog.txt";
-	private int count_moves(int depth)
-	{
-		if (depth <= 0)
-			return 0;
-		counter = 0;
-		totalTime = 0;
-		_initDefault();
-		trymove(depth);
-		_resign();
-		return counter;
+
+		
 	}
+	
 
 
 }

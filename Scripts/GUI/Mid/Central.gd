@@ -2,8 +2,8 @@ extends Control
 ###
 ###
 ### Vars
-@onready var tileMap:TileMapLayer = $BoardTiles;
-@onready var turnSignal:Sprite2D = $TurnSignal;
+@onready var tileMap:TileMapLayer = $HexBoard;
+@onready var turnSignal:Sprite2D = $TurnSig;
 ##
 
 ###

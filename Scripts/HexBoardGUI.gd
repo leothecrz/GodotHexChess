@@ -8,7 +8,9 @@ extends Control
 
 ### Const
 const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
-
+enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
+enum SIDES { BLACK, WHITE };
+enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 ### State
 	# Position References
@@ -20,73 +22,50 @@ const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 @onready var MOVE_SCALE = 0.015;
 
 	# Node Ref
-@onready var GameDataNode:HexEngine = $ChessEngine;
+@onready var BoardControler = $StaticGUI/Mid;
+@onready var LeftPanel = $StaticGUI/Left
+
+@onready var SideSelect = $StaticGUI/Right/BG/Options/SideSelect
+@onready var EnemySelect = $StaticGUI/Right/BG/Options/EnemySelect
+
 @onready var EngineNode:HexEngineSharp = $HCE;
-
-@onready var MoveGUI = $MoveGUI;
-@onready var ChessPiecesNode = $PiecesContainer;
-@onready var TAndFrom = $ToAndFromGUI;
-
-@onready var SettingsDialog = $SettingsDialog;
 
 @onready var BGMusicPlayer = $BGMusic;
 
-@onready var BoardControler = $Background/Central;
-@onready var LeftPanel = $LeftPanel;
-@onready var SideSelect = $PlayerColumn/ColumnBack/GameButtons/SideSelect;
-@onready var EnemySelect = $PlayerColumn/ColumnBack/GameButtons/EnemySelect;
+@onready var TAndFrom = $PosGUI;
+@onready var MoveGUI = $MoveGUI;
+@onready var ChessPiecesNode = $PiecesContainer;
+
+@onready var SettingsDialog = $SettingsDialog;
+
+
 
 	# State
 var GameStartTime:int = 0;
 var minHistSize:int = 1;
-
 	# Board Setup
-var selectedSide:int;
+var selectedSide:int = 0;
 var isRotatedWhiteDown:bool = true;
-
 	# Temp State
 var activePieces;
 var currentLegalMoves:Dictionary;
-
 	#Threads
 var MasterAIThread:Thread;
 var ThreadActive:bool = false;
-	
 	#References
 var tempDialog:AcceptDialog = null;
 var ThinkingDialogRef:Node;
 
-### Signals
 
+
+### Signals
 signal gameSwitchedSides(newSideTurn);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 
 
+
 ## Utility
-
-
-## Connect Signal From Root
-func connectResizeToRoot() -> void:
-	#get_tree().get_root().size_changed.connect(onResize);
-	return;
-
-##TODO: Implement Resize - Cascade scale factor to gui elements
-## Begining of resize cascade
-func onResize() ->void:
-	var viewRect = get_viewport_rect();
-	VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-	AXIAL_X_SCALE = 1.4 * (viewRect.size.x/1152.0);
-	AXIAL_Y_SCALE = 0.9395 * (viewRect.size.y/642.0);
-	PIECE_SCALE = 0.18 * (viewRect.size.y/642.0);
-	MOVE_SCALE = 0.015 * (viewRect.size.y/642.0);
-	LeftPanel.onResize();
-	$PlayerColumn.onResize();
-	$Background.onResize();
-	return;
-
-
-
 ## Convert Axial Cordinates To Viewport Cords
 ##	i=y/(3/2*s);
 ##	j=(x-(y/sqrt(3)))/s*sqrt(3);
@@ -97,15 +76,33 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 
 ## Activate The engines 
 func runEngineTest() -> void:	
-	var Tester = EngineTest.new();
-	Tester.runSweep(GameDataNode);
-	Tester.queue_free();
+	EngineNode._test(0);
 	return;
 
 
+## MENUBAR
+func _on_history_id_pressed(id: int) -> void:
+	if(activePieces):
+		return;
+	pass # Replace with function body.
+func _on_fen_id_pressed(id: int) -> void:
+	if(activePieces):
+		return;
+	pass # Replace with function body.
+func _on_test_id_pressed(id: int) -> void:
+	if(activePieces):
+		return;
+	match ( id ):
+		1:
+			runEngineTest();
+			return;
+		_:
+			return;
+	return;
+	
+	
+
 ## DISPLAY PIECES
-
-
 ## Connect Signals For Chess Pieces
 func connectPieceToSignals(newPieceScene:Node) -> void:
 	## Connect Piece To Piece Controller
@@ -154,16 +151,12 @@ func spawnActivePieces() -> void:
 	return;
 
 
+
 ## MOVE RESPONCE
-
-
 ## Destroy gui element of captured piece
 func updateScenceTree_OfCapture() -> void:	
-	#var i:int = GameDataNode.SIDES.WHITE if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
-	var i:int = GameDataNode.SIDES.WHITE if(EngineNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
-	#var j:int =  GameDataNode._getCaptureType() - 1;
+	var i:int = SIDES.WHITE if(EngineNode._getIsWhiteTurn()) else SIDES.BLACK;
 	var j:int =  EngineNode._getCaptureType() - 1;
-	#var index:int = GameDataNode._getCaptureIndex();
 	var index = EngineNode._getCaptureIndex()
 	
 	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(index);
@@ -175,14 +168,12 @@ func updateScenceTree_OfCapture() -> void:
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
 func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
 	var ref:Node;
-	#var i:int = GameDataNode.SIDES.WHITE if (GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
-	var i:int = GameDataNode.SIDES.WHITE if (EngineNode._getIsWhiteTurn()) else GameDataNode.SIDES.BLACK;
-	for pawnIndex in range( activePieces[i][GameDataNode.PIECES.PAWN].size() ):
-		if (activePieces[i][GameDataNode.PIECES.PAWN][pawnIndex] == cords):
-			ref = ChessPiecesNode.get_child(i).get_child(GameDataNode.PIECES.PAWN-1).get_child(pawnIndex);
+	var i:int = SIDES.WHITE if (EngineNode._getIsWhiteTurn()) else SIDES.BLACK;
+	for pawnIndex in range( activePieces[i][PIECES.PAWN].size() ):
+		if (activePieces[i][PIECES.PAWN][pawnIndex] == cords):
+			ref = ChessPiecesNode.get_child(i).get_child(PIECES.PAWN-1).get_child(pawnIndex);
 			break;
 	
-	#prepareChessPieceNode(ref.side, pTo-1, GameDataNode.getPieceType(pTo), ref.pieceCords);
 	prepareChessPieceNode(ref.side, pTo-1, EngineNode.getPieceType(pTo), ref.pieceCords);
 
 	ref.get_parent().remove_child(ref);	
@@ -199,24 +190,18 @@ func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pT
 ## Get new state data from engine
 func updateGUI_Elements() -> void:
 	if(EngineNode._getGameInCheck() != LeftPanel._getLabelState()):
-	#if(GameDataNode._getGameInCheck() != LeftPanel._getLabelState()):
 		LeftPanel._swapLabelState();
 
 	if(EngineNode._getIsWhiteTurn()):
-	#if(GameDataNode._getIsWhiteTurn()):
-		emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
+		emit_signal("gameSwitchedSides", SIDES.WHITE);
 		BoardControler.setSignalWhite();
 	else:
-		emit_signal("gameSwitchedSides", GameDataNode.SIDES.BLACK);
+		emit_signal("gameSwitchedSides", SIDES.BLACK);
 		BoardControler.setSignalBlack();
 
-	#if(GameDataNode._getGameOverStatus()):
-	#	if(GameDataNode._getGameInCheck()):
 	if(EngineNode._getGameOverStatus()):
 		if(EngineNode._getGameInCheck()):
-			#setConfirmTempDialog(AcceptDialog.new(),\
-			#"%s has won by CheckMate." % ["White" if GameDataNode._getIsBlackTurn() else "Black"],\
-			#killDialog);
+			
 			setConfirmTempDialog(AcceptDialog.new(),\
 			"%s has won by CheckMate." % ["White" if EngineNode._getIsBlackTurn() else "Black"],\
 			killDialog);
@@ -240,9 +225,8 @@ func syncToEngine() -> void:
 	return;
 
 
+
 ## Move Submit
-
-
 ## Interupt a promotion submission to get promotion type
 func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
 	var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
@@ -257,7 +241,7 @@ func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
 ## Sumbit a move to the engine and update state
 func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
 	
-	if(moveType == GameDataNode.MOVE_TYPES.PROMOTE and passInterupt):
+	if(moveType == MOVE_TYPES.PROMOTE and passInterupt):
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
 		
@@ -275,9 +259,8 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	return;
 
 
+
 ## Move GUI
-
-
 ## Setup and display a legal move on GUI
 func spawnAMove(moves:Array, color:Color, key, cords):
 	for i in range(moves.size()):
@@ -306,16 +289,15 @@ func spawnAMove(moves:Array, color:Color, key, cords):
 func spawnMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
-			GameDataNode.MOVE_TYPES.MOVES: 			spawnAMove(moves[key], Color.WHITE, key, cords);
-			GameDataNode.MOVE_TYPES.CAPTURE: 		spawnAMove(moves[key], Color.DARK_RED, key, cords);
-			GameDataNode.MOVE_TYPES.PROMOTE: 		spawnAMove(moves[key], Color.DARK_KHAKI, key, cords);
-			GameDataNode.MOVE_TYPES.ENPASSANT: 		spawnAMove(moves[key], Color.SEA_GREEN, key, cords);
+			MOVE_TYPES.MOVES: 			spawnAMove(moves[key], Color.WHITE, key, cords);
+			MOVE_TYPES.CAPTURE: 		spawnAMove(moves[key], Color.DARK_RED, key, cords);
+			MOVE_TYPES.PROMOTE: 		spawnAMove(moves[key], Color.DARK_KHAKI, key, cords);
+			MOVE_TYPES.ENPASSANT: 		spawnAMove(moves[key], Color.SEA_GREEN, key, cords);
 	return;
 
 
+
 ## AI Moves
-
-
 ##
 func syncMasterAIThreadToMain():
 	if(MasterAIThread.is_started()):
@@ -324,16 +306,12 @@ func syncMasterAIThreadToMain():
 	if(ThinkingDialogRef):
 		ThinkingDialogRef.queue_free();
 	
-	#var i:int = GameDataNode.SIDES.BLACK if(GameDataNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
-	var i:int = GameDataNode.SIDES.BLACK if(EngineNode._getIsWhiteTurn()) else GameDataNode.SIDES.WHITE;
-	#var j:int =  GameDataNode._getEnemyChoiceType() - 1;
+	var i:int = SIDES.BLACK if(EngineNode._getIsWhiteTurn()) else SIDES.WHITE;
 	var j:int =  EngineNode._getEnemyChoiceType() - 1;
-	#var k:int = GameDataNode._getEnemyChoiceIndex();
 	var k:int = EngineNode._getEnemyChoiceIndex();
 	var ref:Node = ChessPiecesNode.get_child(i);
 	ref = ref.get_child(j)
 	ref = ref.get_child(k);
-	#var to:Vector2i = GameDataNode._getEnemyTo();
 	var to:Vector2i = EngineNode._getEnemyTo();
 	
 	TAndFrom.setVis(true);
@@ -342,9 +320,7 @@ func syncMasterAIThreadToMain():
 	var toV =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to) * (1 if isRotatedWhiteDown else -1));
 	TAndFrom.moveTo(toV.x,toV.y)
 	
-	#if (GameDataNode._getEnemyPromoted()):
 	if (EngineNode._getEnemyPromoted()):
-		#prepareChessPieceNode(i,GameDataNode._getEnemyPTo()-1, GameDataNode._getEnemyPTo(), to);
 		prepareChessPieceNode(i,EngineNode._getEnemyPTo()-1, EngineNode._getEnemyPTo(), to);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
@@ -384,12 +360,11 @@ func allowAITurn():
 	return;
 
 
+
 ## CLICK AND DRAG (MOUSE) API
-
-
 ## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
-	var isNotPromoteMove = key != GameDataNode.MOVE_TYPES.PROMOTE;
+	var isNotPromoteMove = key != MOVE_TYPES.PROMOTE;
 	for node in MoveGUI.get_children():
 		MoveGUI.remove_child(node);
 		node.queue_free();
@@ -413,9 +388,8 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	return;
 
 
+
 ## DIALOGS
-
-
 ##
 func setConfirmTempDialog(type:AcceptDialog, input:String, method:Callable):
 	tempDialog = type;
@@ -468,9 +442,8 @@ func resignCleanUp():
 	return;
 
 
+
 ## BUTTONS HELPERS
-
-
 ##
 func startGame() -> void:
 	
@@ -485,7 +458,7 @@ func startGame() -> void:
 	
 	spawnActivePieces();
 	
-	emit_signal("gameSwitchedSides", GameDataNode.SIDES.WHITE);
+	emit_signal("gameSwitchedSides", SIDES.WHITE);
 	
 	GameStartTime = Time.get_ticks_msec();
 	#if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
@@ -500,7 +473,7 @@ func undoCapture():
 	if( not EngineNode._getUncaptureValid() ):
 		return;
 	##Undo Uncapture
-	var captureSideToUndo = GameDataNode.SIDES.BLACK if EngineNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
+	var captureSideToUndo = SIDES.BLACK if EngineNode._getIsWhiteTurn() else SIDES.WHITE;
 	#var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
 	var cType = EngineNode._getCaptureType();
 	var cIndex = EngineNode._getCaptureIndex();
@@ -542,29 +515,24 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	#var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
 	var pType = EngineNode._getUnpromoteType();
 	var pIndex = EngineNode._getUnpromoteIndex();
-	newPos = activePieces[sideToUndo][GameDataNode.PIECES.PAWN][pIndex] ;
+	newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex] ;
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
 	ref.get_child(refChildCount-1).queue_free();
 	
-	var newPieceScene = preloadChessPiece(sideToUndo, GameDataNode.PIECES.PAWN, newPos);
+	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
 	connectPieceToSignals(newPieceScene);
-	ref = ChessPiecesNode.get_child(sideToUndo).get_child(GameDataNode.PIECES.PAWN-1)
+	ref = ChessPiecesNode.get_child(sideToUndo).get_child(PIECES.PAWN-1)
 	ref.add_child(newPieceScene);
 	ref.move_child(newPieceScene,pIndex);
 	return;
 
 ##
 func syncUndo():
-	#var uType:int = GameDataNode._getUndoType();
 	var uType:int = EngineNode._getUndoType();
-	#var uIndex:int = GameDataNode._getUndoIndex();
 	var uIndex:int = EngineNode._getUndoIndex();
-	#var sideToUndo:int = GameDataNode.SIDES.WHITE if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
-	var sideToUndo:int = GameDataNode.SIDES.WHITE if EngineNode._getIsWhiteTurn() else GameDataNode.SIDES.BLACK;
+	var sideToUndo:int = SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK;
 	
-	#activePieces = GameDataNode._getActivePieces();
-	#currentLegalMoves = GameDataNode._getMoves();
 	activePieces = EngineNode._getActivePieces();
 	currentLegalMoves = EngineNode._getMoves();
 	
@@ -584,9 +552,8 @@ func undoAI():
 	return
 
 
+
 ## BUTTONS
-
-
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
@@ -598,6 +565,8 @@ func _newGame_OnButtonPress() -> void:
 
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
+	if(not activePieces):
+		return;
 	if(EngineNode._getGameOverStatus()):
 	#if(GameDataNode._getGameOverStatus()):
 		resignCleanUp();
@@ -625,15 +594,9 @@ func _on_settings_pressed():
 		pieceSelectedLockOthers.emit();
 	return;
 
-## RUN TEST DEBUG FUNCTION
-func _on_run_test_pressed():
-	runEngineTest();
-	return;
 
 
 ## MENUS
-
-
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
 	if(activePieces):
@@ -671,8 +634,8 @@ func _on_enemy_select_item_selected(index:int) -> void:
 	return;
 
 
-## SETTINGS
 
+## SETTINGS
 ##
 func toggleMusic(choice):
 	if choice == 1:
@@ -729,15 +692,13 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 	return;
 
 
+
 ### GODOT DEFAULTS
 
 
 ## First Method Called
 func _ready():
-	selectedSide = 0;
 	MasterAIThread = Thread.new();
-	connectResizeToRoot();
-	
 	#SET The default settings
 	#Find Possible Resolutions Give to Settings
 	#Find ColorSchemes

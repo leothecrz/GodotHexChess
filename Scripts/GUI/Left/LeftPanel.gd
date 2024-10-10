@@ -2,16 +2,12 @@ extends Control
 ###
 ###
 ### State
-@onready var inCheckLabel:RichTextLabel = $ColumnBack/InCheck/CheckLabel;
+@onready var inCheckLabel:RichTextLabel = $BG/InCheck/CheckLabel;
 
 ###
 ###
 ### User Created
 ##
-func onResize() -> void:
-	var viewRect = get_viewport_rect();
-	scale = Vector2((viewRect.size.y/642.0),(viewRect.size.y/642.0))
-	return;
 
 func _swapLabelState() -> void:
 	inCheckLabel.visible = !inCheckLabel.visible;
