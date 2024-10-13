@@ -13,89 +13,6 @@ public partial class MinMaxAI : AIBase
 {
 
 	private const long PIECE_TYPE_COUNT = 6;
-	private const long DIST_VALUE = 10000;
-	private const long KING_DIST_VALUE = DIST_VALUE / 5;
-	private const long CHECK_VAL = 15000;
-	//skip ZERO and ignore king *(its always present) 
-	private static readonly long[] PIECE_VALUES = new long[] {0, 1000, 3000, 5000, 3000, 9000, 0};
-
-	private static readonly long [][] PIECE_BOARDS = 
-		{
-			new long[] {  }, //ZERO
-			new long[] { // PAWNS 
-					 120,50,25,25,50,120,
-				    110,50,25,0,25,50,110,
-				   100,50,25,0,0,25,50,100,
-				  100,50,25,0,0,0,25,50,100,
-				 100,50,25,0,0,0,0,25,50,100,
-				100,50,25,0,0,0,0,0,25,50,100,
-				 100,50,25,0,0,0,0,25,50,100,
-				  100,50,25,0,0,0,25,50,100,
-				   100,50,25,0,0,25,50,100,
-				    110,50,25,0,25,50,110,
-				     120,50,25,25,50,120, },
-			new long[] { //KNIGHT
-					     10,10,10,10,10,10,
-				       10,20,20,20,20,20,10,
-				      10,20,50,50,50,50,20,10,
-				    10,20,50,100,100,100,50,20,10,
-				  10,20,50,100,100,100,100,50,20,10,
-				10,20,50,100,100,100,100,100,50,20,10,
-				  10,20,50,100,100,100,100,50,20,10,
-				    10,20,50,100,100,100,50,20,10,
-				      10,20,50,50,50,50,20,10,
-				       10,20,20,20,20,20,10,
-				         10,10,10,10,10,10, },
-			new long[] { //ROOK
-					 0,100,0,0,100,0,
-				    0,100,0,0,0,100,0,
-				   0,100,0,0,0,0,100,0,
-				  0,100,0,100,100,100,0,100,0,
-				 0,100,0,100,0,0,100,0,100,0,
-				0,100,0,100,0,100,0,100,0,100,0,
-				 0,100,0,100,0,0,100,0,100,0,
-				  0,100,0,100,100,100,0,100,0,
-				   0,100,0,0,0,0,100,0,
-				    0,100,0,0,0,100,0,
-				     0,100,0,0,100,0, },
-			new long[] { //BISHOP
-					 0,0,0,0,0,0,
-				    50,0,0,0,0,0,50,
-				   40,60,0,0,0,0,60,40,
-				  30,0,0,70,0,0,70,0,30,
-				 20,30,0,80,80,80,80,0,30,20,
-				0,0,0,125,125,100,125,125,0,0,0,
-				 20,30,0,80,80,80,80,0,30,20,
-				  30,0,0,70,0,0,70,0,30,
-				   40,60,0,0,0,0,60,40,
-				    50,0,0,0,0,0,50,
-				     0,0,0,0,0,0, },
-			new long[] { //QUEEN
-					 0,0,0,0,0,0,
-				    0,0,0,0,0,0,0,
-				   0,0,0,0,0,0,0,0,
-				  0,0,0,0,0,0,0,0,0,
-				 0,0,0,0,0,0,0,0,0,0,
-				0,0,0,0,0,0,0,0,0,0,0,
-				 0,0,0,0,0,0,0,0,0,0,
-				  0,0,0,0,0,0,0,0,0,
-				   0,0,0,0,0,0,0,0,
-				    0,0,0,0,0,0,0,
-				     0,0,0,0,0,0, },
-			new long[] { //KING
-					 0,0,0,0,0,0,
-				    0,0,0,0,0,0,0,
-				   0,0,0,0,0,0,0,0,
-				  0,0,0,0,0,0,0,0,0,
-				 0,0,0,0,0,0,0,0,0,0,
-				0,0,0,0,0,0,0,0,0,0,0,
-				 0,0,0,0,0,0,0,0,0,0,
-				  0,0,0,0,0,0,0,0,0,
-				   0,0,0,0,0,0,0,0,
-				    0,0,0,0,0,0,0,
-				     0,0,0,0,0,0, }
-		};
-
 
 	private int maxDepth;
 
@@ -173,58 +90,7 @@ public partial class MinMaxAI : AIBase
 	}
 
 
-	// Measure Board State
-	public static long Hueristic(HexEngineSharp hexEngine)
-	{
-		//ENDSTATE
-		if(hexEngine._getGameOverStatus())
-		{
-			if(hexEngine._getGameInCheck())
-			{
-				if(hexEngine._getIsWhiteTurn()) return long.MaxValue;
-				else return long.MinValue;
-			}
-			else return 0; // StaleMate
-		}
-		long H = 0;
-		//Check
-		if(hexEngine._getGameInCheck())
-			if(hexEngine._getIsWhiteTurn())
-				H += CHECK_VAL;
-			else
-				H -= CHECK_VAL;
-		//Piece Comparison
-		foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.BLACK].Keys)
-			foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.BLACK][piecetype])
-				H += PIECE_VALUES[(int)piecetype];
-		foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.WHITE].Keys)
-			foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.WHITE][piecetype])
-				H -= PIECE_VALUES[(int)piecetype];
-		//Push King
-		Vector2I WhiteKing = hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.KING][0];
-		Vector2I BlackKing = hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.KING][0];
-		var dist = getAxialCordDist(WhiteKing,new Vector2I(0,0));
-		H += dist * KING_DIST_VALUE;
-		dist = getAxialCordDist(BlackKing,new Vector2I(0,0));
-		H -= dist * KING_DIST_VALUE;
-		//Push Pawns
-		foreach( Vector2I pawn in hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.PAWN])
-		{
-			if(pawn.X >= 0)
-				H -= DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, -1*HEX_BOARD_RADIUS));
-			else
-				H -= DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, (-1*HEX_BOARD_RADIUS)-pawn.X));
-		}
-		foreach( Vector2I pawn in hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.PAWN])
-		{
-			if(pawn.X <= 0)
-				// axial dist is negative
-				H += DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, HEX_BOARD_RADIUS));
-			else
-				H += DIST_VALUE * getAxialCordDist(pawn, new Vector2I(pawn.X, HEX_BOARD_RADIUS-pawn.X));
-		}
-		return H;
-	}
+	
 
 	// Recursive Move Check
 	private long NegativeMaximum(HexEngineSharp hexEngine, int depth, int multiplier, long alpha, long beta)

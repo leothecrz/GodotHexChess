@@ -1,4 +1,4 @@
-extends Control
+extends Control;
 
 # Entry Point of Game
 
@@ -30,14 +30,13 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 @onready var EngineNode:HexEngineSharp = $HCE;
 
-@onready var BGMusicPlayer = $BGMusic;
+@onready var SettingsDialog = $SettingsDialog;
 
 @onready var TAndFrom = $PosGUI;
 @onready var MoveGUI = $MoveGUI;
 @onready var ChessPiecesNode = $PiecesContainer;
 
-@onready var SettingsDialog = $SettingsDialog;
-
+@onready var BGMusicPlayer = $BGMusic;
 
 
 	# State
@@ -50,12 +49,11 @@ var isRotatedWhiteDown:bool = true;
 var activePieces;
 var currentLegalMoves:Dictionary;
 	#Threads
-var MasterAIThread:Thread;
+var MasterAIThread:Thread = Thread.new();
 var ThreadActive:bool = false;
 	#References
 var tempDialog:AcceptDialog = null;
 var ThinkingDialogRef:Node;
-
 
 
 ### Signals
@@ -74,28 +72,40 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	return Vector2(x, y);
 
-## Activate The engines 
-func runEngineTest() -> void:	
-	EngineNode._test(0);
-	return;
+
 
 
 ## MENUBAR
 func _on_history_id_pressed(id: int) -> void:
-	if(activePieces):
-		return;
+	if(!activePieces):return;
+	if(MasterAIThread.is_started()): return;
+	match (id):
+		0:
+			DisplayServer.clipboard_set(EngineNode._getFullHistString());
+			var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
+			notice.NOTICE_TEXT = "[center]History copied to clipboard[/center]"
+			notice.POP_TIME = 1.0;
+			add_child(notice);
+			notice.position = Vector2i(500,500);
+			return;
+	
 	pass # Replace with function body.
 func _on_fen_id_pressed(id: int) -> void:
-	if(activePieces):
-		return;
+	if(activePieces): return; # Ignore Presses While Game Running
 	pass # Replace with function body.
 func _on_test_id_pressed(id: int) -> void:
-	if(activePieces):
-		return;
 	match ( id ):
-		1:
-			runEngineTest();
+		0:
+			if(activePieces): return;
+			EngineNode._test(0);
 			return;
+		1:
+			if(!activePieces): return;
+			if(MasterAIThread.is_started()): return;
+			print("Current Eval: ");
+			EngineNode._test(1);
+			return;
+			
 		_:
 			return;
 	return;
@@ -108,8 +118,6 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 	## Connect Piece To Piece Controller
 	newPieceScene.pieceSelected.connect(_chessPiece_OnPieceSELECTED);
 	newPieceScene.pieceDeselected.connect(_chessPiece_OnPieceDESELECTED);
-	
-	
 	## Connect Piece Controller To Piece
 	gameSwitchedSides.connect(newPieceScene._on_Control_GameSwitchedSides);
 	pieceSelectedLockOthers.connect(newPieceScene._on_Control_LockPiece);
@@ -216,11 +224,8 @@ func updateGUI_Elements() -> void:
 
 ## Handle post move gui updates
 func syncToEngine() -> void:
-	#activePieces = GameDataNode._getActivePieces()
 	activePieces = EngineNode._getActivePieces();
-	#currentLegalMoves = GameDataNode._getMoves()
 	currentLegalMoves = EngineNode._getMoves();
-	#if(GameDataNode._getCaptureValid()):
 	if(EngineNode._getCaptureValid()):
 		updateScenceTree_OfCapture();
 	updateGUI_Elements();
@@ -343,10 +348,8 @@ func passAIToNewThread():
 
 ##
 func allowAITurn():
-	#if(  not GameDataNode._getIsEnemyAI() ):
 	if(  not EngineNode._getIsEnemyAI() ):
 		return;
-	#if( GameDataNode._getGameOverStatus() ): ##TODO Handle AI GAME END
 	if( EngineNode._getGameOverStatus() ):
 		return
 	
@@ -357,7 +360,9 @@ func allowAITurn():
 	ThinkingDialogRef.z_index = 1;
 	add_child(ThinkingDialogRef);
 	
-	MasterAIThread.start(passAIToNewThread);
+	if ( OK != MasterAIThread.start(passAIToNewThread) ):
+		passAIToNewThread();
+		pass;
 	
 	return;
 
@@ -445,116 +450,6 @@ func resignCleanUp():
 
 
 
-## BUTTONS HELPERS
-##
-func startGame() -> void:
-	
-	#GameDataNode._initDefault();
-	EngineNode._initDefault();
-	
-	#activePieces = GameDataNode._getActivePieces();
-	activePieces = EngineNode._getActivePieces();
-	
-	#var GDMOVES = GameDataNode._getMoves();
-	currentLegalMoves = EngineNode._getMoves();
-	
-	spawnActivePieces();
-	
-	emit_signal("gameSwitchedSides", SIDES.WHITE);
-	
-	GameStartTime = Time.get_ticks_msec();
-	#if(GameDataNode._getIsEnemyAI() and GameDataNode._getEnemyIsWhite()):
-	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ):
-		allowAITurn();
-		
-	return;
-
-##
-func undoCapture():
-	#if( not GameDataNode._getUncaptureValid() ):
-	if( not EngineNode._getUncaptureValid() ):
-		return;
-	##Undo Uncapture
-	var captureSideToUndo = SIDES.BLACK if EngineNode._getIsWhiteTurn() else SIDES.WHITE;
-	#var captureSideToUndo = GameDataNode.SIDES.BLACK if GameDataNode._getIsWhiteTurn() else GameDataNode.SIDES.WHITE;
-	var cType = EngineNode._getCaptureType();
-	var cIndex = EngineNode._getCaptureIndex();
-	#var cType = GameDataNode._getCaptureType();
-	#var cIndex = GameDataNode._getCaptureIndex();
-	var newPos = activePieces[captureSideToUndo][cType][cIndex];
-	
-	var newPieceScene = preloadChessPiece(captureSideToUndo, cType, newPos);
-	connectPieceToSignals(newPieceScene);
-
-	var ref  = ChessPiecesNode\
-	.get_child(captureSideToUndo)\
-	.get_child(cType-1);
-	
-	## respawn captured piece
-	if( ref.get_child_count(false) > 0):
-		if (cIndex == 0):
-			ref.add_child(newPieceScene);
-			ref.move_child(newPieceScene, 0);
-		else:
-			ref.get_child(cIndex-1)\
-			.add_sibling(newPieceScene);
-	else:
-		ref.add_child(newPieceScene);
-	## ID which piece needs to be moved
-	return;
-
-##
-func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
-	var newPos;
-	#if(not GameDataNode._getUnpromoteValid()): ## DEFAULT UNDO
-	if(not EngineNode._getUnpromoteValid()):
-		newPos = activePieces[sideToUndo][uType][uIndex];
-		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
-		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
-		return;
-	##Undo Promotion
-	#var pType = GameDataNode._getUnpromoteType(); # promoted type
-	#var pIndex = GameDataNode._getUnpromoteIndex(); # pawn index
-	var pType = EngineNode._getUnpromoteType();
-	var pIndex = EngineNode._getUnpromoteIndex();
-	newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex] ;
-	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
-	var refChildCount = ref.get_child_count(false);
-	ref.get_child(refChildCount-1).queue_free();
-	
-	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
-	connectPieceToSignals(newPieceScene);
-	ref = ChessPiecesNode.get_child(sideToUndo).get_child(PIECES.PAWN-1)
-	ref.add_child(newPieceScene);
-	ref.move_child(newPieceScene,pIndex);
-	return;
-
-##
-func syncUndo():
-	var uType:int = EngineNode._getUndoType();
-	var uIndex:int = EngineNode._getUndoIndex();
-	var sideToUndo:int = SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK;
-	
-	activePieces = EngineNode._getActivePieces();
-	currentLegalMoves = EngineNode._getMoves();
-	
-	undoPromoteOrDefault(uType, uIndex, sideToUndo);
-	undoCapture();
-	updateGUI_Elements();
-	return;
-
-##
-func undoAI():
-	#if(not GameDataNode._getIsEnemyAI()):
-	if(not EngineNode._getIsEnemyAI()):
-		return;
-	#GameDataNode._undoLastMove();
-	EngineNode._undoLastMove(true);
-	syncUndo();
-	return
-
-
-
 ## BUTTONS
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
@@ -570,7 +465,6 @@ func _resign_OnButtonPress() -> void:
 	if(not activePieces):
 		return;
 	if(EngineNode._getGameOverStatus()):
-	#if(GameDataNode._getGameOverStatus()):
 		resignCleanUp();
 		return;
 	setConfirmTempDialog(ConfirmationDialog.new(), "Resign the match?", resignCleanUp);
@@ -578,11 +472,9 @@ func _resign_OnButtonPress() -> void:
 
 ## Undo Button Pressed
 func _on_undo_pressed():
-	#if(GameDataNode._getMoveHistorySize() < minHistSize):
 	if(EngineNode._getMoveHistorySize() < minHistSize):
 		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
 		return;
-	#GameDataNode._undoLastMove();
 	EngineNode._undoLastMove(true);
 	syncUndo();
 	undoAI();
@@ -610,8 +502,6 @@ func _selectSide_OnItemSelect(index:int) -> void:
 	var isUserPlayingW = (selectedSide == 0);
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
-	
-	#GameDataNode._setEnemy(GameDataNode._getEnemyType(), selectedSide != 0);
 	EngineNode._setEnemy(EngineNode._getEnemyType(), selectedSide != 0);
 	#print("Type: ", GameDataNode._getEnemyType());
 	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
@@ -620,14 +510,12 @@ func _selectSide_OnItemSelect(index:int) -> void:
 ##
 func _on_enemy_select_item_selected(index:int) -> void:
 	if(activePieces):
-		#EnemySelect._setSelected(GameDataNode._getEnemyType());
 		EnemySelect._setSelected(EngineNode._getEnemyType());
 		return; 
 		
 	var type:int = index;
 	if(index > 1):
 		type = index - 1;
-	#GameDataNode._setEnemy(type, selectedSide != 0);
 	EngineNode._setEnemy(type, selectedSide != 0);
 	
 	minHistSize = 1;
@@ -658,8 +546,7 @@ func updateSoundBus(bus,choice):
 ##
 func closeSettingsDialog():
 	SettingsDialog.visible = false;
-	if(activePieces):
-		pieceUnselectedUnlockOthers.emit();
+	pieceUnselectedUnlockOthers.emit();
 	return
 
 ##
@@ -695,13 +582,91 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 
 
 
-### GODOT DEFAULTS
-
-
-## First Method Called
-func _ready():
-	MasterAIThread = Thread.new();
-	#SET The default settings
-	#Find Possible Resolutions Give to Settings
-	#Find ColorSchemes
+## BUTTONS HELPERS
+##
+func startGame() -> void:
+	EngineNode._initDefault();
+	activePieces = EngineNode._getActivePieces();
+	currentLegalMoves = EngineNode._getMoves();
+	
+	spawnActivePieces();
+	emit_signal("gameSwitchedSides", SIDES.WHITE);
+	GameStartTime = Time.get_ticks_msec();
+	
+	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ):
+		allowAITurn();
 	return;
+
+##
+func undoCapture():
+	if( not EngineNode._getUncaptureValid() ):
+		return;
+	##Undo Uncapture
+	var captureSideToUndo = SIDES.BLACK if EngineNode._getIsWhiteTurn() else SIDES.WHITE;
+	var cType = EngineNode._getCaptureType();
+	var cIndex = EngineNode._getCaptureIndex();
+	var newPos = activePieces[captureSideToUndo][cType][cIndex];
+	var newPieceScene = preloadChessPiece(captureSideToUndo, cType, newPos);
+	connectPieceToSignals(newPieceScene);
+
+	var ref  = ChessPiecesNode\
+	.get_child(captureSideToUndo)\
+	.get_child(cType-1);
+	
+	## respawn captured piece
+	if( ref.get_child_count(false) > 0):
+		if (cIndex == 0):
+			ref.add_child(newPieceScene);
+			ref.move_child(newPieceScene, 0);
+		else:
+			ref.get_child(cIndex-1)\
+			.add_sibling(newPieceScene);
+	else:
+		ref.add_child(newPieceScene);
+	## ID which piece needs to be moved
+	return;
+
+##
+func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
+	var newPos;
+	if(not EngineNode._getUnpromoteValid()):
+		newPos = activePieces[sideToUndo][uType][uIndex];
+		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
+		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
+		return;
+	##Undo Promotion
+	var pType = EngineNode._getUnpromoteType();
+	var pIndex = EngineNode._getUnpromoteIndex();
+	newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex] ;
+	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
+	var refChildCount = ref.get_child_count(false);
+	ref.get_child(refChildCount-1).queue_free();
+	
+	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
+	connectPieceToSignals(newPieceScene);
+	ref = ChessPiecesNode.get_child(sideToUndo).get_child(PIECES.PAWN-1)
+	ref.add_child(newPieceScene);
+	ref.move_child(newPieceScene,pIndex);
+	return;
+
+##
+func syncUndo():
+	var uType:int = EngineNode._getUndoType();
+	var uIndex:int = EngineNode._getUndoIndex();
+	var sideToUndo:int = SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK;
+	
+	activePieces = EngineNode._getActivePieces();
+	currentLegalMoves = EngineNode._getMoves();
+	
+	undoPromoteOrDefault(uType, uIndex, sideToUndo);
+	undoCapture();
+	updateGUI_Elements();
+	return;
+
+##
+func undoAI():
+	if(not EngineNode._getIsEnemyAI()):
+		return;
+	EngineNode._undoLastMove(true);
+	syncUndo();
+	return

@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using HexChess;
 using static HexChess.HexConst;
 using static HexChess.FENConst;
+using System.Text;
 
 [GlobalClass]
 public partial class HexEngineSharp : Node
@@ -888,6 +889,17 @@ public partial class HexEngineSharp : Node
 		return Histtop;
 	}
 
+	public String _getFullHistString()
+	{
+		StringBuilder hist = new StringBuilder();
+		foreach(HistEntry his in historyStack)
+		{
+			hist.Append(his.ToString());
+			hist.Append("\n");
+		}
+		return hist.ToString();
+	}
+
 	//STRICT GDSCRIPT INTERACTIONS
 	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> _getActivePieces()
 	{
@@ -938,6 +950,9 @@ public partial class HexEngineSharp : Node
 		{
 			case 0:
 				Tester.runFullSuite();
+				break;
+			case 1:
+				GD.Print(Hueristic(this));
 			break;
 		}
 

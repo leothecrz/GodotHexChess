@@ -410,5 +410,128 @@ namespace HexChess
 		}
 
 
+		//Hueristic Functions
+
+
+		private const long DIST_VALUE = 10000;
+		private const long KING_DIST_VALUE = DIST_VALUE / 5;
+		private const long CHECK_VAL = 15000;
+		//skip ZERO and ignore king *(its always present) 
+		private static readonly long[] PIECE_VALUES = new long[] {0, 1000, 3000, 5000, 3000, 9000, 0};
+		private static readonly long [][] PIECE_BOARDS = 
+			{
+				new long[] {  }, //ZERO
+				new long[] { // PAWNS 
+						120,50,25,25,50,120,
+						110,50,25,0,25,50,110,
+					100,50,25,0,0,25,50,100,
+					100,50,25,0,0,0,25,50,100,
+					100,50,25,0,0,0,0,25,50,100,
+					100,50,25,0,0,0,0,0,25,50,100,
+					100,50,25,0,0,0,0,25,50,100,
+					100,50,25,0,0,0,25,50,100,
+					100,50,25,0,0,25,50,100,
+						110,50,25,0,25,50,110,
+						120,50,25,25,50,120, },
+				new long[] { //KNIGHT
+							10,10,10,10,10,10,
+						10,20,20,20,20,20,10,
+						10,20,50,50,50,50,20,10,
+						10,20,50,100,100,100,50,20,10,
+					10,20,50,100,100,100,100,50,20,10,
+					10,20,50,100,100,100,100,100,50,20,10,
+					10,20,50,100,100,100,100,50,20,10,
+						10,20,50,100,100,100,50,20,10,
+						10,20,50,50,50,50,20,10,
+						10,20,20,20,20,20,10,
+							10,10,10,10,10,10, },
+				new long[] { //ROOK
+						0,100,0,0,100,0,
+						0,100,0,0,0,100,0,
+					0,100,0,0,0,0,100,0,
+					0,100,0,100,100,100,0,100,0,
+					0,100,0,100,0,0,100,0,100,0,
+					0,100,0,100,0,100,0,100,0,100,0,
+					0,100,0,100,0,0,100,0,100,0,
+					0,100,0,100,100,100,0,100,0,
+					0,100,0,0,0,0,100,0,
+						0,100,0,0,0,100,0,
+						0,100,0,0,100,0, },
+				new long[] { //BISHOP
+						0,0,0,0,0,0,
+						50,0,0,0,0,0,50,
+					40,60,0,0,0,0,60,40,
+					30,0,0,70,0,0,70,0,30,
+					20,30,0,80,80,80,80,0,30,20,
+					0,0,0,125,125,100,125,125,0,0,0,
+					20,30,0,80,80,80,80,0,30,20,
+					30,0,0,70,0,0,70,0,30,
+					40,60,0,0,0,0,60,40,
+						50,0,0,0,0,0,50,
+						0,0,0,0,0,0, },
+				new long[] { //QUEEN
+						0,0,0,0,0,0,
+						0,0,0,0,0,0,0,
+					0,0,0,0,0,0,0,0,
+					0,0,0,0,0,0,0,0,0,
+					0,0,0,0,0,0,0,0,0,0,
+					0,0,0,0,0,0,0,0,0,0,0,
+					0,0,0,0,0,0,0,0,0,0,
+					0,0,0,0,0,0,0,0,0,
+					0,0,0,0,0,0,0,0,
+						0,0,0,0,0,0,0,
+						0,0,0,0,0,0, },
+				new long[] { //KING
+							10,10,10,10,10,10,
+						10,20,20,20,20,20,10,
+						10,20,50,50,50,50,20,10,
+						10,20,50,100,100,100,50,20,10,
+					10,20,50,100,100,100,100,50,20,10,
+					10,20,50,100,100,100,100,100,50,20,10,
+					10,20,50,100,100,100,100,50,20,10,
+						10,20,50,100,100,100,50,20,10,
+						10,20,50,50,50,50,20,10,
+						10,20,20,20,20,20,10,
+							10,10,10,10,10,10, }
+			};
+
+			// Measure Board State
+		public static long Hueristic(HexEngineSharp hexEngine)
+		{
+			//ENDSTATE
+			if(hexEngine._getGameOverStatus())
+			{
+				if(hexEngine._getGameInCheck())
+				{
+					if(hexEngine._getIsWhiteTurn()) return long.MaxValue;
+					else return long.MinValue;
+				}
+				else return 0; // StaleMate
+			}
+			long H = 0;
+			//Check
+			if(hexEngine._getGameInCheck())
+				if(hexEngine._getIsWhiteTurn())
+					H += CHECK_VAL;
+				else
+					H -= CHECK_VAL;
+			//Piece Comparison
+			foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.BLACK].Keys)
+				foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.BLACK][piecetype])
+				{
+					H += PIECE_VALUES[(int)piecetype];
+					H += PIECE_BOARDS[(int)piecetype][QRToIndex(piece.X,piece.Y)];
+				}
+			foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.WHITE].Keys)
+				foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.WHITE][piecetype])
+				{
+					H -= PIECE_VALUES[(int)piecetype];
+					H -= PIECE_BOARDS[(int)piecetype][QRToIndex(piece.X,piece.Y)];
+				}
+
+
+			return H;
+		}
+
 	}
 }
