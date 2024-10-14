@@ -1,0 +1,112 @@
+[gd_scene load_steps=2 format=3 uid="uid://cgnk1kugf1aeh"]
+
+[ext_resource type="Script" path="res://Scripts/GUI/GetFen.gd" id="1_ydac7"]
+
+[node name="ColorRect" type="ColorRect"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.322, 0.322, 0.322, 0)
+script = ExtResource("1_ydac7")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -175.0
+offset_top = -100.0
+offset_right = 175.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.273873, 0.273873, 0.273873, 1)
+
+[node name="OK" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -51.0
+offset_right = 76.0
+offset_bottom = -20.0
+grow_vertical = 0
+text = "   OK   "
+
+[node name="RectLabel" type="RichTextLabel" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 10.0
+offset_bottom = 40.0
+grow_horizontal = 2
+bbcode_enabled = true
+text = "[center]Enter FEN String[/center]"
+
+[node name="TextEnter" type="TextEdit" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 25.0
+offset_top = -54.0
+offset_right = -25.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "6/7/8/9/10/11/10/9/8/7/6 w - 1"
+draw_spaces = true
+
+[node name="VLabel" type="Label" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -45.0
+offset_top = -80.0
+offset_right = 45.0
+offset_bottom = -57.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Strict Verify"
+
+[node name="VerifyCheckBox" type="CheckButton" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -22.0
+offset_top = -60.0
+offset_right = 22.0
+offset_bottom = -36.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Cancel" type="Button" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -80.0
+offset_top = -51.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Cancel"
+
+[connection signal="pressed" from="ColorRect/OK" to="." method="_on_ok_pressed"]
+[connection signal="toggled" from="ColorRect/VerifyCheckBox" to="." method="_on_verify_check_box_toggled"]
+[connection signal="pressed" from="ColorRect/Cancel" to="." method="_on_cancel_pressed"]

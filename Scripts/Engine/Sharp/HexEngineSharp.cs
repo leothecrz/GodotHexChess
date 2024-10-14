@@ -9,6 +9,7 @@ using HexChess;
 using static HexChess.HexConst;
 using static HexChess.FENConst;
 using System.Text;
+using System.Diagnostics;
 
 [GlobalClass]
 public partial class HexEngineSharp : Node
@@ -150,7 +151,6 @@ public partial class HexEngineSharp : Node
 	{
 		//Board Status
 		BitBoards.initiateStateBitboards();
-		
 		string [] fenSections =  fenString.Split(' ');
 		if (fenSections.Length != 4)
 		{
@@ -529,6 +529,7 @@ public partial class HexEngineSharp : Node
 		return copy;
 	}
 
+
 	
 
 	public void _restoreState(
@@ -609,6 +610,20 @@ public partial class HexEngineSharp : Node
 		HexState.GameInCheckFrom = new Vector2I(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 
 		activePieces = BitBoards.bbfindPieces();
+		
+		HexState.isWhiteTurn = !HexState.isWhiteTurn;
+		Vector2I mykingCords = activePieces[(int)(HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
+		Vector2I enemykingCords = activePieces[(int)(HexState.isWhiteTurn ?  SIDES.BLACK : SIDES.WHITE)][PIECES.KING][KING_INDEX];
+		mGen.prepBlockingFrom(mykingCords);
+		mGen.findLegalMovesFor(activePieces[(int)(HexState.isWhiteTurn ?  SIDES.WHITE : SIDES.BLACK)]);
+		if(checkIFCordsUnderAttack(enemykingCords, mGen.moves))
+		{
+			var where = checkWHERECordsUnderAttack(enemykingCords, mGen.moves);
+			var index= QRToIndex(where.X,where.Y);
+			var type = BitBoards.PieceTypeOf(index, !HexState.isWhiteTurn);
+			mGen.fillInCheckMoves(type, where, enemykingCords, true);
+		}
+		HexState.isWhiteTurn = !HexState.isWhiteTurn;
 
 		legalMoves = mGen.generateNextLegalMoves(activePieces);
 
@@ -620,7 +635,10 @@ public partial class HexEngineSharp : Node
 
 	// API
 
-
+	public bool _FENCHECK(string fen)
+	{
+		return false;
+	}
 	// Enemy is shorter than opponent
 	public void _setEnemy(ENEMY_TYPES type, bool isWhite)
 	{
@@ -889,6 +907,44 @@ public partial class HexEngineSharp : Node
 		return Histtop;
 	}
 
+	public String _getBoardFenNow()
+	{
+		StringBuilder fen = new StringBuilder();
+		var index = 0;
+		foreach(int size in Bitboard128.COLUMN_SIZES)
+		{
+			for(int i=0; i<size; i+=1)
+			{
+				index += 1;
+				if(BitBoards.IsIndexEmpty(index))
+					continue;
+				switch (BitBoards.PieceTypeOf(index, HexState.isWhiteTurn))
+				{
+					case PIECES.PAWN:
+					break;
+				
+					case PIECES.KNIGHT:
+					break;
+					
+					case PIECES.ROOK:
+					break;
+					
+					case PIECES.BISHOP:
+					break;
+
+					case PIECES.QUEEN:
+					break;
+	
+					case PIECES.KING:
+					break;
+				}
+				
+			}
+		}
+
+
+		return fen.ToString();
+	}
 	public String _getFullHistString()
 	{
 		StringBuilder hist = new StringBuilder();
@@ -958,7 +1014,17 @@ public partial class HexEngineSharp : Node
 
 		
 	}
-	
+
+	public long _intTest(int type)
+	{
+		HexTester Tester = new HexTester(this);
+		switch (type)
+		{
+			case 1:
+				return (Hueristic(this));
+		}
+		return 0;
+	}	
 
 
 }

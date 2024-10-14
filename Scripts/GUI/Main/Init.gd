@@ -54,6 +54,7 @@ var ThreadActive:bool = false;
 	#References
 var tempDialog:AcceptDialog = null;
 var ThinkingDialogRef:Node;
+var FenDialog:Node;
 
 
 ### Signals
@@ -72,38 +73,61 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	return Vector2(x, y);
 
-
+func spawnNotice(TEXT:String, TIME:float):
+	var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
+	notice.NOTICE_TEXT = TEXT;
+	notice.POP_TIME = TIME;
+	add_child(notice);
+	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
+	pass;
 
 
 ## MENUBAR
 func _on_history_id_pressed(id: int) -> void:
-	if(!activePieces):return;
-	if(MasterAIThread.is_started()): return;
+	if(!activePieces): spawnNotice("[center]Game NOT Running[/center]",  0.8); return;
+	if(MasterAIThread.is_started()): spawnNotice("[center]AI Running[/center]",  0.8); return;
 	match (id):
 		0:
 			DisplayServer.clipboard_set(EngineNode._getFullHistString());
-			var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
-			notice.NOTICE_TEXT = "[center]History copied to clipboard[/center]"
-			notice.POP_TIME = 1.0;
-			add_child(notice);
-			notice.position = Vector2i(500,500);
+			spawnNotice("[center]History copied to clipboard[/center]",  0.8)
 			return;
+	return;
+
+func FenOK(str:String, strict:bool) -> void:
+	FenDialog.queue_free();
+	startGameFromFen(str);
+	return;
 	
-	pass # Replace with function body.
+func FenCancel() -> void:
+	FenDialog.queue_free();
+	return;
+
 func _on_fen_id_pressed(id: int) -> void:
-	if(activePieces): return; # Ignore Presses While Game Running
-	pass # Replace with function body.
+	match(id):
+		0:
+			if activePieces : return;
+			FenDialog = preload("res://Scenes/GetFen.tscn").instantiate();
+			FenDialog.OKButtonPressed.connect(FenOK);
+			FenDialog.CANCELButtonPressed.connect(FenCancel);
+			add_child(FenDialog);
+			pass;
+		1:
+			if not activePieces : return;
+			DisplayServer.clipboard_set(EngineNode._getBoardFenNow());
+			spawnNotice("Fen copied to clipboard",1.0)
+			pass;
+	return;
+	
 func _on_test_id_pressed(id: int) -> void:
 	match ( id ):
 		0:
-			if(activePieces): return;
+			if(activePieces): spawnNotice("[center]Game Running[/center]",  0.8);  return;
 			EngineNode._test(0);
 			return;
 		1:
-			if(!activePieces): return;
-			if(MasterAIThread.is_started()): return;
-			print("Current Eval: ");
-			EngineNode._test(1);
+			if(!activePieces): spawnNotice("[center]Game NOT Running[/center]",  0.8); return;
+			if(MasterAIThread.is_started()): spawnNotice("[center]AI Running[/center]",  0.8); return;
+			spawnNotice("[center] Board H(): %d [/center]" % EngineNode._intTest(1),  2);
 			return;
 			
 		_:
@@ -586,6 +610,22 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 ##
 func startGame() -> void:
 	EngineNode._initDefault();
+	activePieces = EngineNode._getActivePieces();
+	currentLegalMoves = EngineNode._getMoves();
+	
+	spawnActivePieces();
+	emit_signal("gameSwitchedSides", SIDES.WHITE);
+	GameStartTime = Time.get_ticks_msec();
+	
+	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ):
+		allowAITurn();
+	return;
+
+func startGameFromFen(fen:String) -> void:
+	if not EngineNode.initiateEngine(fen):
+		spawnNotice("[center]Fen Invalid[/center]", 1.0);
+		return;
+	
 	activePieces = EngineNode._getActivePieces();
 	currentLegalMoves = EngineNode._getMoves();
 	
