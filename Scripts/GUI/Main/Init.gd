@@ -248,7 +248,7 @@ func updateGUI_Elements() -> void:
 func syncToEngine() -> void:
 	activePieces = EngineNode._getActivePieces();
 	currentLegalMoves = EngineNode._getMoves();
-	if(EngineNode._getCaptureValid()):
+	if(EngineNode.CaptureValid()):
 		updateScenceTree_OfCapture();
 	updateGUI_Elements();
 	return;
@@ -630,7 +630,7 @@ func startGameFromFen(fen:String) -> void:
 
 ##
 func undoCapture():
-	if( not EngineNode._getUncaptureValid() ):
+	if( not EngineNode.uncaptureValid() ):
 		return;
 	##Undo Uncapture
 	var captureSideToUndo = SIDES.BLACK if EngineNode._getIsWhiteTurn() else SIDES.WHITE;
@@ -660,30 +660,43 @@ func undoCapture():
 ##
 func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	var newPos;
-	if(not EngineNode._getUnpromoteValid()):
+	if(not EngineNode.unpromoteValid()):
 		newPos = activePieces[sideToUndo][uType][uIndex];
 		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
+		var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(pieceREF._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
 		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
+		
+		TAndFrom.setVis(true);
+		var toV = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos) * (1 if isRotatedWhiteDown else -1));
+		TAndFrom.moveFrom(from.x,from.y);
+		TAndFrom.moveTo(toV.x,toV.y)
 		return;
 	##Undo Promotion
-	var pType = EngineNode._getUnpromoteType();
-	var pIndex = EngineNode._getUnpromoteIndex();
+	var pType = EngineNode.unpromoteType();
+	var pIndex = EngineNode.unpromoteIndex();
 	newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex] ;
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
+	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
 	ref.get_child(refChildCount-1).queue_free();
-	
+
 	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
 	connectPieceToSignals(newPieceScene);
 	ref = ChessPiecesNode.get_child(sideToUndo).get_child(PIECES.PAWN-1)
 	ref.add_child(newPieceScene);
 	ref.move_child(newPieceScene,pIndex);
+	
+	TAndFrom.setVis(true);
+	var toV = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveFrom(from.x,from.y);
+	TAndFrom.moveTo(toV.x,toV.y)
+	
 	return;
 
 ##
 func syncUndo():
-	var uType:int = EngineNode._getUndoType();
-	var uIndex:int = EngineNode._getUndoIndex();
+	var uType:int = EngineNode.undoType();
+	var uIndex:int = EngineNode.undoIndex();
 	var sideToUndo:int = SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK;
 	
 	activePieces = EngineNode._getActivePieces();

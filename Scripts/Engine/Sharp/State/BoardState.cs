@@ -32,6 +32,17 @@ namespace HexChess
     public int turnNumber {get; set;} = 0;
 
 
+	// UndoFlags and Data
+	public bool uncaptureValid {get; set;} = false;
+	public bool unpromoteValid {get; set;}   = false;
+	public PIECES unpromoteType {get; set;} = PIECES.ZERO;
+	public int unpromoteIndex {get; set;}  = -1;
+	public PIECES undoType {get; set;} = PIECES.ZERO;
+	public int undoIndex {get; set;} = -1;
+	public Vector2I undoTo {get; set;} = new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
+
+
+
     public BoardState()
     {
 		blackCaptures = new List<PIECES>();

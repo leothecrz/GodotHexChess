@@ -11,25 +11,24 @@ namespace HexChess
 		public enum PIECES {ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING};
 		public enum SIDES {BLACK, WHITE};
 		public enum MOVE_TYPES {MOVES, CAPTURE, ENPASSANT, PROMOTE};
+		public enum ENEMY_TYPES { PLAYER_TWO, RANDOM, MIN_MAX, NN };
 		public enum MATE_STATUS {NONE, CHECK, OVER};
 		public enum UNDO_FLAGS {NONE, ENPASSANT, CHECK, GAME_OVER };
-		public enum ENEMY_TYPES { PLAYER_TWO, RANDOM, MIN_MAX, NN }
-
 		//	Defaults
 		public const int KING_INDEX = 0;
 		public const int HEX_BOARD_RADIUS = 5;
 		public const int DECODE_FEN_OFFSET = 70;
 		public const int TYPE_MASK = 0b0111;
-
+		public const int SIDE_MASK = 0b1000;
 		//	Vectors
 		public static readonly Dictionary<string,Vector2I> ROOK_VECTORS = new Dictionary<string, Vector2I> { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0) } };
 		public static readonly Dictionary<string,Vector2I> BISHOP_VECTORS = new Dictionary<string, Vector2I> { { "lfoward", new Vector2I(-2,1)}, { "rFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "lbackward", new Vector2I(1,1)}, { "rBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
 		public static readonly Dictionary<string,Vector2I> KING_VECTORS = new Dictionary<string, Vector2I> { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0)}, { "dlfoward", new Vector2I(-2,1)}, { "drFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "dlbackward", new Vector2I(1,1)}, { "drBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
 		public static readonly Dictionary<string,Vector2I> KNIGHT_VECTORS = new Dictionary<string, Vector2I> { { "left", new Vector2I(-1,-2)}, { "lRight", new Vector2I(1,-3)}, { "rRight", new Vector2I(2,-3)} };
-		
 		//	Templates
 		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> DEFAULT_MOVE_TEMPLATE = new Dictionary<MOVE_TYPES, List<Vector2I>> { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I>{}},  };
 		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> PAWN_MOVE_TEMPLATE = new Dictionary<MOVE_TYPES, List<Vector2I>> { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I> {}}, {MOVE_TYPES.ENPASSANT, new List<Vector2I> {}}, {MOVE_TYPES.PROMOTE, new List<Vector2I> {}} };
+		// Positions
 		public static readonly int[] PAWN_START 	= {-4, -3, -2, -1, 0, 1, 2, 3, 4};
 		public static readonly int[] PAWN_PROMOTE 	= {-5, -4, -3, -2, -1, 0, 1, 2 , 3, 4};
 		public static readonly int[] KNIGHT_MULTIPLERS = {-1, 1, -1, 1};
@@ -75,16 +74,16 @@ namespace HexChess
 			var q = normalq - 5;
 			return new Vector2I(q, r);
 		}
-		public static int getSAxialCordFrom(Vector2I cords)
+		public static int SAxialCordFrom(Vector2I cords)
 		{
 			return (-1 * cords.X) - cords.Y;
 		}
-		public static int getAxialCordDist(Vector2I from, Vector2I to)
+		public static int AxialCordDist(Vector2I from, Vector2I to)
 		{
-			var dif = new Vector3I(from.X-to.X, from.Y-to.Y, getSAxialCordFrom(from)-getSAxialCordFrom(to));
+			var dif = new Vector3I(from.X-to.X, from.Y-to.Y, SAxialCordFrom(from)-SAxialCordFrom(to));
 			return Math.Max( Math.Max( Math.Abs(dif.X), Math.Abs(dif.Y)), Math.Abs(dif.Z));
 		}
-		public static void printActivePieces(Dictionary<PIECES, List<Vector2I>>[]AP)
+		public static void CleanPrintAP(Dictionary<PIECES, List<Vector2I>>[]AP)
 		{
 			for (int side = 0; side < AP.Length; side += 1)
 			{
@@ -95,7 +94,7 @@ namespace HexChess
 			}
 		}
 		// set all values of given board to zero.
-		public static void resetBoard(Dictionary<int, Dictionary<int,int>> board)
+		public static void ZeroBoard(Dictionary<int, Dictionary<int,int>> board)
 		{
 			foreach( int key in board.Keys)
 				foreach( int innerKey in board[key].Keys)
@@ -103,7 +102,7 @@ namespace HexChess
 			return;
 		}
 		// Count the amount of moves found
-		public static int countMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> movesList)
+		public static int CountMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> movesList)
 		{
 			int count = 0;
 			foreach( Vector2I piece in movesList.Keys )
@@ -140,7 +139,7 @@ namespace HexChess
 			// return new List<T> (diffArray);
 			return ARR.Except(ARR1).ToList();
 		}
-		public static void printBoard(Dictionary<int, Dictionary<int, int>> board)
+		public static void CleanPrintBoard(Dictionary<int, Dictionary<int, int>> board)
 		{
 			// Get the keys of the board and reverse them
 			var flippedKeys = board.Keys.ToList();
@@ -186,7 +185,7 @@ namespace HexChess
 
 
 		// Get int representation of piece.
-		public static int getPieceInt(PIECES piece, bool isBlack)
+		public static int ToPieceInt(PIECES piece, bool isBlack)
 		{
 			int id = (int) piece;
 			if(!isBlack)
@@ -194,12 +193,12 @@ namespace HexChess
 			return id;
 		}
 		// Strip the color bit information and find what piece is in use.
-		public static PIECES getPieceType(int id)
+		public static PIECES PieceTypeOf(int id)
 		{
 			int res = (id & TYPE_MASK);
 			return (PIECES) res;
 		}
-		public static bool charIsInt(char activeChar)
+		public static bool IsCharInt(char activeChar)
 		{
 			return ('0' <= activeChar) && (activeChar <= '9');
 		}
@@ -305,7 +304,7 @@ namespace HexChess
 		}
 		public static bool isPieceKing(int id)
 		{ 		
-			return getPieceType(id) == PIECES.KING;
+			return PieceTypeOf(id) == PIECES.KING;
 		}
 
 
@@ -364,7 +363,7 @@ namespace HexChess
 
 
 		// Turn a vector (q,r) into a string representation of the position.
-		public static string encodeEnPassantFEN(int q, int r)
+		public static string EncodeFEN(int q, int r)
 		{
 			int rStr = 6 - r;
 			int qStr = 5 + q;
@@ -372,14 +371,14 @@ namespace HexChess
 			return $"{qLetter}{rStr}";
 		}
 		// Turn a string represenation of board postiion to a vector2i.
-		public static Vector2I decodeEnPassantFEN(string s)
+		public static Vector2I DecodeFEN(string s)
 		{
 			int qStr = (int)s[0] - DECODE_FEN_OFFSET;
 			int rStr = int.Parse(s.Substring(1));
 			rStr += 6-(2*rStr);
 			return new Vector2I(qStr, rStr);
 		}
-
+		//
 		public static char PieceToChar(PIECES p, bool isW)
 		{
 			char returnChar = ' ';
@@ -401,7 +400,7 @@ namespace HexChess
 
 
 		// Check if an active piece appears in the capture moves of any piece.
-		public static bool checkIFCordsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
+		public static bool IsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
 		{
 			foreach( Vector2I piece in enemyMoves.Keys)
 			{
@@ -416,7 +415,7 @@ namespace HexChess
 			return false;
 		}
 		// Check what piece contains in their capture moves the cords piece.
-		public static Vector2I checkWHERECordsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
+		public static Vector2I UnderAttackFrom(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
 		{
 			foreach( Vector2I piece in enemyMoves.Keys)
 				foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.CAPTURE] )

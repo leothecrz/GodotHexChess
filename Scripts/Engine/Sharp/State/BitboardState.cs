@@ -56,8 +56,8 @@ public class BitboardState
 	//
 	public void generateCombinedStateBitboards()
 	{
-		BIT_WHITE = Bitboard128.genTotalBitBoard(WHITE_BB);
-		BIT_BLACK = Bitboard128.genTotalBitBoard(BLACK_BB);
+		BIT_WHITE = Bitboard128.ORCombine(WHITE_BB);
+		BIT_BLACK = Bitboard128.ORCombine(BLACK_BB);
 		BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
 	}
 
@@ -67,9 +67,9 @@ public class BitboardState
 	// Checks BIT_ALL for the existence of a piece at index
 	public bool IsIndexEmpty(int index)
 	{
-		Bitboard128 temp = Bitboard128.createSinglePieceBB(index);
+		Bitboard128 temp = Bitboard128.OneBitAt(index);
 		Bitboard128 result = BIT_ALL.AND(temp);
-		bool status = result.IS_EMPTY();
+		bool status = result.Empty();
 		result = null;
 		temp = null;
 		return status;
@@ -77,9 +77,9 @@ public class BitboardState
 	// Assumes Piece Exists. Check on which side bitboard the piece exist on.
 	public bool IsPieceWhite(int index)
 	{
-		Bitboard128 check = Bitboard128.createSinglePieceBB(index);
+		Bitboard128 check = Bitboard128.OneBitAt(index);
 		Bitboard128 result = BIT_WHITE.AND(check);
-		bool status = result.IS_EMPTY();
+		bool status = result.Empty();
 		result = null;
 		check = null;
 		return !status;
@@ -88,7 +88,7 @@ public class BitboardState
 	public PIECES PieceTypeOf(int index, bool isWhiteTrn)
 	{
 		int i = 0;
-		Bitboard128 temp = Bitboard128.createSinglePieceBB(index);
+		Bitboard128 temp = Bitboard128.OneBitAt(index);
 		Bitboard128[] opponentBitBoards;
 		if(isWhiteTrn)
 			opponentBitBoards = BLACK_BB;
@@ -99,7 +99,7 @@ public class BitboardState
 		{
 			i += 1;
 			Bitboard128 result = temp.AND(bb);
-			var status = result.IS_EMPTY();
+			var status = result.Empty();
 			result = null;
 			if (!status) break;
 		}
@@ -137,7 +137,7 @@ public class BitboardState
 		foreach( Bitboard128 bb in BLACK_BB )
 		{
 			type += 1;
-			List<int> pieceIndexes = bb._getIndexes();
+			List<int> pieceIndexes = bb.ExtractIndexes();
 			foreach(int i in pieceIndexes)
 				pieceCords[(int)SIDES.BLACK][(PIECES)type].Add(IndexToQR(i));
 		}
@@ -145,7 +145,7 @@ public class BitboardState
 		foreach( Bitboard128 bb in WHITE_BB)
 		{
 		 	type += 1;
-		 	List<int> pieceIndexes = bb._getIndexes();
+		 	List<int> pieceIndexes = bb.ExtractIndexes();
 		 	foreach(int i in pieceIndexes)
 		 		pieceCords[(int)SIDES.WHITE][(PIECES)type].Add(IndexToQR(i));
 		}
@@ -161,8 +161,8 @@ public class BitboardState
 	public void add_IPieceToBitBoardsOf(int q, int r, int piece, bool updateWhite)
 	{
 		int index = QRToIndex(q,r);
-		Bitboard128 insert = Bitboard128.createSinglePieceBB(index);
-		int type = (int) getPieceType(piece);
+		Bitboard128 insert = Bitboard128.OneBitAt(index);
+		int type = (int)HexConst.PieceTypeOf(piece);
 
 		if(updateWhite)
 		{
@@ -205,7 +205,7 @@ public class BitboardState
 			case 'q': piece = PIECES.QUEEN; break;
 			case 'k': piece = PIECES.KING; break;
 		}
-		add_IPieceToBitBoards(q,r, getPieceInt(piece, isBlack));
+		add_IPieceToBitBoards(q,r, ToPieceInt(piece, isBlack));
 		return;
 	}
 	
@@ -217,7 +217,7 @@ public class BitboardState
 		else
 			activeBoard = BLACK_BB;
 		var pos = (int) type - 1;
-		var mask = Bitboard128.createSinglePieceBB(index);
+		var mask = Bitboard128.OneBitAt(index);
 		var result = activeBoard[pos].OR(mask);
 		mask = null;
 		activeBoard[pos] = null;
@@ -236,7 +236,7 @@ public class BitboardState
 		Bitboard128[] activeBoard; 
 		if(isWhite) activeBoard = WHITE_BB; 
 		else activeBoard = BLACK_BB;
-		Bitboard128 mask = Bitboard128.createSinglePieceBB(index);
+		Bitboard128 mask = Bitboard128.OneBitAt(index);
 		int pos = (int) type - 1;
 		Bitboard128 result = activeBoard[pos].XOR(mask);
 		mask = null;
@@ -249,7 +249,7 @@ public class BitboardState
 	{
 		Bitboard128[] activeBoard;
 		if(isWhite) activeBoard = WHITE_BB; else activeBoard = BLACK_BB;
-		Bitboard128 mask = Bitboard128.createSinglePieceBB(index);
+		Bitboard128 mask = Bitboard128.OneBitAt(index);
 		int pos = (int) type - 1;
 		var result = activeBoard[pos].XOR(mask);
 		mask = null;

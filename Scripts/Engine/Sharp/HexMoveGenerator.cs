@@ -95,11 +95,11 @@ public class HexMoveGenerator
 			{
 				if ( piece.X == myKingCords.X ) return false;
 				else if ( piece.Y == myKingCords.Y ) return false;
-				else if ( getSAxialCordFrom(piece) == getSAxialCordFrom(myKingCords) ) return false;
+				else if ( SAxialCordFrom(piece) == SAxialCordFrom(myKingCords) ) return false;
 			}
 			if(type == PIECES.BISHOP || type == PIECES.QUEEN)
 			{
-				var differenceS = getSAxialCordFrom(piece) - getSAxialCordFrom(myKingCords);
+				var differenceS = SAxialCordFrom(piece) - SAxialCordFrom(myKingCords);
 				if(piece.X - myKingCords.X == piece.Y - myKingCords.Y) return false;
 				else if(piece.X - myKingCords.X == differenceS ) return false;
 				else if(piece.Y - myKingCords.Y == differenceS ) return false;
@@ -109,7 +109,7 @@ public class HexMoveGenerator
 	}
 	private void findCaptureMovesForPawn(Vector2I pawn, int qpos, int rpos)
 	{
-		if ( ! Bitboard128.inBitboardRange(qpos, rpos) ) return;
+		if ( ! Bitboard128.IsLegalHexCords(qpos, rpos) ) return;
 			
 		Vector2I move = new Vector2I(qpos, rpos);
 		int index = QRToIndex(qpos,rpos);
@@ -140,7 +140,7 @@ public class HexMoveGenerator
 		Vector2I move = new Vector2I(pawn.X,fowardR);
 		bool boolCanGoFoward = false;
 		// Foward Move
-		if (Bitboard128.inBitboardRange(pawn.X, fowardR))
+		if (Bitboard128.IsLegalHexCords(pawn.X, fowardR))
 		{
 			int index = QRToIndex(pawn.X,fowardR);
 			if(BBRef.IsIndexEmpty(index))
@@ -218,7 +218,7 @@ public class HexMoveGenerator
 				Vector2I activeVector = KNIGHT_VECTORS[dir];
 				int checkingQ = knight.X + (( (invertAt2Counter < 2) ? activeVector.X : activeVector.Y) * m);
 				int checkingR = knight.Y + (( (invertAt2Counter < 2) ? activeVector.Y : activeVector.X) * m);
-				if (Bitboard128.inBitboardRange(checkingQ,checkingR))
+				if (Bitboard128.IsLegalHexCords(checkingQ,checkingR))
 				{
 					int index = QRToIndex(checkingQ,checkingR);
 					updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
@@ -262,7 +262,7 @@ public class HexMoveGenerator
 			Vector2I activeVector = ROOK_VECTORS[dir];
 			int checkingQ = rook.X + activeVector.X;
 			int checkingR = rook.Y + activeVector.Y;
-			while (Bitboard128.inBitboardRange(checkingQ,checkingR))
+			while (Bitboard128.IsLegalHexCords(checkingQ,checkingR))
 			{
 				var index = QRToIndex(checkingQ,checkingR);
 				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
@@ -282,7 +282,7 @@ public class HexMoveGenerator
 						{
 							checkingQ += activeVector.X;
 							checkingR += activeVector.Y;
-							if(Bitboard128.inBitboardRange(checkingQ, checkingR))
+							if(Bitboard128.IsLegalHexCords(checkingQ, checkingR))
 								updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
 						}
 					}
@@ -325,7 +325,7 @@ public class HexMoveGenerator
 			Vector2I activeVector = BISHOP_VECTORS[dir];
 			int checkingQ = bishop.X + activeVector.X;
 			int checkingR = bishop.Y + activeVector.Y;
-			while ( Bitboard128.inBitboardRange(checkingQ,checkingR) )
+			while ( Bitboard128.IsLegalHexCords(checkingQ,checkingR) )
 			{
 				var index = QRToIndex(checkingQ,checkingR);
 				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
@@ -347,7 +347,7 @@ public class HexMoveGenerator
 						{
 							checkingQ += activeVector.X;
 							checkingR += activeVector.Y;
-							if( Bitboard128.inBitboardRange(checkingQ,checkingR) )
+							if( Bitboard128.IsLegalHexCords(checkingQ,checkingR) )
 								updateAttackBoard(checkingQ, checkingR, 1 , BoardRef.isWhiteTurn);
 						}
 					}
@@ -413,7 +413,7 @@ public class HexMoveGenerator
 			int checkingQ = king.X + activeVector.X;
 			int checkingR = king.Y + activeVector.Y;
 			
-			if(!Bitboard128.inBitboardRange(checkingQ,checkingR))
+			if(!Bitboard128.IsLegalHexCords(checkingQ,checkingR))
 				continue;
 
 			updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
@@ -499,10 +499,10 @@ public class HexMoveGenerator
 		var leftCaptureR = BoardRef.isWhiteTurn ?  cords.Y : cords.Y + 1;
 		var rightCaptureR = BoardRef.isWhiteTurn ? cords.Y-1 : cords.Y;
 		//Left Capture
-		if( Bitboard128.inBitboardRange(cords.X-1, leftCaptureR) )
+		if( Bitboard128.IsLegalHexCords(cords.X-1, leftCaptureR) )
 			updateAttackBoard(cords.X-1, leftCaptureR, -1, BoardRef.isWhiteTurn);
 		//Right Capture
-		if( Bitboard128.inBitboardRange(cords.X+1, rightCaptureR) )
+		if( Bitboard128.IsLegalHexCords(cords.X+1, rightCaptureR) )
 			updateAttackBoard(cords.X+1, rightCaptureR, -1, BoardRef.isWhiteTurn);
 		return;
 	}
@@ -542,7 +542,7 @@ public class HexMoveGenerator
 		foreach( Vector2I v in ROOK_VECTORS.Values)
 		{
 			var checking = new Vector2I(cords.X,cords.Y) + v;
-			while (Bitboard128.inBitboardRange(checking.X, checking.Y))
+			while (Bitboard128.IsLegalHexCords(checking.X, checking.Y))
 			{
 				if(! BBRef.IsIndexEmpty(QRToIndex(checking.X,checking.Y)))
 				{
@@ -559,7 +559,7 @@ public class HexMoveGenerator
 		foreach( Vector2I v in BISHOP_VECTORS.Values)
 		{
 			var checking = new Vector2I(cords.X,cords.Y) + v;
-			while (Bitboard128.inBitboardRange(checking.X, checking.Y))
+			while (Bitboard128.IsLegalHexCords(checking.X, checking.Y))
 			{
 				if(! BBRef.IsIndexEmpty(QRToIndex(checking.X,checking.Y)))
 				{
@@ -613,7 +613,7 @@ public class HexMoveGenerator
 				int checkingQ = cords.X + activeVector.X;
 				int checkingR = cords.Y + activeVector.Y;
 				
-				while ( Bitboard128.inBitboardRange(checkingQ,checkingR) )
+				while ( Bitboard128.IsLegalHexCords(checkingQ,checkingR) )
 				{
 					index = QRToIndex(checkingQ,checkingR);
 					if( BBRef.IsIndexEmpty(index) )
@@ -685,7 +685,7 @@ public class HexMoveGenerator
 			GameInCheckMoves.Add(moveToCords);
 			moveToCords.X += direction.X;
 			moveToCords.Y += direction.Y;
-			if( Bitboard128.inBitboardRange(moveToCords.X, moveToCords.Y) )
+			if( Bitboard128.IsLegalHexCords(moveToCords.X, moveToCords.Y) )
 				if(! BBRef.IsIndexEmpty(QRToIndex(moveToCords.X, moveToCords.Y)))
 					break;
 			else
@@ -721,7 +721,7 @@ public class HexMoveGenerator
 			GameInCheckMoves.Add(moveToCords);
 			moveToCords.X += direction.X;
 			moveToCords.Y += direction.Y;
-			if ( Bitboard128.inBitboardRange(moveToCords.X, moveToCords.Y) )
+			if ( Bitboard128.IsLegalHexCords(moveToCords.X, moveToCords.Y) )
 				if(! BBRef.IsIndexEmpty(QRToIndex(moveToCords.X, moveToCords.Y))) break;
 			else break;
 		}
@@ -768,13 +768,13 @@ public class HexMoveGenerator
 		int selfside = -1;
 		if(BoardRef.isWhiteTurn)
 		{
-			resetBoard(WhiteAttackBoard);
+			ZeroBoard(WhiteAttackBoard);
 			selfside = (int) SIDES.WHITE;
 		}
 		else
 		{
 			selfside = (int) SIDES.BLACK;
-			resetBoard(BlackAttackBoard);
+			ZeroBoard(BlackAttackBoard);
 		}
 
 		myKingCords = AP[selfside][PIECES.KING][KING_INDEX];

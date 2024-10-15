@@ -1,48 +1,38 @@
 using Godot;
 
+
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
+
 
 using HexChess;
 using static HexChess.HexConst;
 using static HexChess.FENConst;
-using System.Text;
-using System.Diagnostics;
 
 [GlobalClass]
 public partial class HexEngineSharp : Node
 {
 	// States
-	private BoardState HexState;		
+	private BoardState HexState;
 	private BitboardState BitBoards;
 	private EnemyState Enemy;
-	// Gen
 	private HexMoveGenerator mGen;
 	// Pieces
-	private Dictionary<PIECES, List<Vector2I>>[] activePieces = null;
+	private Dictionary<PIECES, List<Vector2I>>[] activePieces;
 	// Moves
 	private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves = null;
-
-	// UndoFlags and Data
-	private bool uncaptureValid  = false;
-	private bool unpromoteValid  = false;
-	private PIECES unpromoteType  = PIECES.ZERO;
-	private int unpromoteIndex   = -1;
-	private PIECES undoType = PIECES.ZERO;
-	private int undoIndex = -1;
-	private Vector2I undoTo;
-
-	//Move Auth
-	private bool bypassMoveLock = false;
-
 	// History
 	private Stack<HistEntry> historyStack;
+	//Move Auth
+	private bool bypassMoveLock;
 
 
 	/// <summary>
-	/// Constructor
+	/// Constructor. Initiates state holders and the move generator.
+	/// HexEngineSharp is the cordinator of the engine module.
 	/// </summary>
 	public HexEngineSharp()
 	{
@@ -50,6 +40,9 @@ public partial class HexEngineSharp : Node
 		BitBoards = new BitboardState();
 		Enemy = new EnemyState();
 		mGen = new HexMoveGenerator(HexState, BitBoards);
+		activePieces = null;
+		legalMoves = null;
+		bypassMoveLock = false;
 	}
 
 
@@ -61,7 +54,7 @@ public partial class HexEngineSharp : Node
 		int qpos = pos.X - 1;
 		var lst = new List<Vector2I> {};
 
-		if( Bitboard128.inBitboardRange(qpos, leftCaptureR) )
+		if( Bitboard128.IsLegalHexCords(qpos, leftCaptureR) )
 		{
 			int index = QRToIndex(qpos, leftCaptureR);
 			if( (!BitBoards.IsIndexEmpty(index)) && 
@@ -70,7 +63,7 @@ public partial class HexEngineSharp : Node
 					lst.Add(new Vector2I(qpos, leftCaptureR));
 		}
 		qpos = pos.X + 1;
-		if( Bitboard128.inBitboardRange(qpos, rightCaptureR) )
+		if( Bitboard128.IsLegalHexCords(qpos, rightCaptureR) )
 		{
 			int index = QRToIndex(qpos, rightCaptureR);
 			if( (!BitBoards.IsIndexEmpty(index)) &&
@@ -89,7 +82,7 @@ public partial class HexEngineSharp : Node
 			{
 				int checkingQ = pos.X + (((invertAt2Counter < 2) ? activeVector.X : activeVector.Y) * m);
 				int checkingR = pos.Y + (((invertAt2Counter < 2) ? activeVector.Y : activeVector.X) * m);
-				if (Bitboard128.inBitboardRange(checkingQ,checkingR))
+				if (Bitboard128.IsLegalHexCords(checkingQ,checkingR))
 				{
 					int index = QRToIndex(checkingQ, checkingR);
 					if( ! BitBoards.IsIndexEmpty(index) && (BitBoards.IsPieceWhite(index) != isWTurn) )
@@ -110,7 +103,7 @@ public partial class HexEngineSharp : Node
 		{
 			int checkingQ = pos.X + activeVector.X;
 			int checkingR = pos.Y + activeVector.Y;
-			while ( Bitboard128.inBitboardRange(checkingQ, checkingR) )
+			while ( Bitboard128.IsLegalHexCords(checkingQ, checkingR) )
 			{
 				int index = QRToIndex(checkingQ, checkingR);
 				if (BitBoards.IsIndexEmpty(index)){}
@@ -189,10 +182,10 @@ public partial class HexEngineSharp : Node
 			for(int i=0; i < activeRow.Length; i += 1 )
 			{
 				char activeChar = activeRow[i];
-				if( charIsInt(activeChar) )
+				if( IsCharInt(activeChar) )
 				{
 					int pushDistance = (int) activeChar - '0';
-					while ( (i+1 < activeRow.Length) && charIsInt(activeRow[i+1]))
+					while ( (i+1 < activeRow.Length) && IsCharInt(activeRow[i+1]))
 					{
 						i += 1;
 						pushDistance *= 10;
@@ -231,7 +224,7 @@ public partial class HexEngineSharp : Node
 		if(fenSections[2] != "-")
 		{
 			HexState.EnPassantCordsValid = true;
-			HexState.EnPassantTarget = decodeEnPassantFEN(fenSections[2]);
+			HexState.EnPassantTarget = DecodeFEN(fenSections[2]);
 			HexState.EnPassantCords = new Vector2I(HexState.EnPassantTarget.X, HexState.EnPassantTarget.Y + (HexState.isWhiteTurn ? -1 : 1));
 		}
 		else
@@ -248,6 +241,7 @@ public partial class HexEngineSharp : Node
 		return true;
 	}
 
+
 	//
 	private void handleMoveState(Vector2I cords, Vector2I lastCords, HistEntry hist)
 	{
@@ -262,7 +256,7 @@ public partial class HexEngineSharp : Node
 
 		mGen.prepBlockingFrom(mykingCords);
 		mGen.findLegalMovesFor(mGen.setupActiveForSingle(pieceType, cords, lastCords));
-		if(checkIFCordsUnderAttack(enemykingCords, mGen.moves))
+		if(IsUnderAttack(enemykingCords, mGen.moves))
 		{
 			mateStatus = UNDO_FLAGS.CHECK;
 			mGen.fillInCheckMoves(pieceType, cords, enemykingCords, true);
@@ -282,7 +276,7 @@ public partial class HexEngineSharp : Node
 			HexState.isOver = true;
 
 		// Check For Mate and Stale Mate	
-		var moveCount = countMoves(legalMoves);
+		var moveCount = CountMoves(legalMoves);
 		if( moveCount <= 0)
 		{
 			HexState.isOver = true;
@@ -296,9 +290,9 @@ public partial class HexEngineSharp : Node
 		}
 		
 		if(mateStatus == UNDO_FLAGS.GAME_OVER)
-			hist._flipOver();
+			hist.FlipOver();
 		else if (mateStatus == UNDO_FLAGS.CHECK)
-			hist._flipCheck();
+			hist.FlipCheck();
 		
 		historyStack.Push(hist);
 		
@@ -362,7 +356,7 @@ public partial class HexEngineSharp : Node
 	private void handleMove(Vector2I cords, MOVE_TYPES moveType, int moveIndex, PIECES promoteTo)
 	{
 		PIECES pieceType = BitBoards.PieceTypeOf(QRToIndex(cords.X,cords.Y), !HexState.isWhiteTurn);
-		int pieceVal = getPieceInt(pieceType, !HexState.isWhiteTurn);
+		int pieceVal = ToPieceInt(pieceType, !HexState.isWhiteTurn);
 		int previousPieceVal = pieceVal;
 		
 		int selfColor = (int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK );
@@ -379,9 +373,9 @@ public partial class HexEngineSharp : Node
 			case MOVE_TYPES.PROMOTE:
 				if(moveTo.X != cords.X)
 				{
-					histEntry._flipCapture();
-					histEntry._setCPieceType((int)HexState.captureType);
-					histEntry._setCIndex(HexState.captureIndex);
+					histEntry.FlipCapture();
+					histEntry.cPiece = ((int)HexState.captureType);
+					histEntry.cIndex = (HexState.captureIndex);
 					handleMoveCapture(moveTo, pieceType);
 				}
 				int i = 0;
@@ -393,13 +387,13 @@ public partial class HexEngineSharp : Node
 				}
 				
 				activePieces[selfColor][pieceType].RemoveAt(i);
-				pieceType = getPieceType((int)promoteTo);
-				pieceVal = getPieceInt(pieceType, !HexState.isWhiteTurn);
+				pieceType = PieceTypeOf((int)promoteTo);
+				pieceVal = ToPieceInt(pieceType, !HexState.isWhiteTurn);
 				activePieces[selfColor][pieceType].Append(moveTo);
 				
-				histEntry._flipPromote();
-				histEntry._setPPieceType((int)pieceType);
-				histEntry._setPIndex(i);
+				histEntry.FlipPromote();
+				histEntry.pPiece = ((int)pieceType);
+				histEntry.pIndex = (i);
 				break;
 				
 
@@ -408,15 +402,15 @@ public partial class HexEngineSharp : Node
 				HexState.EnPassantCords = new Vector2I(newECords.X, newECords.Y + (HexState.isWhiteTurn ? 1 : -1));
 				HexState.EnPassantTarget = moveTo;
 				HexState.EnPassantCordsValid = true;
-				histEntry._flipEnPassant();
+				histEntry.FlipEnPassant();
 				break;
 				
 			case MOVE_TYPES.CAPTURE:
-				histEntry._flipCapture();
+				histEntry.FlipCapture();
 				if( handleMoveCapture(moveTo, pieceType))
-					histEntry._flipTopSneak();
-				histEntry._setCIndex(HexState.captureIndex);
-				histEntry._setCPieceType((int)HexState.captureType);
+					histEntry.FlipTopSneak();
+				histEntry.cIndex = (HexState.captureIndex);
+				histEntry.cPiece = ((int)HexState.captureType);
 				break;
 
 			case MOVE_TYPES.MOVES: break;
@@ -432,7 +426,7 @@ public partial class HexEngineSharp : Node
 				break;
 			}
 
-		mGen.rmvSelfAtks(cords, getPieceType(previousPieceVal));
+		mGen.rmvSelfAtks(cords, PieceTypeOf(previousPieceVal));
 		
 		handleMoveState(moveTo, cords, histEntry);
 
@@ -445,33 +439,33 @@ public partial class HexEngineSharp : Node
 	{
 		var selfSide = (int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK );
 		
-		if(hist._getEnPassant()) HexState.EnPassantCordsValid = false;
-		if(hist._getOver()) HexState.isOver = false;
-		if(hist._getCheck()) HexState.isCheck = false;
+		if(hist.EnPassant) HexState.EnPassantCordsValid = false;
+		if(hist.Over) HexState.isOver = false;
+		if(hist.Check) HexState.isCheck = false;
 		
-		if(hist._getPromote())
+		if(hist.Promote)
 		{
 			BitBoards.AddPieceOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, PIECES.PAWN);
-			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, (PIECES) hist._getPPieceType());
+			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, (PIECES) hist.pPiece);
 			
-			int size = activePieces[selfSide][(PIECES) hist._getPPieceType()].Count;
-			activePieces[selfSide][(PIECES) hist._getPPieceType()].RemoveAt(size-1);
-			activePieces[selfSide][PIECES.PAWN].Insert( hist._getPIndex(), new Vector2I(from.X,from.Y) );
+			int size = activePieces[selfSide][(PIECES) hist.pPiece].Count;
+			activePieces[selfSide][(PIECES) hist.pPiece].RemoveAt(size-1);
+			activePieces[selfSide][PIECES.PAWN].Insert( hist.pIndex, new Vector2I(from.X,from.Y) );
 			
-			unpromoteValid = true;
-			unpromoteIndex = hist._getPIndex();
-			unpromoteType = (PIECES) hist._getPPieceType();
+			HexState.unpromoteValid = true;
+			HexState.unpromoteIndex = hist.pIndex;
+			HexState.unpromoteType = (PIECES) hist.pPiece;
 		}
-		if(hist._getCapture())
+		if(hist.Capture)
 		{
-			if(hist._getIsCaptureTopSneak())
+			if(hist.CaptureTopSneak)
 				to.Y += HexState.isWhiteTurn ? 1 :-1;
-			BitBoards.AddPieceOf(QRToIndex(to.X, to.Y), !HexState.isWhiteTurn, (PIECES) hist._getCPieceType());
-			activePieces[(int)(HexState.isWhiteTurn ? SIDES.BLACK : SIDES.WHITE)][(PIECES)hist._getCPieceType()].Insert( hist._getCIndex(), new Vector2I(to.X,to.Y) );
+			BitBoards.AddPieceOf(QRToIndex(to.X, to.Y), !HexState.isWhiteTurn, (PIECES) hist.cPiece);
+			activePieces[(int)(HexState.isWhiteTurn ? SIDES.BLACK : SIDES.WHITE)][(PIECES)hist.cPiece].Insert( hist.cIndex, new Vector2I(to.X,to.Y) );
 				
-			uncaptureValid = true;
-			HexState.captureIndex = hist._getCIndex();
-			HexState.captureType = (PIECES) hist._getCPieceType();
+			HexState.uncaptureValid = true;
+			HexState.captureIndex = hist.cIndex;
+			HexState.captureType = (PIECES) hist.cPiece;
 			
 			mGen.addInflunceFrom(to);
 		}
@@ -485,7 +479,7 @@ public partial class HexEngineSharp : Node
 		var history = historyStack.Pop();
 		historyStack.Push(history);
 
-		if(history._getCheck())
+		if(history.Check)
 		{
 			var kingCords = activePieces[(int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
 			var attacker = searchForMyAttackers(kingCords, HexState.isWhiteTurn);
@@ -497,11 +491,11 @@ public partial class HexEngineSharp : Node
 				mGen.fillInCheckMoves(pieceType, atk, kingCords, false);
 			}
 		}	
-		if(history._getEnPassant())
+		if(history.EnPassant)
 		{
 			HexState.EnPassantCordsValid = true;
-			var from = history._getFrom();
-			var to = history._getTo();
+			var from = history.from;
+			var to = history.to;
 			var side = ((from - to).Y) < 0 ? SIDES.BLACK : SIDES.WHITE;
 			HexState.EnPassantTarget = to;
 			HexState.EnPassantCords = new Vector2I(to.X, to.Y - (side == SIDES.BLACK ? 1 : -1));
@@ -614,9 +608,9 @@ public partial class HexEngineSharp : Node
 		Vector2I enemykingCords = activePieces[(int)(HexState.isWhiteTurn ?  SIDES.BLACK : SIDES.WHITE)][PIECES.KING][KING_INDEX];
 		mGen.prepBlockingFrom(mykingCords);
 		mGen.findLegalMovesFor(activePieces[(int)(HexState.isWhiteTurn ?  SIDES.WHITE : SIDES.BLACK)]);
-		if(checkIFCordsUnderAttack(enemykingCords, mGen.moves))
+		if(IsUnderAttack(enemykingCords, mGen.moves))
 		{
-			var where = checkWHERECordsUnderAttack(enemykingCords, mGen.moves);
+			var where = UnderAttackFrom(enemykingCords, mGen.moves);
 			var index= QRToIndex(where.X,where.Y);
 			var type = BitBoards.PieceTypeOf(index, !HexState.isWhiteTurn);
 			mGen.fillInCheckMoves(type, where, enemykingCords, true);
@@ -728,17 +722,17 @@ public partial class HexEngineSharp : Node
 		if(historyStack.Count < 1)
 			return false;
 		
-		uncaptureValid = false;
-		unpromoteValid = false;
+		HexState.uncaptureValid = false;
+		HexState.unpromoteValid = false;
 		HexState.decrementTurnNumber();
 		HexState.swapPlayerTurn();
 		
 		var activeMove = historyStack.Pop();
-		var pieceVal = activeMove._getPiece();
-		var UndoNewFrom = activeMove._getFrom();
-		var UndoNewTo = activeMove._getTo();
+		var pieceVal = activeMove.piece;
+		var UndoNewFrom = activeMove.from;
+		var UndoNewTo = activeMove.to;
 		
-		var pieceType = getPieceType(pieceVal);
+		var pieceType = PieceTypeOf(pieceVal);
 		var selfColor = (int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK);
 		int index = 0;
 		
@@ -758,9 +752,9 @@ public partial class HexEngineSharp : Node
 			index += 1;
 		}
 		
-		undoType = pieceType;
-		undoIndex = index;
-		
+		HexState.undoType = pieceType;
+		HexState.undoIndex = index;
+
 		undoSubCleanFlags(UndoNewFrom, UndoNewTo, activeMove);
 		undoSubFixState();
 		
@@ -784,13 +778,13 @@ public partial class HexEngineSharp : Node
 
 
 	//BOOL
-	public bool _getUncaptureValid()
+	public bool uncaptureValid()
 	{
-		return uncaptureValid;
+		return HexState.uncaptureValid;
 	}
-	public bool _getUnpromoteValid()
+	public bool unpromoteValid()
 	{
-		return unpromoteValid;
+		return HexState.unpromoteValid;
 	}
 	public bool _getIsWhiteTurn()
 	{
@@ -812,7 +806,7 @@ public partial class HexEngineSharp : Node
 	{
 		return HexState.isOver;
 	}
-	public bool _getCaptureValid()
+	public bool CaptureValid()
 	{
 		return HexState.captureValid;
 	}
@@ -829,11 +823,11 @@ public partial class HexEngineSharp : Node
 	{
 		return (int) Enemy.EnemyPromotedTo;
 	}
-	public int _getCaptureType()
+	public int CaptureType()
 	{
 		return (int) HexState.captureType;
 	}
-	public int _getCaptureIndex()
+	public int CaptureIndex()
 	{
 		return HexState.captureIndex;
 	}
@@ -841,13 +835,13 @@ public partial class HexEngineSharp : Node
 	{
 		return historyStack.Count;
 	}
-	public int _getUndoType()
+	public int undoType()
 	{
-		return (int) undoType;
+		return (int) HexState.undoType;
 	}
-	public int _getUndoIndex()
+	public int undoIndex()
 	{
-		return undoIndex;
+		return HexState.undoIndex;
 	}
 	public int _getEnemyChoiceType()
 	{
@@ -863,7 +857,7 @@ public partial class HexEngineSharp : Node
 	}
 	public int getPiecetype(int p)
 	{
-		return (int)getPieceType(p);
+		return (int)PieceTypeOf(p);
 	}
 	//
 	public Vector2I _getEnemyTo()
@@ -891,7 +885,7 @@ public partial class HexEngineSharp : Node
 				break;
 			var top = historyStack.Pop();
 			topStore.Push(top);
-			Histtop.Add(top.simpleString());
+			Histtop.Add(top.SimpleString());
 		}
 		
 		while(topStore.Count != 0)
@@ -899,6 +893,15 @@ public partial class HexEngineSharp : Node
 		
 		
 		return Histtop;
+	}
+
+	public int unpromoteType()
+	{
+		return (int) HexState.unpromoteType;
+	}
+	public int unpromoteIndex()
+	{
+		return (int) HexState.unpromoteIndex;
 	}
 
 	public String _getBoardFenNow()
@@ -948,7 +951,7 @@ public partial class HexEngineSharp : Node
 		}
 		
 		fen.Append(HexState.isWhiteTurn ? " w " : " b ");
-		if(HexState.EnPassantCordsValid) fen.Append(encodeEnPassantFEN(HexState.EnPassantCords.X, HexState.EnPassantCords.Y));
+		if(HexState.EnPassantCordsValid) fen.Append(EncodeFEN(HexState.EnPassantCords.X, HexState.EnPassantCords.Y));
 		else fen.Append('-');
 		
 		fen.Append($" {HexState.turnNumber}");

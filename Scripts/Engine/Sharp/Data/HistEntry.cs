@@ -7,21 +7,21 @@ namespace HexChess
 {
 	class HistEntry
 	{
-		private Vector2I from;
-		private Vector2I to;
+		public Vector2I from {get; private set;}
+		public Vector2I to {get; private set;}
 
-		private bool enPassant;
-		private bool check;
-		private bool over;
-		private bool promote;
-		private bool capture;
-		private bool captureTopSneak;
+		public bool EnPassant {get; private set;}
+		public bool Check {get; private set;}
+		public bool Over {get; private set;}
+		public bool Promote {get; private set;}
+		public bool Capture {get; private set;}
+		public bool CaptureTopSneak {get; private set;}
 
-		private int piece;
-		private int pPiece;
-		private int pIndex;
-		private int cPiece;
-		private int cIndex;
+		public int piece {get; private set;}
+		public int pPiece {get; set;}
+		public int pIndex {get; set;}
+		public int cPiece {get; set;}
+		public int cIndex {get; set;}
 
 		public HistEntry(int PIECE, Vector2I FROM, Vector2I TO)
 		{
@@ -29,106 +29,51 @@ namespace HexChess
 			from = new Vector2I(FROM.X,FROM.Y);
 			to = new Vector2I(TO.X,TO.Y);
 			
-			promote = false;
-			enPassant = false;
-			check = false;
-			over = false;
-			capture = false;
-			captureTopSneak = false;
+			Promote = false;
+			EnPassant = false;
+			Check = false;
+			Over = false;
+			Capture = false;
+			CaptureTopSneak = false;
 			return;
 		}
-
-		public void _flipPromote()
+		public bool FlipPromote()
 		{
-			promote = !promote;
+			Promote = !Promote;
+			return Promote;
 		}
-		public bool _getPromote()
+		public bool FlipEnPassant()
 		{
-			return promote;
+			EnPassant = !EnPassant;
+			return EnPassant;
 		}
-		public void _flipEnPassant()
+		public bool FlipCheck()
 		{
-			enPassant = !enPassant;
+			Check = !Check;
+			return Check;
 		}
-		public bool _getEnPassant()
-		{
-			return enPassant;
-		}
-		public void _flipCheck()
-		{
-			check = !check;
-		}
-		public bool _getCheck()
-		{
-			return check;
-		}
-		public void _flipOver()
+		public bool FlipOver()
 		{ 
-			over = !over;
+			Over = !Over;
+			return Over;
 		}
-		public bool _getOver()
+		public bool FlipCapture()
 		{
-			return over;
+			Capture = !Capture;
+			return Capture;
 		}
-		public void _flipCapture()
+		public bool FlipTopSneak()
 		{
-			capture = !capture;
+			CaptureTopSneak = !CaptureTopSneak;
+			return CaptureTopSneak;
 		}
-		public bool _getCapture()
+		public string SimpleString()
 		{
-			return capture;
-		}
-		public bool _getIsCaptureTopSneak()
-		{
-			return captureTopSneak;
-		}
-		public void _flipTopSneak()
-		{
-			captureTopSneak = !captureTopSneak;
-		}
-		public int _getCPieceType()
-		{
-			return cPiece;
-		}
-		public void _setCPieceType ( int type ){
-			cPiece = type;
-		}
-		public int _getCIndex (){
-			return cIndex;
-		}
-		public void _setCIndex ( int i )
-		{
-			cIndex = i;
-		}
-		public int _getPPieceType(){
-			return pPiece;
-		}
-		public void _setPPieceType ( int type )
-		{
-			pPiece = type;
-		}
-		public int _getPIndex (){
-			return pIndex;
-		}
-		public void _setPIndex ( int i ){
-			pIndex = i;
-		}
-		public int _getPiece(){
-			return piece;
-		}
-		public Vector2I _getFrom(){
-			return from;
-		}
-		public Vector2I _getTo(){
-			return to;
-		}
-		public string simpleString()
-		{
-			return $"{piece} {encodeEnPassantFEN(from.X,from.Y)} {encodeEnPassantFEN(to.X,to.Y)}";
+			return $"{piece} {EncodeFEN(from.X,from.Y)} {EncodeFEN(to.X,to.Y)}";
 		} 
 		public override string ToString()
 		{
-			return $"P:{piece}, from:({from.X},{from.Y}), to:({to.X},{to.Y}) -- e:{enPassant} c:{check} o:{over} -- p:{promote} type:{pPiece} index:{pIndex} -- cap:{capture} top:{captureTopSneak} type:{cPiece} index:{cIndex}";
+			return $"P:{piece}, from:({from.X},{from.Y}), to:({to.X},{to.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{pPiece} index:{pIndex} -- cap:{Capture} top:{CaptureTopSneak} type:{cPiece} index:{cIndex}";
 		}
 	}
 }
