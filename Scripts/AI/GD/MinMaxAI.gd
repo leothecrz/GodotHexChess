@@ -5,7 +5,7 @@ const MIN_INT = -9223372036854775808;
 const MAX_INT = 9223372036854775807;
 
 const DIST_VALUE:int = 10000;
-const KING_DIST_VALUE = DIST_VALUE / 5;
+const KING_DIST_VALUE = int(DIST_VALUE / 5.0);
 const CHECK_VAL = 15000;
 
 #skip ZERO and ignore king *(its always present) 

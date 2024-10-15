@@ -3,10 +3,10 @@ extends Control
 @onready var TEXTNode:RichTextLabel = $History
 
 ## QUICK PROTOTYPE - - CAN BE DONE WITH ARRAY AND FOR LOOP
-func setText(str:Array):
+func setText(stir:Array):
 	var text_lines = []
-	for i in range(min(str.size(), 5)):
-		text_lines.append(str[i])
+	for i in range(min(stir.size(), 5)):
+		text_lines.append(stir[i])
 	
 	while text_lines.size() < 5:
 		text_lines.append("")

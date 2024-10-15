@@ -9,8 +9,8 @@ extends Control
 ### User Created
 ##
 
-func _updateHist(str:Array):
-	HistoryNode.setText(str);
+func _updateHist(stir:Array):
+	HistoryNode.setText(stir);
 
 func _swapLabelState() -> void:
 	inCheckLabel.visible = !inCheckLabel.visible;

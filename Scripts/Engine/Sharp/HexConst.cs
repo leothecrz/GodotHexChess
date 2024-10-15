@@ -199,7 +199,7 @@ namespace HexChess
 			int res = (id & TYPE_MASK);
 			return (PIECES) res;
 		}
-		public  static bool charIsInt(char activeChar)
+		public static bool charIsInt(char activeChar)
 		{
 			return ('0' <= activeChar) && (activeChar <= '9');
 		}
@@ -380,6 +380,22 @@ namespace HexChess
 			return new Vector2I(qStr, rStr);
 		}
 
+		public static char PieceToChar(PIECES p, bool isW)
+		{
+			char returnChar = ' ';
+			switch(p)
+			{
+				case PIECES.PAWN: returnChar = 'p'; break;
+				case PIECES.KNIGHT: returnChar = 'n'; break;
+				case PIECES.ROOK: returnChar = 'r'; break;
+				case PIECES.BISHOP: returnChar = 'b'; break;
+				case PIECES.QUEEN: returnChar = 'q'; break;
+				case PIECES.KING: returnChar = 'k'; break;
+			}
+			if(isW)
+				returnChar -= (char)('a'-'A');
+			return returnChar;
+		}
 
 		// Moves Search 
 

@@ -530,8 +530,6 @@ public partial class HexEngineSharp : Node
 	}
 
 
-	
-
 	public void _restoreState(
 		Dictionary<int, Dictionary<int,int>> WABoard,
 		Dictionary<int, Dictionary<int,int>> BABoard,
@@ -778,14 +776,6 @@ public partial class HexEngineSharp : Node
 	//START DEFAULT GAME PUBLIC CALL
 	public bool _initDefault()
 	{
-		//var testing = new List<int> {46, 47, 48, 49, 50, 35, 26, 18, 11, 5, 56, 66, 75, 83, 90, 44, 43, 42, 41, 40, 34, 24, 15, 7, 0, 55, 64, 72, 79, 85 };
-		// Bitboard128 test = new Bitboard128(0,0);
-		//foreach(int i in testing)
-		//{
-		// test = test.OR(Bitboard128.createSinglePieceBB(90));
-		//}
-		// GD.Print(test);
-
 		return initiateEngine(DEFAULT_FEN_STRING);
 	}
 
@@ -871,6 +861,10 @@ public partial class HexEngineSharp : Node
 	{
 		return (int) Enemy.EnemyType;
 	}
+	public int getPiecetype(int p)
+	{
+		return (int)getPieceType(p);
+	}
 	//
 	public Vector2I _getEnemyTo()
 	{
@@ -911,37 +905,53 @@ public partial class HexEngineSharp : Node
 	{
 		StringBuilder fen = new StringBuilder();
 		var index = 0;
-		foreach(int size in Bitboard128.COLUMN_SIZES)
+		for(int i=0; i < Bitboard128.COLUMN_SIZES.Length; i +=1 )
 		{
-			for(int i=0; i<size; i+=1)
+			var stack = new Stack<char>();
+			var dist = 0;
+			for(int j=0; j < Bitboard128.COLUMN_SIZES[i]; j+=1 )
 			{
-				index += 1;
-				if(BitBoards.IsIndexEmpty(index))
-					continue;
-				switch (BitBoards.PieceTypeOf(index, HexState.isWhiteTurn))
+				if(!BitBoards.IsIndexEmpty(index))
 				{
-					case PIECES.PAWN:
-					break;
-				
-					case PIECES.KNIGHT:
-					break;
-					
-					case PIECES.ROOK:
-					break;
-					
-					case PIECES.BISHOP:
-					break;
-
-					case PIECES.QUEEN:
-					break;
-	
-					case PIECES.KING:
-					break;
+					if(dist != 0)
+					{
+						if(dist > 9)
+						{
+							stack.Push('1');
+							stack.Push((char)('0' + (char)(dist-10)));
+						}
+						else
+							stack.Push((char)('0' + (char)dist));
+					}
+					var isW = BitBoards.IsPieceWhite(index);
+					var p = BitBoards.PieceTypeOf(index,!isW);
+					stack.Push(PieceToChar(p, isW));
+					dist = 0;
 				}
-				
+				else dist+=1;
+				index += 1;
 			}
+			if(dist != 0)
+			{
+				if(dist > 9)
+				{
+					stack.Push('1');
+					stack.Push((char)('0' + (char)(dist-10)));
+				}
+				else
+					stack.Push((char)('0' + (char)dist));
+			}
+			while(stack.Count != 0)
+				fen.Append(stack.Pop());
+			if(i < Bitboard128.COLUMN_SIZES.Length-1)
+				fen.Append('/');
 		}
-
+		
+		fen.Append(HexState.isWhiteTurn ? " w " : " b ");
+		if(HexState.EnPassantCordsValid) fen.Append(encodeEnPassantFEN(HexState.EnPassantCords.X, HexState.EnPassantCords.Y));
+		else fen.Append('-');
+		
+		fen.Append($" {HexState.turnNumber}");
 
 		return fen.ToString();
 	}

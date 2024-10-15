@@ -93,9 +93,9 @@ func _on_history_id_pressed(id: int) -> void:
 			return;
 	return;
 
-func FenOK(str:String, strict:bool) -> void:
+func FenOK(stir:String, strict:bool) -> void:
 	FenDialog.queue_free();
-	startGameFromFen(str);
+	startGameFromFen(stir);
 	return;
 	
 func FenCancel() -> void:
@@ -132,9 +132,7 @@ func _on_test_id_pressed(id: int) -> void:
 			
 		_:
 			return;
-	return;
-	
-	
+			
 
 ## DISPLAY PIECES
 ## Connect Signals For Chess Pieces
@@ -206,7 +204,7 @@ func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pT
 			ref = ChessPiecesNode.get_child(i).get_child(PIECES.PAWN-1).get_child(pawnIndex);
 			break;
 	
-	prepareChessPieceNode(ref.side, pTo-1, EngineNode.getPieceType(pTo), ref.pieceCords);
+	prepareChessPieceNode(ref.side, pTo-1, EngineNode.getPiecetype(pTo), ref.pieceCords);
 
 	ref.get_parent().remove_child(ref);	
 	ref.queue_free();
@@ -610,15 +608,11 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 ##
 func startGame() -> void:
 	EngineNode._initDefault();
-	activePieces = EngineNode._getActivePieces();
-	currentLegalMoves = EngineNode._getMoves();
-	
+	syncToEngine()
 	spawnActivePieces();
-	emit_signal("gameSwitchedSides", SIDES.WHITE);
+	emit_signal("gameSwitchedSides", SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK );
 	GameStartTime = Time.get_ticks_msec();
-	
-	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ):
-		allowAITurn();
+	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
 
 func startGameFromFen(fen:String) -> void:
@@ -626,15 +620,12 @@ func startGameFromFen(fen:String) -> void:
 		spawnNotice("[center]Fen Invalid[/center]", 1.0);
 		return;
 	
-	activePieces = EngineNode._getActivePieces();
-	currentLegalMoves = EngineNode._getMoves();
-	
+	syncToEngine()
 	spawnActivePieces();
-	emit_signal("gameSwitchedSides", SIDES.WHITE);
+	emit_signal("gameSwitchedSides", SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK );
 	GameStartTime = Time.get_ticks_msec();
-	
-	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ):
-		allowAITurn();
+
+	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
 
 ##
