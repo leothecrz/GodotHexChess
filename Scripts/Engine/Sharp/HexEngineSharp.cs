@@ -39,7 +39,7 @@ public partial class HexEngineSharp : Node
 		HexState = new BoardState();
 		BitBoards = new BitboardState();
 		Enemy = new EnemyState();
-		mGen = new HexMoveGenerator(HexState, BitBoards);
+		mGen = new HexMoveGenerator(ref HexState,ref BitBoards);
 		activePieces = null;
 		legalMoves = null;
 		bypassMoveLock = false;
@@ -768,142 +768,49 @@ public partial class HexEngineSharp : Node
 		return true;
 	}
 	//START DEFAULT GAME PUBLIC CALL
-	public bool _initDefault()
-	{
-		return initiateEngine(DEFAULT_FEN_STRING);
-	}
+	public bool _initDefault() { return initiateEngine(DEFAULT_FEN_STRING); }
 
 
 	// Getters
 
 
 	//BOOL
-	public bool uncaptureValid()
-	{
-		return HexState.uncaptureValid;
-	}
-	public bool unpromoteValid()
-	{
-		return HexState.unpromoteValid;
-	}
-	public bool _getIsWhiteTurn()
-	{
-		return HexState.isWhiteTurn;
-	}
-	public bool _getIsBlackTurn()
-	{
-		return !HexState.isWhiteTurn;
-	}
-	public bool _getEnemyIsWhite()
-	{
-		return Enemy.EnemyPlaysWhite;
-	} 
-	public bool _getIsEnemyAI()
-	{
-		return Enemy.EnemyIsAI;
-	}
-	public bool _getGameOverStatus()
-	{
-		return HexState.isOver;
-	}
-	public bool CaptureValid()
-	{
-		return HexState.captureValid;
-	}
-	public bool _getGameInCheck()
-	{
-		return HexState.isCheck;
-	}
-	public bool _getEnemyPromoted()
-	{
-		return Enemy.EnemyPromoted;
-	}
+	public bool uncaptureValid(){ return HexState.uncaptureValid; }
+	public bool unpromoteValid() { return HexState.unpromoteValid; }
+	public bool _getIsWhiteTurn() { return HexState.isWhiteTurn; }
+	public bool _getIsBlackTurn() { return !HexState.isWhiteTurn; }
+	public bool _getEnemyIsWhite() { return Enemy.EnemyPlaysWhite; } 
+	public bool _getIsEnemyAI() { return Enemy.EnemyIsAI; }
+	public bool _getGameOverStatus() { return HexState.isOver; }
+	public bool CaptureValid() { return HexState.captureValid; }
+	public bool _getGameInCheck() { return HexState.isCheck; }
+	public bool _getEnemyPromoted() { return Enemy.EnemyPromoted; }
 	//INT
-	public int _getEnemyPTo()
-	{
-		return (int) Enemy.EnemyPromotedTo;
-	}
-	public int CaptureType()
-	{
-		return (int) HexState.captureType;
-	}
-	public int CaptureIndex()
-	{
-		return HexState.captureIndex;
-	}
-	public int _getMoveHistorySize()
-	{
-		return historyStack.Count;
-	}
-	public int undoType()
-	{
-		return (int) HexState.undoType;
-	}
-	public int undoIndex()
-	{
-		return HexState.undoIndex;
-	}
-	public int _getEnemyChoiceType()
-	{
-		return (int) Enemy.EnemyChoiceType;
-	}
-	public int _getEnemyChoiceIndex()
-	{
-		return Enemy.EnemyChoiceIndex;
-	}
-	public int _getEnemyType()
-	{
-		return (int) Enemy.EnemyType;
-	}
-	public int getPiecetype(int p)
-	{
-		return (int)PieceTypeOf(p);
-	}
+	public int _getEnemyPTo() { return (int) Enemy.EnemyPromotedTo; }
+	public int CaptureType() { return (int) HexState.captureType; }
+	public int CaptureIndex() { return HexState.captureIndex; }
+	public int _getMoveHistorySize() { return historyStack.Count; }
+	public int undoType() { return (int) HexState.undoType; }
+	public int undoIndex() { return HexState.undoIndex; }
+	public int _getEnemyChoiceType() { return (int) Enemy.EnemyChoiceType; }
+	public int _getEnemyChoiceIndex() { return Enemy.EnemyChoiceIndex; }
+	public int _getEnemyType() { return (int) Enemy.EnemyType; }
+	public int getPiecetype(int p) { return (int)PieceTypeOf(p); }
+	public int unpromoteType() { return (int) HexState.unpromoteType; }
+	public int unpromoteIndex() { return (int) HexState.unpromoteIndex; }
 	//
-	public Vector2I _getEnemyTo()
-	{
-		return Enemy.EnemyTo;
-	}
+	public Vector2I _getEnemyTo() { return Enemy.EnemyTo; }
 	//
-	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> _getmoves()
-	{
-		return legalMoves;
-	}
+	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> _getmoves() { return legalMoves; }
 	//
 	public Dictionary<PIECES, List<Vector2I>>[] _getAP()
 	{
 		return activePieces;
 	}
 	//
-	public Godot.Collections.Array<String> _getHistTop()
-	{	
-		Godot.Collections.Array<String> Histtop = new Godot.Collections.Array<string>();
-		Stack<HistEntry> topStore = new Stack<HistEntry>();
-		for (int i = 0; i < 5; i++)
-		{
-			if(historyStack.Count == 0)
-				break;
-			var top = historyStack.Pop();
-			topStore.Push(top);
-			Histtop.Add(top.SimpleString());
-		}
-		
-		while(topStore.Count != 0)
-			historyStack.Push(topStore.Pop());
-		
-		
-		return Histtop;
-	}
-
-	public int unpromoteType()
-	{
-		return (int) HexState.unpromoteType;
-	}
-	public int unpromoteIndex()
-	{
-		return (int) HexState.unpromoteIndex;
-	}
-
+	
+	
+	// Strings
 	public String _getBoardFenNow()
 	{
 		StringBuilder fen = new StringBuilder();
@@ -969,7 +876,7 @@ public partial class HexEngineSharp : Node
 		return hist.ToString();
 	}
 
-	//STRICT GDSCRIPT INTERACTIONS
+	// STRICT GDSCRIPT INTERACTIONS
 	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> _getActivePieces()
 	{
 		var gdReturn = new Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>>();
@@ -1008,6 +915,25 @@ public partial class HexEngineSharp : Node
 		}
 		return gdReturn;
 	} 
+	public Godot.Collections.Array<String> _getHistTop()
+		{	
+			Godot.Collections.Array<String> Histtop = new Godot.Collections.Array<string>();
+			Stack<HistEntry> topStore = new Stack<HistEntry>();
+			for (int i = 0; i < 5; i++)
+			{
+				if(historyStack.Count == 0)
+					break;
+				var top = historyStack.Pop();
+				topStore.Push(top);
+				Histtop.Add(top.SimpleString());
+			}
+			
+			while(topStore.Count != 0)
+				historyStack.Push(topStore.Pop());
+			
+			
+			return Histtop;
+		}
 
 
 	// Test
@@ -1027,7 +953,6 @@ public partial class HexEngineSharp : Node
 
 		
 	}
-
 	public long _intTest(int type)
 	{
 		HexTester Tester = new HexTester(this);

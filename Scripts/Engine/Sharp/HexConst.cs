@@ -1,12 +1,13 @@
+using Godot;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
 
 namespace HexChess
 {
-	public class HexConst
-		{
+public class HexConst
+{
 		// ENUMS
 		public enum PIECES {ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING};
 		public enum SIDES {BLACK, WHITE};
@@ -14,7 +15,7 @@ namespace HexChess
 		public enum ENEMY_TYPES { PLAYER_TWO, RANDOM, MIN_MAX, NN };
 		public enum MATE_STATUS {NONE, CHECK, OVER};
 		public enum UNDO_FLAGS {NONE, ENPASSANT, CHECK, GAME_OVER };
-		//	Defaults
+		//	Const
 		public const int KING_INDEX = 0;
 		public const int HEX_BOARD_RADIUS = 5;
 		public const int DECODE_FEN_OFFSET = 70;
@@ -30,7 +31,7 @@ namespace HexChess
 		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> PAWN_MOVE_TEMPLATE = new Dictionary<MOVE_TYPES, List<Vector2I>> { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I> {}}, {MOVE_TYPES.ENPASSANT, new List<Vector2I> {}}, {MOVE_TYPES.PROMOTE, new List<Vector2I> {}} };
 		// Positions
 		public static readonly int[] PAWN_START 	= {-4, -3, -2, -1, 0, 1, 2, 3, 4};
-		public static readonly int[] PAWN_PROMOTE 	= {-5, -4, -3, -2, -1, 0, 1, 2 , 3, 4};
+		public static readonly int[] PAWN_PROMOTE 	= {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
 		public static readonly int[] KNIGHT_MULTIPLERS = {-1, 1, -1, 1};
 		
 
@@ -179,11 +180,6 @@ namespace HexChess
 				Console.WriteLine();
 			}
 		}
-
-
-		// Internal Gets
-
-
 		// Get int representation of piece.
 		public static int ToPieceInt(PIECES piece, bool isBlack)
 		{
@@ -293,7 +289,7 @@ namespace HexChess
 
 		public static bool isPieceWhite(int id)
 		{
-			int mask = 0b1000;
+			int mask = SIDE_MASK;
 			if ((id & mask) != 0)
 				return true;
 			return false;
@@ -395,6 +391,7 @@ namespace HexChess
 				returnChar -= (char)('a'-'A');
 			return returnChar;
 		}
+
 
 		// Moves Search 
 
@@ -510,7 +507,7 @@ namespace HexChess
 							10,10,10,10,10,10, }
 			};
 
-			// Measure Board State
+		// Measure Board State
 		public static long Hueristic(HexEngineSharp hexEngine)
 		{
 			//ENDSTATE
@@ -548,5 +545,5 @@ namespace HexChess
 			return H;
 		}
 
-	}
+}
 }

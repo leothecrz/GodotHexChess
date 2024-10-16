@@ -37,7 +37,7 @@ public class HexMoveGenerator
 	public ulong stopTime = 0;
 
 
-	public HexMoveGenerator(BoardState bref, BitboardState bbref)
+	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref)
 	{
 		BoardRef = bref;
 		BBRef = bbref;
