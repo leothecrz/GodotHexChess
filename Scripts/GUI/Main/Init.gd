@@ -12,8 +12,8 @@ enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
 enum SIDES { BLACK, WHITE };
 enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
-### State
-	# Position References
+
+### Position State
 @onready var VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @onready var PIXEL_OFFSET = 35;
 @onready var AXIAL_X_SCALE = 1.4;
@@ -21,7 +21,8 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 @onready var PIECE_SCALE = 0.18;
 @onready var MOVE_SCALE = 0.015;
 
-	# Node Ref
+
+### Node Ref
 @onready var BoardControler = $StaticGUI/Mid;
 @onready var LeftPanel = $StaticGUI/Left
 
@@ -39,35 +40,38 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 @onready var BGMusicPlayer = $BGMusic;
 
 
-	# State
+### State
 var GameStartTime:int = 0;
 var minHistSize:int = 1;
-	# Board Setup
+# Board Setup
 var selectedSide:int = 0;
 var isRotatedWhiteDown:bool = true;
-	# Temp State
+# Temp State
 var activePieces;
 var currentLegalMoves:Dictionary;
-	#Threads
+#Threads
 var MasterAIThread:Thread = Thread.new();
 var ThreadActive:bool = false;
-	#References
+#References
 var tempDialog:AcceptDialog = null;
 var ThinkingDialogRef:Node;
 var FenDialog:Node;
 
 
+
+
+
 ### Signals
-signal gameSwitchedSides(newSideTurn);
+signal gameSwitchedSides(newSideTurn:bool);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 
 
 
+
+
 ## Utility
 ## Convert Axial Cordinates To Viewport Cords
-##	i=y/(3/2*s);
-##	j=(x-(y/sqrt(3)))/s*sqrt(3);
 func axial_to_pixel(axial: Vector2i) -> Vector2:
 	var x = float(axial.x) * AXIAL_X_SCALE;
 	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
@@ -82,6 +86,24 @@ func spawnNotice(TEXT:String, TIME:float):
 	pass;
 
 
+
+## MENU HELPERS
+func FenOK(stir:String, strict:bool) -> void:
+	FenDialog.queue_free();
+
+	if(not strict):
+		startGameFromFen(stir);
+	
+	return;
+	
+func FenCancel() -> void:
+	FenDialog.queue_free();
+	return;
+
+
+
+
+
 ## MENUBAR
 func _on_history_id_pressed(id: int) -> void:
 	if(!activePieces): spawnNotice("[center]Game NOT Running[/center]",  0.8); return;
@@ -91,15 +113,6 @@ func _on_history_id_pressed(id: int) -> void:
 			DisplayServer.clipboard_set(EngineNode._getFullHistString());
 			spawnNotice("[center]History copied to clipboard[/center]",  0.8)
 			return;
-	return;
-
-func FenOK(stir:String, strict:bool) -> void:
-	FenDialog.queue_free();
-	startGameFromFen(stir);
-	return;
-	
-func FenCancel() -> void:
-	FenDialog.queue_free();
 	return;
 
 func _on_fen_id_pressed(id: int) -> void:
@@ -133,6 +146,9 @@ func _on_test_id_pressed(id: int) -> void:
 		_:
 			return;
 			
+
+
+
 
 ## DISPLAY PIECES
 ## Connect Signals For Chess Pieces
@@ -179,6 +195,8 @@ func spawnActivePieces() -> void:
 				prepareChessPieceNode(side, index, pieceType, piece);
 			index += 1;
 	return;
+
+
 
 
 
@@ -255,6 +273,8 @@ func syncToEngine() -> void:
 
 
 
+
+
 ## Move Submit
 ## Interupt a promotion submission to get promotion type
 func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
@@ -286,6 +306,8 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 
 	syncToEngine();
 	return;
+
+
 
 
 
@@ -323,6 +345,8 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 			MOVE_TYPES.PROMOTE: 		spawnAMove(moves[key], Color.DARK_KHAKI, key, cords);
 			MOVE_TYPES.ENPASSANT: 		spawnAMove(moves[key], Color.SEA_GREEN, key, cords);
 	return;
+
+
 
 
 
@@ -390,6 +414,8 @@ func allowAITurn():
 
 
 
+
+
 ## CLICK AND DRAG (MOUSE) API
 ## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
@@ -405,7 +431,6 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 		if(isNotPromoteMove):
 			allowAITurn();
 	return;
-
 ## Lock Other Pieces
 ## Sub :: Spawn Piece's Moves 
 func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
@@ -415,6 +440,8 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 		thisPiecesMoves[key] = currentLegalMoves[CORDS][key];
 	spawnMoves(thisPiecesMoves, CORDS);
 	return;
+
+
 
 
 
@@ -472,44 +499,6 @@ func resignCleanUp():
 
 
 
-## BUTTONS
-## New Game Button Pressed.
-# Sub : Calls Spawn Pieces
-func _newGame_OnButtonPress() -> void:
-	if(activePieces):
-		forcedNewGameDialog();
-		return;
-	startGame();
-	return;
-
-## Resign Button Pressed.
-func _resign_OnButtonPress() -> void:
-	if(not activePieces):
-		return;
-	if(EngineNode._getGameOverStatus()):
-		resignCleanUp();
-		return;
-	setConfirmTempDialog(ConfirmationDialog.new(), "Resign the match?", resignCleanUp);
-	return;
-
-## Undo Button Pressed
-func _on_undo_pressed():
-	if(EngineNode._getMoveHistorySize() < minHistSize):
-		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
-		return;
-	EngineNode._undoLastMove(true);
-	syncUndo();
-	undoAI();
-	return;
-
-## Settings Button Pressed
-func _on_settings_pressed():
-	SettingsDialog.visible = true;
-	SettingsDialog.z_index = 1;
-	if(activePieces):
-		pieceSelectedLockOthers.emit();
-	return;
-
 
 
 ## MENUS
@@ -524,7 +513,7 @@ func _selectSide_OnItemSelect(index:int) -> void:
 	var isUserPlayingW = (selectedSide == 0);
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
-	EngineNode._setEnemy(EngineNode._getEnemyType(), selectedSide != 0);
+	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selectedSide != 0);
 	#print("Type: ", GameDataNode._getEnemyType());
 	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
 	return;
@@ -538,12 +527,14 @@ func _on_enemy_select_item_selected(index:int) -> void:
 	var type:int = index;
 	if(index > 1):
 		type = index - 1;
-	EngineNode._setEnemy(type, selectedSide != 0);
+	EngineNode.UpdateEnemy(type, selectedSide != 0);
 	
 	minHistSize = 1;
 	if(type == 0):
 		minHistSize += 1;
 	return;
+
+
 
 
 
@@ -604,6 +595,8 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 
 
 
+
+
 ## BUTTONS HELPERS
 ##
 func startGame() -> void:
@@ -614,7 +607,7 @@ func startGame() -> void:
 	GameStartTime = Time.get_ticks_msec();
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
-
+##
 func startGameFromFen(fen:String) -> void:
 	if not EngineNode.initiateEngine(fen):
 		spawnNotice("[center]Fen Invalid[/center]", 1.0);
@@ -627,7 +620,6 @@ func startGameFromFen(fen:String) -> void:
 
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
-
 ##
 func undoCapture():
 	if( not EngineNode.uncaptureValid() ):
@@ -656,7 +648,6 @@ func undoCapture():
 		ref.add_child(newPieceScene);
 	## ID which piece needs to be moved
 	return;
-
 ##
 func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	var newPos;
@@ -692,7 +683,6 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	TAndFrom.moveTo(toV.x,toV.y)
 	
 	return;
-
 ##
 func syncUndo():
 	var uType:int = EngineNode.undoType();
@@ -706,7 +696,6 @@ func syncUndo():
 	undoCapture();
 	updateGUI_Elements();
 	return;
-
 ##
 func undoAI():
 	if(not EngineNode._getIsEnemyAI()):
@@ -714,3 +703,45 @@ func undoAI():
 	EngineNode._undoLastMove(true);
 	syncUndo();
 	return
+
+
+
+
+
+## BUTTONS
+## New Game Button Pressed.
+# Sub : Calls Spawn Pieces
+func _newGame_OnButtonPress() -> void:
+	if(activePieces):
+		forcedNewGameDialog();
+		return;
+	startGame();
+	return;
+
+## Resign Button Pressed.
+func _resign_OnButtonPress() -> void:
+	if(not activePieces):
+		return;
+	if(EngineNode._getGameOverStatus()):
+		resignCleanUp();
+		return;
+	setConfirmTempDialog(ConfirmationDialog.new(), "Resign the match?", resignCleanUp);
+	return;
+
+## Undo Button Pressed
+func _on_undo_pressed():
+	if(EngineNode._getMoveHistorySize() < minHistSize):
+		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
+		return;
+	EngineNode._undoLastMove(true);
+	syncUndo();
+	undoAI();
+	return;
+
+## Settings Button Pressed
+func _on_settings_pressed():
+	SettingsDialog.visible = true;
+	SettingsDialog.z_index = 1;
+	if(activePieces):
+		pieceSelectedLockOthers.emit();
+	return;

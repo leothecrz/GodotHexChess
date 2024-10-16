@@ -1,12 +1,10 @@
 using Godot;
 
-
 using System;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
-
 
 using HexChess;
 using static HexChess.HexConst;
@@ -15,24 +13,22 @@ using static HexChess.FENConst;
 [GlobalClass]
 public partial class HexEngineSharp : Node
 {
-	// States
+	// State Holders
 	private BoardState HexState;
 	private BitboardState BitBoards;
 	private EnemyState Enemy;
 	private HexMoveGenerator mGen;
-	// Pieces
-	private Dictionary<PIECES, List<Vector2I>>[] activePieces;
-	// Moves
-	private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves = null;
-	// History
-	private Stack<HistEntry> historyStack;
-	//Move Auth
-	private bool bypassMoveLock;
+
+	private Dictionary<PIECES, List<Vector2I>>[] activePieces; // PIECES
+	private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves = null; // MOVES
+	private Stack<HistEntry> historyStack; // HISTORY
+
+	private bool bypassMoveLock; //MOVE AUTH
 
 
 	/// <summary>
 	/// Constructor. Initiates state holders and the move generator.
-	/// HexEngineSharp is the cordinator of the engine module.
+	/// HexEngineSharp is the master cordinator of the engine module.
 	/// </summary>
 	public HexEngineSharp()
 	{
@@ -46,7 +42,8 @@ public partial class HexEngineSharp : Node
 	}
 
 
-	// Board Search
+	/// Board Search
+
 	private List<Vector2I> searchForPawnsAtk(Vector2I pos, bool isWTurn)
 	{
 		int leftCaptureR = isWTurn ? 0 :  1;
@@ -434,7 +431,7 @@ public partial class HexEngineSharp : Node
 	}
 
 
-	// Move Undo
+	/// Move Undo
 	private void undoSubCleanFlags(Vector2I from, Vector2I to, HistEntry hist)
 	{
 		var selfSide = (int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK );
@@ -502,64 +499,33 @@ public partial class HexEngineSharp : Node
 		}
 		return;
 	}
-	public static Dictionary<int, Dictionary<int, int>> DeepCopyBoard(Dictionary<int, Dictionary<int, int>> original)
-	{
-		var copy = new Dictionary<int, Dictionary<int, int>>();
-		foreach (var outerPair in original)
-		{
-			var innerCopy = new Dictionary<int, int>(outerPair.Value);
-			copy.Add(outerPair.Key, innerCopy);
-		}
-		return copy;
-	}
-	public static Dictionary<Vector2I, List<Vector2I>> DeepCopyPieces(Dictionary<Vector2I, List<Vector2I>> original)
-	{
-		var copy = new Dictionary<Vector2I, List<Vector2I>>();
-		foreach (var outerPair in original)
-		{
-			var listCopy = new List<Vector2I>(outerPair.Value.Select(v => new Vector2I(v.X, v.Y)));
-			copy.Add(outerPair.Key, listCopy);
-		}
-		return copy;
-	}
+	
+	
 
-
-	public void _restoreState(
+	public void _restoreState
+	(
 		Dictionary<int, Dictionary<int,int>> WABoard,
 		Dictionary<int, Dictionary<int,int>> BABoard,
 		Dictionary<Vector2I, List<Vector2I>> BPieces,
-		Dictionary<Vector2I, List<Vector2I>> IPieces,
-		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves)
+		Dictionary<Vector2I, List<Vector2I>> IPieces, 
+		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves
+	)
 	{
 		mGen.WhiteAttackBoard = DeepCopyBoard(WABoard);
 		mGen.BlackAttackBoard = DeepCopyBoard(BABoard);
 		mGen.blockingPieces = DeepCopyPieces(BPieces);
 		mGen.influencedPieces = DeepCopyPieces(IPieces);
 		legalMoves = DeepCopyLegalMoves(moves);
-		mGen.moves = legalMoves;
+		mGen.moves = legalMoves; 
 		return;
 	}
-	public Dictionary<int, Dictionary<int,int>> _duplicateWAB()
-	{
-		return DeepCopyBoard(mGen.WhiteAttackBoard);
-	}
-	public Dictionary<int, Dictionary<int,int>> _duplicateBAB()
-	{
-		return DeepCopyBoard(mGen.BlackAttackBoard);
-	}	
-	public Dictionary<Vector2I, List<Vector2I>> _duplicateBP()
-	{
-		return DeepCopyPieces(mGen.blockingPieces);
-	}
-	public Dictionary<Vector2I, List<Vector2I>>  _duplicateIP()
-	{
-		return DeepCopyPieces(mGen.influencedPieces);
-	}
+	public Dictionary<int, Dictionary<int,int>> _duplicateWAB() { return DeepCopyBoard(mGen.WhiteAttackBoard); }
+	public Dictionary<int, Dictionary<int,int>> _duplicateBAB() { return DeepCopyBoard(mGen.BlackAttackBoard); }	
+	public Dictionary<Vector2I, List<Vector2I>> _duplicateBP() { return DeepCopyPieces(mGen.blockingPieces); }
+	public Dictionary<Vector2I, List<Vector2I>>  _duplicateIP() { return DeepCopyPieces(mGen.influencedPieces); }
 
 
-	//Init
-
-
+	///Init
 	private void initiateEngineAI()
 	{
 		if(! Enemy.EnemyIsAI)
@@ -579,7 +545,11 @@ public partial class HexEngineSharp : Node
 		}
 		return;
 	}
-	// initiate the engine with a new game
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="FEN_STRING"></param>
+	/// <returns></returns>
 	public bool initiateEngine(string FEN_STRING)
 	{
 		if ( ! fillBoardwithFEN(FEN_STRING) )
@@ -623,35 +593,15 @@ public partial class HexEngineSharp : Node
 
 		return true;		
 	}
+	/// <summary>
+	/// Calls initiateEngine() with the DEFAULT_FEN_STRING. Starts the default game.
+	/// </summary>
+	/// <returns>True is success in initiation. False if initiation failed</returns>
+	public bool _initDefault() { return initiateEngine(DEFAULT_FEN_STRING); }
 
 
-	// API
-
-	public bool _FENCHECK(string fen)
-	{
-		return false;
-	}
-	// Enemy is shorter than opponent
-	public void _setEnemy(ENEMY_TYPES type, bool isWhite)
-	{
-		Enemy.EnemyType = type;
-		if(Enemy.EnemyType < ENEMY_TYPES.RANDOM)
-			Enemy.EnemyIsAI = false;
-		else
-			Enemy.EnemyIsAI = true;
-		Enemy.EnemyPlaysWhite = isWhite;
-		return;
-	}
-	public void _disableAIMoveLock()
-	{
-		bypassMoveLock = false;
-		return;
-	}
-	public void _enableAIMoveLock()
-	{
-		bypassMoveLock = true;
-		return;
-	}
+	/// API
+	
 	//## MAKE MOVE PUBLIC CALL
 	//# TODO:: HANDLE IN PROPER INPUT FEEDBACK
 	public void _makeMove(Vector2I cords, MOVE_TYPES moveType, int moveIndex, PIECES promoteTo)
@@ -680,6 +630,7 @@ public partial class HexEngineSharp : Node
 		handleMove(cords, moveType, moveIndex, promoteTo);
 		return;
 	}
+	
 	public void _passToAI()
 	{
 		if(HexState.isOver)
@@ -707,6 +658,7 @@ public partial class HexEngineSharp : Node
 		return;
 	}
 	// RESIGN PUBLIC 
+	
 	public void _resign()
 	{
 		BitBoards.clearCombinedStateBitboards();
@@ -717,6 +669,7 @@ public partial class HexEngineSharp : Node
 		return;
 	}
 	// Undo Move PUBLIC CALL
+	
 	public bool _undoLastMove(bool genMoves = true)
 	{
 		if(historyStack.Count < 1)
@@ -768,13 +721,33 @@ public partial class HexEngineSharp : Node
 		return true;
 	}
 	//START DEFAULT GAME PUBLIC CALL
-	public bool _initDefault() { return initiateEngine(DEFAULT_FEN_STRING); }
 
+	public bool _FENCHECK(string fen)
+	{
+		return false;
+	}
 
-	// Getters
+	public void UpdateEnemy(ENEMY_TYPES type, bool isWhite)
+	{
+		Enemy.EnemyType = type;
+		Enemy.EnemyPlaysWhite = isWhite;
+		if(Enemy.EnemyType < ENEMY_TYPES.RANDOM) Enemy.EnemyIsAI = false;
+		else Enemy.EnemyIsAI = true;
+		return;
+	}
+	public void DisableAIMoveLock()
+	{
+		bypassMoveLock = false;
+		return;
+	}
+	public void EnableAIMoveLock()
+	{
+		bypassMoveLock = true;
+		return;
+	}
+		
 
-
-	//BOOL
+	/// Getter // bools
 	public bool uncaptureValid(){ return HexState.uncaptureValid; }
 	public bool unpromoteValid() { return HexState.unpromoteValid; }
 	public bool _getIsWhiteTurn() { return HexState.isWhiteTurn; }
@@ -785,7 +758,7 @@ public partial class HexEngineSharp : Node
 	public bool CaptureValid() { return HexState.captureValid; }
 	public bool _getGameInCheck() { return HexState.isCheck; }
 	public bool _getEnemyPromoted() { return Enemy.EnemyPromoted; }
-	//INT
+	// ints
 	public int _getEnemyPTo() { return (int) Enemy.EnemyPromotedTo; }
 	public int CaptureType() { return (int) HexState.captureType; }
 	public int CaptureIndex() { return HexState.captureIndex; }
@@ -798,20 +771,8 @@ public partial class HexEngineSharp : Node
 	public int getPiecetype(int p) { return (int)PieceTypeOf(p); }
 	public int unpromoteType() { return (int) HexState.unpromoteType; }
 	public int unpromoteIndex() { return (int) HexState.unpromoteIndex; }
-	//
-	public Vector2I _getEnemyTo() { return Enemy.EnemyTo; }
-	//
-	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> _getmoves() { return legalMoves; }
-	//
-	public Dictionary<PIECES, List<Vector2I>>[] _getAP()
-	{
-		return activePieces;
-	}
-	//
-	
-	
-	// Strings
-	public String _getBoardFenNow()
+	// strings
+	public string _getBoardFenNow()
 	{
 		StringBuilder fen = new StringBuilder();
 		var index = 0;
@@ -865,7 +826,7 @@ public partial class HexEngineSharp : Node
 
 		return fen.ToString();
 	}
-	public String _getFullHistString()
+	public string _getFullHistString()
 	{
 		StringBuilder hist = new StringBuilder();
 		foreach(HistEntry his in historyStack)
@@ -875,8 +836,14 @@ public partial class HexEngineSharp : Node
 		}
 		return hist.ToString();
 	}
+	// vectors
+	public Vector2I _getEnemyTo() { return Enemy.EnemyTo; }
+	// dictionaries
+	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> _getmoves() { return legalMoves; }
+	public Dictionary<PIECES, List<Vector2I>>[] _getAP() { return activePieces; }
+	
 
-	// STRICT GDSCRIPT INTERACTIONS
+	/// STRICT GDSCRIPT INTERACTIONS
 	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> _getActivePieces()
 	{
 		var gdReturn = new Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>>();
@@ -936,7 +903,7 @@ public partial class HexEngineSharp : Node
 		}
 
 
-	// Test
+	/// Testing
 	public void _test(int type)
 	{
 		

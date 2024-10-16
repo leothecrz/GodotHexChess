@@ -34,6 +34,7 @@ public class HexConst
 		public static readonly int[] PAWN_PROMOTE 	= {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
 		public static readonly int[] KNIGHT_MULTIPLERS = {-1, 1, -1, 1};
 		
+		/// unsorted
 
 		public static int QRToIndex (int q, int r)
 		{
@@ -420,6 +421,30 @@ public class HexConst
 						return piece;
 			return new Vector2I(-HEX_BOARD_RADIUS, -HEX_BOARD_RADIUS);
 		}
+
+
+		///Deep Copy
+		public static Dictionary<int, Dictionary<int, int>> DeepCopyBoard(Dictionary<int, Dictionary<int, int>> original)
+		{
+			var copy = new Dictionary<int, Dictionary<int, int>>();
+			foreach (var outerPair in original)
+			{
+				var innerCopy = new Dictionary<int, int>(outerPair.Value);
+				copy.Add(outerPair.Key, innerCopy);
+			}
+			return copy;
+		}
+		public static Dictionary<Vector2I, List<Vector2I>> DeepCopyPieces(Dictionary<Vector2I, List<Vector2I>> original)
+		{
+			var copy = new Dictionary<Vector2I, List<Vector2I>>();
+			foreach (var outerPair in original)
+			{
+				var listCopy = new List<Vector2I>(outerPair.Value.Select(v => new Vector2I(v.X, v.Y)));
+				copy.Add(outerPair.Key, listCopy);
+			}
+			return copy;
+		}
+
 
 
 		//Hueristic Functions

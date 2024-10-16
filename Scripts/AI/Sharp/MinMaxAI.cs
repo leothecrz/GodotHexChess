@@ -173,7 +173,7 @@ public partial class MinMaxAI : AIBase
 		long BestValue = long.MinValue;
 		var legalmoves = DeepCopyLegalMoves( hexEngine._getmoves() );
 
-		hexEngine._disableAIMoveLock();
+		hexEngine.DisableAIMoveLock();
 		CORDS = new Vector2I(-6,-6);
 		counter = 0;
 		positionsFound = 0;
@@ -215,7 +215,7 @@ public partial class MinMaxAI : AIBase
 		GD.Print("Positions Found: ", positionsFound);
 		GD.Print("Best Value: ", BestValue);
 		
-		hexEngine._enableAIMoveLock();
+		hexEngine.EnableAIMoveLock();
 
 		return;
 	}
