@@ -6,7 +6,8 @@ extends Control;
 ## 1 No Game Data Node
 
 
-### Const
+
+### Const TODO :: Should Be Set By Engine Node
 const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
 enum SIDES { BLACK, WHITE };
@@ -22,40 +23,39 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 @onready var MOVE_SCALE = 0.015;
 
 
+
 ### Node Ref
+@onready var EngineNode:HexEngineSharp = $HCE;
+
 @onready var BoardControler = $StaticGUI/Mid;
 @onready var LeftPanel = $StaticGUI/Left
-
 @onready var SideSelect = $StaticGUI/Right/BG/Options/SideSelect
 @onready var EnemySelect = $StaticGUI/Right/BG/Options/EnemySelect
 
-@onready var EngineNode:HexEngineSharp = $HCE;
-
-@onready var SettingsDialog = $SettingsDialog;
-
-@onready var TAndFrom = $PosGUI;
-@onready var MoveGUI = $MoveGUI;
-@onready var ChessPiecesNode = $PiecesContainer;
+@onready var TAndFrom = $DynamicGUI/PosGUI;
+@onready var MoveGUI = $DynamicGUI/MoveGUI;
+@onready var ChessPiecesNode = $DynamicGUI/PiecesContainer;
 
 @onready var BGMusicPlayer = $BGMusic;
+@onready var SettingsDialog = $Settings;
+
 
 
 ### State
-var GameStartTime:int = 0;
-var minHistSize:int = 1;
+var undoSizeReq:int = 1;
 # Board Setup
-var selectedSide:int = 0;
+var selfside:int = 0;
 var isRotatedWhiteDown:bool = true;
-# Temp State
-var activePieces;
+# Temp
+var activePieces:Array;
 var currentLegalMoves:Dictionary;
 #Threads
 var MasterAIThread:Thread = Thread.new();
 var ThreadActive:bool = false;
 #References
 var tempDialog:AcceptDialog = null;
-var ThinkingDialogRef:Node;
-var FenDialog:Node;
+var ThinkingDialogRef:Node = null;
+var FenDialog:Node = null;
 
 
 
@@ -76,12 +76,13 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 	var x = float(axial.x) * AXIAL_X_SCALE;
 	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	return Vector2(x, y);
-
+## Spawn a simple pop up that will display TEXT for TIME seconds
 func spawnNotice(TEXT:String, TIME:float):
 	var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
 	notice.NOTICE_TEXT = TEXT;
 	notice.POP_TIME = TIME;
-	add_child(notice);
+	
+	self.add_child(notice);
 	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
 	pass;
 
@@ -90,12 +91,14 @@ func spawnNotice(TEXT:String, TIME:float):
 ## MENU HELPERS
 func FenOK(stir:String, strict:bool) -> void:
 	FenDialog.queue_free();
-
 	if(not strict):
 		startGameFromFen(stir);
-	
+		return;
+	if(EngineNode._FENCHECK(stir)):
+		startGameFromFen(stir);
+		return;
+	spawnNotice("[center]String Failed Fen Check[/center]", 1.0);
 	return;
-	
 func FenCancel() -> void:
 	FenDialog.queue_free();
 	return;
@@ -113,8 +116,7 @@ func _on_history_id_pressed(id: int) -> void:
 			DisplayServer.clipboard_set(EngineNode._getFullHistString());
 			spawnNotice("[center]History copied to clipboard[/center]",  0.8)
 			return;
-	return;
-
+		_: return;
 func _on_fen_id_pressed(id: int) -> void:
 	match(id):
 		0:
@@ -129,8 +131,7 @@ func _on_fen_id_pressed(id: int) -> void:
 			DisplayServer.clipboard_set(EngineNode._getBoardFenNow());
 			spawnNotice("Fen copied to clipboard",1.0)
 			pass;
-	return;
-	
+		_: return;
 func _on_test_id_pressed(id: int) -> void:
 	match ( id ):
 		0:
@@ -145,7 +146,7 @@ func _on_test_id_pressed(id: int) -> void:
 			
 		_:
 			return;
-			
+
 
 
 
@@ -163,7 +164,7 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 	return;
 
 ## Setup A Chess Piece Scene
-func preloadChessPiece(side:int, pieceType, piece:Vector2i) -> Node:
+func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	var newPieceScene:Node = preload("res://Scenes/chess_piece.tscn").instantiate();
 	var cords = piece * (1 if isRotatedWhiteDown else -1);
 	
@@ -180,20 +181,18 @@ func preloadChessPiece(side:int, pieceType, piece:Vector2i) -> Node:
 	return newPieceScene;
 
 ## Hand piece data to new scene. Connect scene to piece controller. Add to container.
-func prepareChessPieceNode(side:int, typeindex:int, pieceType, piece:Vector2i) -> void:
+func prepareChessPieceNode(side:int, typeindex:int, pieceType:int, piece:Vector2i) -> void:
 	var newPieceScene = preloadChessPiece(side, pieceType, piece);
 	ChessPiecesNode.get_child(side).get_child(typeindex).add_child(newPieceScene,);
 	connectPieceToSignals(newPieceScene);
 	return;
 
-## Spawn all the pieces in 'activePieces' at their positions.
+## Spawn all the pieces in 'activePieces' at their positions. AP structure [{{},{}...},{{},{}...}]
 func spawnActivePieces() -> void:
 	for side:int in range(activePieces.size()):
-		var index:int = 0;
-		for pieceType in activePieces[side]:
-			for piece in activePieces[side][pieceType]:
-				prepareChessPieceNode(side, index, pieceType, piece);
-			index += 1;
+		for pieceType:int in activePieces[side]:
+			for piece:Vector2i in activePieces[side][pieceType]:
+				prepareChessPieceNode(side, pieceType-1, pieceType, piece);
 	return;
 
 
@@ -506,14 +505,14 @@ func resignCleanUp():
 func _selectSide_OnItemSelect(index:int) -> void:
 	if(activePieces):
 		# TODO: Throw up warning "Game is ALREADY running, cant change sides during game "
-		SideSelect._setSelected(selectedSide);
+		SideSelect._setSelected(selfside);
 		return; 
-	selectedSide = index;
+	selfside = index;
 	
-	var isUserPlayingW = (selectedSide == 0);
+	var isUserPlayingW = (selfside == 0);
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
-	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selectedSide != 0);
+	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfside != 0);
 	#print("Type: ", GameDataNode._getEnemyType());
 	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
 	return;
@@ -527,11 +526,11 @@ func _on_enemy_select_item_selected(index:int) -> void:
 	var type:int = index;
 	if(index > 1):
 		type = index - 1;
-	EngineNode.UpdateEnemy(type, selectedSide != 0);
+	EngineNode.UpdateEnemy(type, selfside != 0);
 	
-	minHistSize = 1;
+	undoSizeReq = 1;
 	if(type == 0):
-		minHistSize += 1;
+		undoSizeReq += 1;
 	return;
 
 
@@ -604,7 +603,7 @@ func startGame() -> void:
 	syncToEngine()
 	spawnActivePieces();
 	emit_signal("gameSwitchedSides", SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK );
-	GameStartTime = Time.get_ticks_msec();
+
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
 ##
@@ -616,7 +615,6 @@ func startGameFromFen(fen:String) -> void:
 	syncToEngine()
 	spawnActivePieces();
 	emit_signal("gameSwitchedSides", SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK );
-	GameStartTime = Time.get_ticks_msec();
 
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
@@ -730,7 +728,7 @@ func _resign_OnButtonPress() -> void:
 
 ## Undo Button Pressed
 func _on_undo_pressed():
-	if(EngineNode._getMoveHistorySize() < minHistSize):
+	if(EngineNode._getMoveHistorySize() < undoSizeReq):
 		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
 		return;
 	EngineNode._undoLastMove(true);

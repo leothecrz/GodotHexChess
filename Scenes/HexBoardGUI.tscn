@@ -46,6 +46,9 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_pgjcn")
 
+[node name="HCE" type="Node" parent="."]
+script = ExtResource("2_gq2xx")
+
 [node name="StaticGUI" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -541,8 +544,56 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Play Against:"
 
-[node name="HCE" type="Node" parent="."]
-script = ExtResource("2_gq2xx")
+[node name="DynamicGUI" type="Node" parent="."]
+
+[node name="PosGUI" type="Node" parent="DynamicGUI"]
+script = ExtResource("13_at1p6")
+
+[node name="To" type="Sprite2D" parent="DynamicGUI/PosGUI"]
+visible = false
+modulate = Color(1, 0, 0, 0.392157)
+position = Vector2(722, 409)
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("4_p44o5")
+
+[node name="From" type="Sprite2D" parent="DynamicGUI/PosGUI"]
+visible = false
+modulate = Color(0, 0, 1, 0.392157)
+position = Vector2(429, 409)
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("4_p44o5")
+
+[node name="MoveGUI" type="Node" parent="DynamicGUI"]
+
+[node name="PiecesContainer" type="Node" parent="DynamicGUI"]
+
+[node name="Black" type="Node" parent="DynamicGUI/PiecesContainer"]
+
+[node name="Pawns" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Knights" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Rooks" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Bishops" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Queens" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="King" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="White" type="Node" parent="DynamicGUI/PiecesContainer"]
+
+[node name="Pawns" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Knights" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Rooks" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Bishops" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Queens" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="King" type="Node" parent="DynamicGUI/PiecesContainer/White"]
 
 [node name="BGMusic" type="AudioStreamPlayer" parent="."]
 bus = &"Music"
@@ -551,56 +602,7 @@ script = ExtResource("10_5jr73")
 [node name="SoundSource" type="AudioStreamPlayer" parent="."]
 bus = &"Sound"
 
-[node name="PosGUI" type="Node" parent="."]
-script = ExtResource("13_at1p6")
-
-[node name="To" type="Sprite2D" parent="PosGUI"]
-visible = false
-modulate = Color(1, 0, 0, 0.392157)
-position = Vector2(722, 409)
-scale = Vector2(1.1, 1.1)
-texture = ExtResource("4_p44o5")
-
-[node name="From" type="Sprite2D" parent="PosGUI"]
-visible = false
-modulate = Color(0, 0, 1, 0.392157)
-position = Vector2(429, 409)
-scale = Vector2(1.1, 1.1)
-texture = ExtResource("4_p44o5")
-
-[node name="MoveGUI" type="Node" parent="."]
-
-[node name="PiecesContainer" type="Node" parent="."]
-
-[node name="Black" type="Node" parent="PiecesContainer"]
-
-[node name="Pawns" type="Node" parent="PiecesContainer/Black"]
-
-[node name="Knights" type="Node" parent="PiecesContainer/Black"]
-
-[node name="Rooks" type="Node" parent="PiecesContainer/Black"]
-
-[node name="Bishops" type="Node" parent="PiecesContainer/Black"]
-
-[node name="Queens" type="Node" parent="PiecesContainer/Black"]
-
-[node name="King" type="Node" parent="PiecesContainer/Black"]
-
-[node name="White" type="Node" parent="PiecesContainer"]
-
-[node name="Pawns" type="Node" parent="PiecesContainer/White"]
-
-[node name="Knights" type="Node" parent="PiecesContainer/White"]
-
-[node name="Rooks" type="Node" parent="PiecesContainer/White"]
-
-[node name="Bishops" type="Node" parent="PiecesContainer/White"]
-
-[node name="Queens" type="Node" parent="PiecesContainer/White"]
-
-[node name="King" type="Node" parent="PiecesContainer/White"]
-
-[node name="SettingsDialog" parent="." instance=ExtResource("8_avrf3")]
+[node name="Settings" parent="." instance=ExtResource("8_avrf3")]
 visible = false
 layout_mode = 1
 
@@ -614,4 +616,4 @@ layout_mode = 1
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
-[connection signal="settingsUpdated" from="SettingsDialog" to="." method="_on_settings_dialog_settings_updated"]
+[connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]
