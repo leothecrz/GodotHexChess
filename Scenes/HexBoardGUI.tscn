@@ -55,6 +55,313 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0.0509804, 0.0509804, 1)
 
+[node name="Left" type="Control" parent="StaticGUI"]
+layout_mode = 1
+anchors_preset = 0
+script = ExtResource("5_ermre")
+
+[node name="BG" type="ColorRect" parent="StaticGUI/Left"]
+layout_mode = 0
+offset_right = 230.0
+offset_bottom = 648.0
+color = Color(1, 1, 1, 0.0588235)
+
+[node name="InCheck" type="Control" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 230.0
+offset_bottom = 322.0
+
+[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Left/BG/InCheck"]
+visible = false
+modulate = Color(0.763723, 0.3167, 0.431369, 1)
+z_index = 1
+position = Vector2(306, 54)
+rotation = 0.785398
+scale = Vector2(0.135, 0.135)
+texture = ExtResource("6_dt4tv")
+
+[node name="MoveHistory" type="Control" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -222.0
+offset_right = 230.0
+grow_vertical = 0
+script = ExtResource("5_scl7f")
+
+[node name="History" type="RichTextLabel" parent="StaticGUI/Left/BG/MoveHistory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "[center][font_size=28] LAST 5 MOVES[/font_size][/center]"
+
+[node name="MenuBar" type="MenuBar" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 40.0
+offset_top = 2.0
+offset_right = -39.0
+offset_bottom = 33.0
+grow_horizontal = 2
+
+[node name="History" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+size = Vector2i(139, 100)
+item_count = 1
+item_0/text = "Get Full History"
+
+[node name="FEN" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+size = Vector2i(137, 100)
+item_count = 2
+item_0/text = "Start From FEN"
+item_1/text = "Get FEN"
+item_1/id = 1
+
+[node name="Test" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+item_count = 2
+item_0/text = "Run Engine Suite"
+item_1/text = "Evaluate Board"
+item_1/id = 1
+
+[node name="Mid" type="Control" parent="StaticGUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_tcmm4")
+
+[node name="BG" type="ColorRect" parent="StaticGUI/Mid"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -324.0
+offset_top = -324.0
+offset_right = 324.0
+offset_bottom = 324.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.156863)
+
+[node name="HexBoard" type="TileMapLayer" parent="StaticGUI/Mid"]
+use_parent_material = true
+position = Vector2(-33, 0)
+tile_map_data = PackedByteArray("AAD7//3/BAAAAAAAAQD7//7/BAAAAAAAAwD7////BAAAAAAAAgD7/wAABAAAAAAAAQD7/wEABAAAAAAAAwD7/wIABAAAAAAAAgD8//z/BAAAAAAAAwD8//3/BAAAAAAAAgD8//7/BAAAAAAAAQD8////BAAAAAAAAwD8/wAABAAAAAAAAgD8/wEABAAAAAAAAQD8/wIABAAAAAAAAwD9//z/BAAAAAAAAgD9//3/BAAAAAAAAQD9//7/BAAAAAAAAwD9////BAAAAAAAAgD9/wAABAAAAAAAAQD9/wEABAAAAAAAAwD9/wIABAAAAAAAAgD9/wMABAAAAAAAAQD+//v/BAAAAAAAAQD+//z/BAAAAAAAAwD+//3/BAAAAAAAAgD+//7/BAAAAAAAAQD+////BAAAAAAAAwD+/wAABAAAAAAAAgD+/wEABAAAAAAAAQD+/wIABAAAAAAAAwD+/wMABAAAAAAAAgD///v/BAAAAAAAAwD///z/BAAAAAAAAgD///3/BAAAAAAAAQD///7/BAAAAAAAAwD/////BAAAAAAAAgD//wAABAAAAAAAAQD//wEABAAAAAAAAwD//wIABAAAAAAAAgD//wMABAAAAAAAAQAAAPv/BAAAAAAAAQAAAPz/BAAAAAAAAwAAAP3/BAAAAAAAAgAAAP7/BAAAAAAAAQAAAP//BAAAAAAAAwAAAAAABAAAAAAAAgAAAAEABAAAAAAAAQAAAAIABAAAAAAAAwABAPz/BAAAAAAAAgABAP3/BAAAAAAAAQABAP7/BAAAAAAAAwABAP//BAAAAAAAAgABAAAABAAAAAAAAQABAAEABAAAAAAAAwABAAIABAAAAAAAAgABAAQABAAAAAAAAwACAPz/BAAAAAAAAwACAP3/BAAAAAAAAgACAP7/BAAAAAAAAQACAP//BAAAAAAAAwACAAAABAAAAAAAAgACAAEABAAAAAAAAQACAAIABAAAAAAAAwACAAMABAAAAAAAAgADAP3/BAAAAAAAAQADAP7/BAAAAAAAAwADAP//BAAAAAAAAgADAAAABAAAAAAAAQADAAEABAAAAAAAAwADAAIABAAAAAAAAgADAAMABAAAAAAAAQAEAP7/BAAAAAAAAQAEAP//BAAAAAAAAwAEAAAABAAAAAAAAgAEAAEABAAAAAAAAQAEAAIABAAAAAAAAwAAAPr/BAAAAAAAAgABAPv/BAAAAAAAAwACAPv/BAAAAAAAAQADAPz/BAAAAAAAAgAEAPz/BAAAAAAAAwAFAP3/BAAAAAAAAQAFAP7/BAAAAAAAAwAFAP//BAAAAAAAAgAFAAAABAAAAAAAAQAFAAEABAAAAAAAAwAFAAIABAAAAAAAAgAAAAQABAAAAAAAAQAAAAMABAAAAAAAAgABAAMABAAAAAAAAQAEAP3/BAAAAAAAAgD//wQABAAAAAAAAwA=")
+tile_set = SubResource("TileSet_7e04f")
+
+[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Mid"]
+position = Vector2(-270, -270)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("6_dt4tv")
+
+[node name="LetterLabels" type="Control" parent="StaticGUI/Mid"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="A" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = -250.0
+offset_top = 168.0
+offset_right = -210.0
+offset_bottom = 191.0
+text = "A
+"
+
+[node name="A2" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = -202.0
+offset_top = 197.0
+offset_right = -162.0
+offset_bottom = 220.0
+text = "B
+"
+
+[node name="A3" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = -150.0
+offset_top = 225.0
+offset_right = -110.0
+offset_bottom = 248.0
+text = "C"
+
+[node name="A4" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = -103.0
+offset_top = 254.0
+offset_right = -63.0
+offset_bottom = 277.0
+text = "D"
+
+[node name="A5" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = -54.0
+offset_top = 283.0
+offset_right = -14.0
+offset_bottom = 306.0
+text = "E"
+
+[node name="A6" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = 35.0
+offset_top = 282.0
+offset_right = 75.0
+offset_bottom = 305.0
+text = "G 2"
+
+[node name="A7" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = 84.0
+offset_top = 253.0
+offset_right = 124.0
+offset_bottom = 276.0
+text = "H 3"
+
+[node name="A8" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = 137.0
+offset_top = 225.0
+offset_right = 177.0
+offset_bottom = 248.0
+text = "I 4"
+
+[node name="A9" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = 185.0
+offset_top = 197.0
+offset_right = 225.0
+offset_bottom = 220.0
+text = "J 5"
+
+[node name="A10" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+offset_left = 232.0
+offset_top = 168.0
+offset_right = 272.0
+offset_bottom = 191.0
+text = "K 6"
+
+[node name="NumberLabels" type="Control" parent="StaticGUI/Mid"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="A" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -314.0
+offset_top = 131.0
+offset_right = -274.0
+offset_bottom = 154.0
+text = "1"
+
+[node name="A2" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -314.0
+offset_top = 74.0
+offset_right = -274.0
+offset_bottom = 97.0
+text = "2
+"
+
+[node name="A3" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -314.0
+offset_top = 17.0
+offset_right = -274.0
+offset_bottom = 40.0
+text = "3"
+
+[node name="A4" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -314.0
+offset_top = -40.0
+offset_right = -274.0
+offset_bottom = -17.0
+text = "4"
+
+[node name="A5" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -314.0
+offset_top = -97.0
+offset_right = -274.0
+offset_bottom = -74.0
+text = "5"
+
+[node name="A6" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -314.0
+offset_top = -154.0
+offset_right = -274.0
+offset_bottom = -131.0
+text = "6"
+
+[node name="A7" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -253.0
+offset_top = -207.0
+offset_right = -213.0
+offset_bottom = -184.0
+text = "7"
+
+[node name="A8" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -204.0
+offset_top = -235.0
+offset_right = -164.0
+offset_bottom = -212.0
+text = "8"
+
+[node name="A9" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -154.0
+offset_top = -263.0
+offset_right = -114.0
+offset_bottom = -240.0
+text = "9"
+
+[node name="A10" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -106.0
+offset_top = -292.0
+offset_right = -66.0
+offset_bottom = -269.0
+text = "10"
+
+[node name="A11" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = -57.0
+offset_top = -321.0
+offset_right = -17.0
+offset_bottom = -298.0
+text = "11"
+
+[node name="A12" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = 66.0
+offset_top = -306.0
+offset_right = 106.0
+offset_bottom = -283.0
+text = "11"
+
+[node name="A13" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = 115.0
+offset_top = -277.0
+offset_right = 155.0
+offset_bottom = -254.0
+text = "11"
+
+[node name="A14" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = 163.0
+offset_top = -248.0
+offset_right = 203.0
+offset_bottom = -225.0
+text = "11"
+
+[node name="A15" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = 212.0
+offset_top = -220.0
+offset_right = 252.0
+offset_bottom = -197.0
+text = "11"
+
+[node name="A16" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+offset_left = 260.0
+offset_top = -190.0
+offset_right = 300.0
+offset_bottom = -167.0
+text = "11"
+
 [node name="Right" type="Control" parent="StaticGUI"]
 layout_mode = 1
 anchors_preset = 1
@@ -234,117 +541,6 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Play Against:"
 
-[node name="Left" type="Control" parent="StaticGUI"]
-layout_mode = 1
-anchors_preset = 0
-script = ExtResource("5_ermre")
-
-[node name="BG" type="ColorRect" parent="StaticGUI/Left"]
-layout_mode = 0
-offset_right = 230.0
-offset_bottom = 648.0
-color = Color(1, 1, 1, 0.0588235)
-
-[node name="InCheck" type="Control" parent="StaticGUI/Left/BG"]
-layout_mode = 1
-anchors_preset = 0
-offset_right = 230.0
-offset_bottom = 322.0
-
-[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Left/BG/InCheck"]
-visible = false
-modulate = Color(0.763723, 0.3167, 0.431369, 1)
-z_index = 1
-position = Vector2(306, 54)
-rotation = 0.785398
-scale = Vector2(0.135, 0.135)
-texture = ExtResource("6_dt4tv")
-
-[node name="MoveHistory" type="Control" parent="StaticGUI/Left/BG"]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -222.0
-offset_right = 230.0
-grow_vertical = 0
-script = ExtResource("5_scl7f")
-
-[node name="History" type="RichTextLabel" parent="StaticGUI/Left/BG/MoveHistory"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-bbcode_enabled = true
-text = "[center][font_size=28] LAST 5 MOVES[/font_size][/center]"
-
-[node name="MenuBar" type="MenuBar" parent="StaticGUI/Left/BG"]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = 40.0
-offset_top = 2.0
-offset_right = -39.0
-offset_bottom = 33.0
-grow_horizontal = 2
-
-[node name="History" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
-size = Vector2i(139, 100)
-item_count = 1
-item_0/text = "Get Full History"
-
-[node name="FEN" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
-size = Vector2i(137, 100)
-item_count = 2
-item_0/text = "Start From FEN"
-item_1/text = "Get FEN"
-item_1/id = 1
-
-[node name="Test" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
-item_count = 2
-item_0/text = "Run Engine Suite"
-item_1/text = "Evaluate Board"
-item_1/id = 1
-
-[node name="Mid" type="Control" parent="StaticGUI"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("2_tcmm4")
-
-[node name="BG" type="ColorRect" parent="StaticGUI/Mid"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -324.0
-offset_top = -324.0
-offset_right = 324.0
-offset_bottom = 324.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(1, 1, 1, 0.156863)
-
-[node name="HexBoard" type="TileMapLayer" parent="StaticGUI/Mid"]
-use_parent_material = true
-position = Vector2(-33, 0)
-tile_map_data = PackedByteArray("AAD7//3/BAAAAAAAAQD7//7/BAAAAAAAAwD7////BAAAAAAAAgD7/wAABAAAAAAAAQD7/wEABAAAAAAAAwD7/wIABAAAAAAAAgD8//z/BAAAAAAAAwD8//3/BAAAAAAAAgD8//7/BAAAAAAAAQD8////BAAAAAAAAwD8/wAABAAAAAAAAgD8/wEABAAAAAAAAQD8/wIABAAAAAAAAwD9//z/BAAAAAAAAgD9//3/BAAAAAAAAQD9//7/BAAAAAAAAwD9////BAAAAAAAAgD9/wAABAAAAAAAAQD9/wEABAAAAAAAAwD9/wIABAAAAAAAAgD9/wMABAAAAAAAAQD+//v/BAAAAAAAAQD+//z/BAAAAAAAAwD+//3/BAAAAAAAAgD+//7/BAAAAAAAAQD+////BAAAAAAAAwD+/wAABAAAAAAAAgD+/wEABAAAAAAAAQD+/wIABAAAAAAAAwD+/wMABAAAAAAAAgD///v/BAAAAAAAAwD///z/BAAAAAAAAgD///3/BAAAAAAAAQD///7/BAAAAAAAAwD/////BAAAAAAAAgD//wAABAAAAAAAAQD//wEABAAAAAAAAwD//wIABAAAAAAAAgD//wMABAAAAAAAAQAAAPv/BAAAAAAAAQAAAPz/BAAAAAAAAwAAAP3/BAAAAAAAAgAAAP7/BAAAAAAAAQAAAP//BAAAAAAAAwAAAAAABAAAAAAAAgAAAAEABAAAAAAAAQAAAAIABAAAAAAAAwABAPz/BAAAAAAAAgABAP3/BAAAAAAAAQABAP7/BAAAAAAAAwABAP//BAAAAAAAAgABAAAABAAAAAAAAQABAAEABAAAAAAAAwABAAIABAAAAAAAAgABAAQABAAAAAAAAwACAPz/BAAAAAAAAwACAP3/BAAAAAAAAgACAP7/BAAAAAAAAQACAP//BAAAAAAAAwACAAAABAAAAAAAAgACAAEABAAAAAAAAQACAAIABAAAAAAAAwACAAMABAAAAAAAAgADAP3/BAAAAAAAAQADAP7/BAAAAAAAAwADAP//BAAAAAAAAgADAAAABAAAAAAAAQADAAEABAAAAAAAAwADAAIABAAAAAAAAgADAAMABAAAAAAAAQAEAP7/BAAAAAAAAQAEAP//BAAAAAAAAwAEAAAABAAAAAAAAgAEAAEABAAAAAAAAQAEAAIABAAAAAAAAwAAAPr/BAAAAAAAAgABAPv/BAAAAAAAAwACAPv/BAAAAAAAAQADAPz/BAAAAAAAAgAEAPz/BAAAAAAAAwAFAP3/BAAAAAAAAQAFAP7/BAAAAAAAAwAFAP//BAAAAAAAAgAFAAAABAAAAAAAAQAFAAEABAAAAAAAAwAFAAIABAAAAAAAAgAAAAQABAAAAAAAAQD//wQABAAAAAAAAwAAAAMABAAAAAAAAgABAAMABAAAAAAAAQAEAP3/BAAAAAAAAgA=")
-tile_set = SubResource("TileSet_7e04f")
-
-[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Mid"]
-position = Vector2(-270, -270)
-scale = Vector2(0.2, 0.2)
-texture = ExtResource("6_dt4tv")
-
 [node name="HCE" type="Node" parent="."]
 script = ExtResource("2_gq2xx")
 
@@ -408,14 +604,14 @@ texture = ExtResource("4_p44o5")
 visible = false
 layout_mode = 1
 
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/History" to="." method="_on_history_id_pressed"]
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/FEN" to="." method="_on_fen_id_pressed"]
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/Test" to="." method="_on_test_id_pressed"]
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Undo" to="." method="_on_undo_pressed"]
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/ResignButton" to="." method="_resign_OnButtonPress"]
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Settings" to="." method="_on_settings_pressed"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
-[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/History" to="." method="_on_history_id_pressed"]
-[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/FEN" to="." method="_on_fen_id_pressed"]
-[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/Test" to="." method="_on_test_id_pressed"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
 [connection signal="settingsUpdated" from="SettingsDialog" to="." method="_on_settings_dialog_settings_updated"]
