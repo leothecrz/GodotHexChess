@@ -18,6 +18,9 @@ func checkAndFlipBoard(isPOVWhite:bool):
 	if(isPOVWhite != boardRotatedToWhite):
 		boardRotatedToWhite = !boardRotatedToWhite;
 		rotate_tilemap();
+		$LetterLabels.flip();
+		$NumberLabels.flip();
+		
 	return;
 
 ## Flip The Board (Not Pixel Perfect, Origin Of TileMap Need Fixing)

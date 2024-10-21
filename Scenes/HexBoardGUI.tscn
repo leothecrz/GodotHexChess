@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=18 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Main/Init.gd" id="1_pgjcn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -10,7 +10,9 @@
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Texture2D" uid="uid://b7ynqeqd2uut2" path="res://Images/PerfectHexagon.png" id="6_mxkma"]
 [ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/letter_labels.gd" id="9_afgne"]
 [ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/number_labels.gd" id="10_h4ubk"]
 [ext_resource type="Script" path="res://Scripts/GUI/ToFrom.gd" id="13_at1p6"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_754bx"]
@@ -173,8 +175,9 @@ texture = ExtResource("6_dt4tv")
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+script = ExtResource("9_afgne")
 
-[node name="A" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+[node name="A1" type="Label" parent="StaticGUI/Mid/LetterLabels"]
 layout_mode = 0
 offset_left = -250.0
 offset_top = 168.0
@@ -184,6 +187,7 @@ text = "A
 "
 
 [node name="A2" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = -202.0
 offset_top = 197.0
 offset_right = -162.0
@@ -192,6 +196,7 @@ text = "B
 "
 
 [node name="A3" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = -150.0
 offset_top = 225.0
 offset_right = -110.0
@@ -199,6 +204,7 @@ offset_bottom = 248.0
 text = "C"
 
 [node name="A4" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = -103.0
 offset_top = 254.0
 offset_right = -63.0
@@ -206,6 +212,7 @@ offset_bottom = 277.0
 text = "D"
 
 [node name="A5" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = -54.0
 offset_top = 283.0
 offset_right = -14.0
@@ -213,6 +220,7 @@ offset_bottom = 306.0
 text = "E"
 
 [node name="A6" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = 35.0
 offset_top = 282.0
 offset_right = 75.0
@@ -220,6 +228,7 @@ offset_bottom = 305.0
 text = "G 2"
 
 [node name="A7" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = 84.0
 offset_top = 253.0
 offset_right = 124.0
@@ -227,6 +236,7 @@ offset_bottom = 276.0
 text = "H 3"
 
 [node name="A8" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = 137.0
 offset_top = 225.0
 offset_right = 177.0
@@ -234,6 +244,7 @@ offset_bottom = 248.0
 text = "I 4"
 
 [node name="A9" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = 185.0
 offset_top = 197.0
 offset_right = 225.0
@@ -241,6 +252,7 @@ offset_bottom = 220.0
 text = "J 5"
 
 [node name="A10" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
 offset_left = 232.0
 offset_top = 168.0
 offset_right = 272.0
@@ -251,114 +263,131 @@ text = "K 6"
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+script = ExtResource("10_h4ubk")
 
-[node name="A" type="Label" parent="StaticGUI/Mid/NumberLabels"]
-offset_left = -314.0
-offset_top = 131.0
-offset_right = -274.0
-offset_bottom = 154.0
+[node name="1" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = 108.0
+offset_right = -260.0
+offset_bottom = 131.0
 text = "1"
 
-[node name="A2" type="Label" parent="StaticGUI/Mid/NumberLabels"]
-offset_left = -314.0
-offset_top = 74.0
-offset_right = -274.0
-offset_bottom = 97.0
+[node name="2" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = 50.0
+offset_right = -260.0
+offset_bottom = 73.0
 text = "2
 "
 
-[node name="A3" type="Label" parent="StaticGUI/Mid/NumberLabels"]
-offset_left = -314.0
-offset_top = 17.0
-offset_right = -274.0
-offset_bottom = 40.0
+[node name="3" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -6.0
+offset_right = -260.0
+offset_bottom = 17.0
 text = "3"
 
-[node name="A4" type="Label" parent="StaticGUI/Mid/NumberLabels"]
-offset_left = -314.0
-offset_top = -40.0
-offset_right = -274.0
-offset_bottom = -17.0
+[node name="4" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -64.0
+offset_right = -260.0
+offset_bottom = -41.0
 text = "4"
 
-[node name="A5" type="Label" parent="StaticGUI/Mid/NumberLabels"]
-offset_left = -314.0
-offset_top = -97.0
-offset_right = -274.0
-offset_bottom = -74.0
+[node name="5" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -121.0
+offset_right = -260.0
+offset_bottom = -98.0
 text = "5"
 
-[node name="A6" type="Label" parent="StaticGUI/Mid/NumberLabels"]
-offset_left = -314.0
-offset_top = -154.0
-offset_right = -274.0
-offset_bottom = -131.0
+[node name="6" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -177.0
+offset_right = -260.0
+offset_bottom = -154.0
 text = "6"
 
-[node name="A7" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="7" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = -253.0
 offset_top = -207.0
 offset_right = -213.0
 offset_bottom = -184.0
 text = "7"
 
-[node name="A8" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="8" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = -204.0
 offset_top = -235.0
 offset_right = -164.0
 offset_bottom = -212.0
 text = "8"
 
-[node name="A9" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="9" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = -154.0
 offset_top = -263.0
 offset_right = -114.0
 offset_bottom = -240.0
 text = "9"
 
-[node name="A10" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="10" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = -106.0
 offset_top = -292.0
 offset_right = -66.0
 offset_bottom = -269.0
 text = "10"
 
-[node name="A11" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="11" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = -57.0
 offset_top = -321.0
 offset_right = -17.0
 offset_bottom = -298.0
 text = "11"
 
-[node name="A12" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="11B" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = 66.0
 offset_top = -306.0
 offset_right = 106.0
 offset_bottom = -283.0
 text = "11"
 
-[node name="A13" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="11C" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = 115.0
 offset_top = -277.0
 offset_right = 155.0
 offset_bottom = -254.0
 text = "11"
 
-[node name="A14" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="11D" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = 163.0
 offset_top = -248.0
 offset_right = 203.0
 offset_bottom = -225.0
 text = "11"
 
-[node name="A15" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="11E" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = 212.0
 offset_top = -220.0
 offset_right = 252.0
 offset_bottom = -197.0
 text = "11"
 
-[node name="A16" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+[node name="11F" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
 offset_left = 260.0
 offset_top = -190.0
 offset_right = 300.0
