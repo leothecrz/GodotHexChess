@@ -35,7 +35,8 @@ public class HexMoveGenerator
 	//Testing
 	public ulong startTime = 0 ;
 	public ulong stopTime = 0;
-
+	public double runningAVG = 0;
+	public int count = -1;
 
 	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref)
 	{
@@ -51,7 +52,14 @@ public class HexMoveGenerator
 		WhiteAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
 		BlackAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
 	}
-
+	//Utility
+	public void updateRunningAverage()
+	{
+		if(count <= 0)
+			return;
+		double time = stopTime - startTime;
+		runningAVG += ((time - runningAVG)/count);
+	}
 
 	//Static
 	public static Dictionary<int,Dictionary<int,int>> createAttackBoard(int radius)
@@ -465,10 +473,11 @@ public class HexMoveGenerator
 	// Internal Use // Only Call If Prep was manually done.
 	public void findLegalMovesFor(Dictionary<PIECES, List<Vector2I>> pieces)
 	{
-		
 		moves = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>>();
 
+		count += 1;
 		startTime = Time.GetTicksUsec();
+
 		foreach ( PIECES pieceType in pieces.Keys )
 		{
 			List<Vector2I> singleTypePieces = pieces[pieceType];
@@ -486,7 +495,12 @@ public class HexMoveGenerator
 				case PIECES.KING: findMovesForKings(singleTypePieces); break;
 			}
 		}
+		
 		stopTime = Time.GetTicksUsec();
+		updateRunningAverage();
+
+		GD.Print($"Running iteration: {count}, Time: {stopTime-startTime}");
+		GD.Print("Running Move Gen Average ", runningAVG);
 
 		return;
 	}
