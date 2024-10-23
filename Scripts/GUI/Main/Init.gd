@@ -203,8 +203,8 @@ func spawnActivePieces() -> void:
 ## Destroy gui element of captured piece
 func updateScenceTree_OfCapture() -> void:	
 	var i:int = SIDES.WHITE if(EngineNode._getIsWhiteTurn()) else SIDES.BLACK;
-	var j:int =  EngineNode._getCaptureType() - 1;
-	var index = EngineNode._getCaptureIndex()
+	var j:int =  EngineNode.CaptureType() - 1;
+	var index = EngineNode.CaptureIndex()
 	
 	var ref:Node = ChessPiecesNode.get_child(i).get_child(j).get_child(index);
 	ref.get_parent().remove_child(ref);
