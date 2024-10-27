@@ -1,0 +1,168 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbeomhtiuxwqb"]
+
+[ext_resource type="Script" path="res://Scripts/GUI/multiplayer_gui.gd" id="1_r47su"]
+
+[node name="MultGUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_r47su")
+
+[node name="Isolate" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0)
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -175.0
+offset_top = -250.0
+offset_right = 175.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.921569)
+
+[node name="Type" type="TabBar" parent="BG"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 35.0
+grow_horizontal = 2
+current_tab = 0
+tab_count = 2
+tab_0/title = "Host / Join"
+tab_1/title = "Lobby"
+tab_1/disabled = true
+
+[node name="Close" type="Button" parent="BG"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -50.0
+offset_bottom = 35.0
+grow_horizontal = 0
+text = "X
+"
+
+[node name="HJScreen" type="ColorRect" parent="BG"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -350.0
+offset_top = -465.0
+grow_horizontal = 0
+grow_vertical = 0
+color = Color(0.117647, 0, 0, 0.588235)
+
+[node name="Label" type="Label" parent="BG/HJScreen"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 47.0
+offset_right = 94.0
+offset_bottom = 70.0
+text = "Host IP: "
+
+[node name="Address" type="TextEdit" parent="BG/HJScreen"]
+layout_mode = 0
+offset_left = 139.0
+offset_top = 45.0
+offset_right = 320.0
+offset_bottom = 86.0
+placeholder_text = "127.0.0.1"
+editable = false
+
+[node name="Label2" type="Label" parent="BG/HJScreen"]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 108.0
+offset_right = 112.0
+offset_bottom = 131.0
+text = "Host Port: "
+
+[node name="Port" type="TextEdit" parent="BG/HJScreen"]
+layout_mode = 0
+offset_left = 139.0
+offset_top = 104.0
+offset_right = 320.0
+offset_bottom = 144.0
+placeholder_text = "4440"
+
+[node name="Label3" type="Label" parent="BG/HJScreen"]
+offset_left = 30.0
+offset_top = 165.0
+offset_right = 112.0
+offset_bottom = 214.0
+text = "Display 
+ Name"
+
+[node name="UName" type="TextEdit" parent="BG/HJScreen"]
+offset_left = 139.0
+offset_top = 161.0
+offset_right = 320.0
+offset_bottom = 201.0
+placeholder_text = "Name"
+
+[node name="HostLobby" type="Button" parent="BG/HJScreen"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -48.0
+offset_top = -115.0
+offset_right = 48.0
+offset_bottom = -84.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Host Lobby"
+
+[node name="JoinLobby" type="Button" parent="BG/HJScreen"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -48.0
+offset_top = -65.0
+offset_right = 48.0
+offset_bottom = -34.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Join Lobby"
+
+[node name="LobbyScreen" type="ColorRect" parent="BG"]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -350.0
+offset_top = -465.0
+grow_horizontal = 0
+grow_vertical = 0
+color = Color(0, 0.117647, 0, 0.588235)
+
+[connection signal="pressed" from="BG/Close" to="." method="_on_close_pressed"]
+[connection signal="pressed" from="BG/HJScreen/HostLobby" to="." method="_on_host_lobby_pressed"]
+[connection signal="pressed" from="BG/HJScreen/JoinLobby" to="." method="_on_join_lobby_pressed"]

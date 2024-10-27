@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=20 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Main/Init.gd" id="1_pgjcn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -14,6 +14,8 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/number_labels.gd" id="10_h4ubk"]
 [ext_resource type="Script" path="res://Scripts/GUI/ToFrom.gd" id="13_at1p6"]
+[ext_resource type="PackedScene" uid="uid://dbeomhtiuxwqb" path="res://Scenes/multiplayerGUI.tscn" id="15_8pwlq"]
+[ext_resource type="Script" path="res://Scripts/Multiplayer/multiplayer_main.gd" id="15_t52bv"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_754bx"]
 texture = ExtResource("6_mxkma")
@@ -488,6 +490,18 @@ grow_vertical = 2
 text = "Settings
 "
 
+[node name="Mult" type="Button" parent="StaticGUI/Right/BG/Buttons"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -48.5
+offset_top = -200.0
+offset_right = 48.5
+offset_bottom = -169.0
+grow_horizontal = 2
+text = "Multiplayer"
+
 [node name="Options" type="Control" parent="StaticGUI/Right/BG"]
 anchors_preset = 0
 offset_right = 40.0
@@ -631,7 +645,14 @@ script = ExtResource("10_5jr73")
 [node name="SoundSource" type="AudioStreamPlayer" parent="."]
 bus = &"Sound"
 
+[node name="Multiplayer" type="Node" parent="."]
+script = ExtResource("15_t52bv")
+
 [node name="Settings" parent="." instance=ExtResource("8_avrf3")]
+visible = false
+layout_mode = 1
+
+[node name="MultGUI" parent="." instance=ExtResource("15_8pwlq")]
 visible = false
 layout_mode = 1
 
@@ -642,7 +663,10 @@ layout_mode = 1
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/NewGameButton" to="." method="_newGame_OnButtonPress"]
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/ResignButton" to="." method="_resign_OnButtonPress"]
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Settings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Mult" to="." method="_on_mult_pressed"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
 [connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]
+[connection signal="hostServer" from="MultGUI" to="Multiplayer" method="_on_mult_gui_host_server"]
+[connection signal="joinServer" from="MultGUI" to="Multiplayer" method="_on_mult_gui_join_server"]

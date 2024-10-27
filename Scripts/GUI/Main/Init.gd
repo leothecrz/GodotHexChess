@@ -38,6 +38,7 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 @onready var BGMusicPlayer = $BGMusic;
 @onready var SettingsDialog = $Settings;
+@onready var MultDialog = $MultGUI;
 
 
 
@@ -743,3 +744,15 @@ func _on_settings_pressed():
 	if(activePieces):
 		pieceSelectedLockOthers.emit();
 	return;
+
+
+func _on_mult_pressed() -> void:
+	MultDialog.visible = true;
+	MultDialog.z_index = 1;
+	if(activePieces):
+		pieceSelectedLockOthers.emit();
+	pass # Replace with function body.
+
+
+func _on_mult_gui_host_server(uname: String, adrs: String, port: String) -> void:
+	pass # Replace with function body.
