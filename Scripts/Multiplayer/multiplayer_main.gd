@@ -1,5 +1,8 @@
 extends Node
 
+@onready var gui = $"../MultGUI";
+
+const SERVER_ID = 1;
 const MAX_CON = 1;
 const DEFAULT_SERVER_IP = "127.0.0.1";
 
@@ -9,6 +12,11 @@ var players = {}
 var player_info = {"name": "Name"}
 var players_loaded = 0
 
+#Server INIT
+#JOINING
+#Connect OK : 1501180601
+#Adding Player : 1
+#Adding Player : 1501180601
 
 
 
@@ -21,20 +29,29 @@ signal server_disconnected
 
 
 # When a peer connects, send them my player info.
+# Player Info Swap
 func player_add(id : int):
 	registerPlayer.rpc_id(id, player_info);
 	return;
 
+#
 @rpc("any_peer", "reliable")
 func registerPlayer(new_player_info):
 	var new_player_id = multiplayer.get_remote_sender_id();
 	players[new_player_id] = new_player_info;
 	player_connected.emit(new_player_id, new_player_info);
 	
+	print("Adding Player : ", new_player_id, " PLAYERS : ",players);
+	gui.prepLobby(players);
+	return;
+	
+
+#Client
 func connect_ok():
 	var peer_id = multiplayer.get_unique_id()
 	players[peer_id] = player_info
 	player_connected.emit(peer_id, player_info)
+	print("Connect OK : ", peer_id);
 	return;
 	
 	
@@ -42,6 +59,7 @@ func connect_ok():
 func player_remove(id : int):
 	players.erase(id)
 	player_disconnected.emit(id)
+	print("PLAYER LEFT ", players);
 	pass;
 
 
@@ -50,10 +68,13 @@ func player_remove(id : int):
 
 func connect_failed():
 	multiplayer.multiplayer_peer = null;
+	print("FAILED CONNECTION");
 	pass;
 
 func serverDisconnected():
 	multiplayer.multiplayer_peer = null
+	players.clear();
+	print("SERVER DISC ", players);
 	# clean up gameboard and reset for single player
 	pass;
 
@@ -68,9 +89,10 @@ func startServer():
 		pass;
 	multiplayer.multiplayer_peer = serverPeer;
 	
-	players[1] = player_info;
-	player_connected.emit(1, player_info);
+	players[SERVER_ID] = player_info;
+	player_connected.emit(SERVER_ID, player_info);
 	
+	print("Server INIT");
 	return;
 
 
@@ -80,6 +102,7 @@ func joinAsPlayerTwo():
 	if error:
 		pass;
 	multiplayer.multiplayer_peer = clientPeer;
+	print("JOINING");
 	return;
 
 
@@ -91,7 +114,7 @@ func _ready() -> void:
 	multiplayer.connected_to_server.connect(connect_ok);
 	multiplayer.connection_failed.connect(connect_failed);
 	multiplayer.server_disconnected.connect(serverDisconnected);
-	#Server
+	#Everyone
 	multiplayer.peer_connected.connect(player_add);
 	multiplayer.peer_disconnected.connect(player_remove);
 	return;

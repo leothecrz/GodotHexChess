@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://dbeomhtiuxwqb"]
+[gd_scene load_steps=3 format=3 uid="uid://dbeomhtiuxwqb"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/multiplayer_gui.gd" id="1_r47su"]
+[ext_resource type="Texture2D" uid="uid://c3cbwpc0b7bio" path="res://Images/defProfile.png" id="2_eo558"]
 
 [node name="MultGUI" type="Control"]
 layout_mode = 3
@@ -105,6 +106,7 @@ offset_bottom = 144.0
 placeholder_text = "4440"
 
 [node name="Label3" type="Label" parent="BG/HJScreen"]
+layout_mode = 0
 offset_left = 30.0
 offset_top = 165.0
 offset_right = 112.0
@@ -113,6 +115,7 @@ text = "Display
  Name"
 
 [node name="UName" type="TextEdit" parent="BG/HJScreen"]
+layout_mode = 0
 offset_left = 139.0
 offset_top = 161.0
 offset_right = 320.0
@@ -163,6 +166,113 @@ grow_horizontal = 0
 grow_vertical = 0
 color = Color(0, 0.117647, 0, 0.588235)
 
+[node name="MyName" type="RichTextLabel" parent="BG/LobbyScreen"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 50.0
+offset_right = 100.0
+offset_bottom = 90.0
+grow_horizontal = 2
+bbcode_enabled = true
+text = "[center]MYUSERNAME[/center]"
+
+[node name="OpName" type="RichTextLabel" parent="BG/LobbyScreen"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -90.0
+offset_right = 100.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+bbcode_enabled = true
+text = "[center]OPUSERNAME[/center]"
+
+[node name="Leave" type="Button" parent="BG/LobbyScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -81.5
+offset_top = -15.5
+offset_right = 81.5
+offset_bottom = 15.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "Leave / Close Server"
+
+[node name="IMGBG" type="ColorRect" parent="BG/LobbyScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -110.5
+offset_right = 30.0
+offset_bottom = -50.5
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.470076, 0.470076, 0.470076, 1)
+
+[node name="MyProfIMG" type="TextureRect" parent="BG/LobbyScreen/IMGBG"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_eo558")
+expand_mode = 1
+
+[node name="IMGBG_OP" type="ColorRect" parent="BG/LobbyScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = 49.5
+offset_right = 30.0
+offset_bottom = 109.5
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.470076, 0.470076, 0.470076, 1)
+
+[node name="OpProfIMG" type="TextureRect" parent="BG/LobbyScreen/IMGBG_OP"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_eo558")
+expand_mode = 1
+
 [connection signal="pressed" from="BG/Close" to="." method="_on_close_pressed"]
 [connection signal="pressed" from="BG/HJScreen/HostLobby" to="." method="_on_host_lobby_pressed"]
 [connection signal="pressed" from="BG/HJScreen/JoinLobby" to="." method="_on_join_lobby_pressed"]
+[connection signal="pressed" from="BG/LobbyScreen/Leave" to="." method="_on_leave_pressed"]

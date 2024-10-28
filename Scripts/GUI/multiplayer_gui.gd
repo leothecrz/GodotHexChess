@@ -3,6 +3,7 @@ extends Control
 #Signals
 signal hostServer(uname:String,adrs:String,port:String);
 signal joinServer(uname:String,adrs:String,port:String);
+signal shutdownServerClient();
 
 var myname = "";
 
@@ -16,8 +17,8 @@ var myname = "";
 @onready var port = $BG/HJScreen/Port;
 @onready var uname = $BG/HJScreen/UName;
 
-
-
+@onready var lbName = $BG/LobbyScreen/MyName;
+@onready var oplbName = $BG/LobbyScreen/OpName;
 
 
 func _on_close_pressed() -> void:
@@ -42,9 +43,12 @@ func lobbyVisible() -> void:
 
 
 
-func prepLobby() -> void:
+func prepLobby(players:Dictionary) -> void:
 	lobbyVisible();
-	
+	if players.keys().size() != 2 : push_error("Invalid players list")
+	var pKeys = players.keys();
+	lbName.text = centerText(players[pKeys[0]]["name"]);
+	oplbName.text = centerText(players[pKeys[1]]["name"]);
 	return;
 
 
@@ -66,6 +70,8 @@ func isValidUname(Str:String):
 	if(Str.is_empty()): return false;
 	return true;
 
+func centerText(Str):
+	return "[center]" + Str + "[/center]";
 
 func _on_host_lobby_pressed() -> void:
 	myname = uname.text if isValidUname(uname.text) else "UNKNOWN_PLAYER"
@@ -83,4 +89,11 @@ func _on_join_lobby_pressed() -> void:
 		adrs.text if isValidADRS(adrs.text) else "127.0.0.1",
 		port.text if isValidPort(port.text) else "4440"
 	);
+	return;
+
+
+func _on_leave_pressed() -> void:
+	hostVisible();
+	shutdownServerClient.emit();
+	visible = false;
 	return;

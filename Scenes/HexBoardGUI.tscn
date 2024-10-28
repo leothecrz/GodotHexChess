@@ -648,11 +648,11 @@ bus = &"Sound"
 [node name="Multiplayer" type="Node" parent="."]
 script = ExtResource("15_t52bv")
 
-[node name="Settings" parent="." instance=ExtResource("8_avrf3")]
+[node name="MultGUI" parent="." instance=ExtResource("15_8pwlq")]
 visible = false
 layout_mode = 1
 
-[node name="MultGUI" parent="." instance=ExtResource("15_8pwlq")]
+[node name="Settings" parent="." instance=ExtResource("8_avrf3")]
 visible = false
 layout_mode = 1
 
@@ -667,6 +667,6 @@ layout_mode = 1
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
-[connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]
 [connection signal="hostServer" from="MultGUI" to="Multiplayer" method="_on_mult_gui_host_server"]
 [connection signal="joinServer" from="MultGUI" to="Multiplayer" method="_on_mult_gui_join_server"]
+[connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]
