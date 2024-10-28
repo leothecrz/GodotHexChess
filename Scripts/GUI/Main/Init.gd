@@ -715,8 +715,13 @@ func undoAI():
 	syncUndo();
 	return
 ##
+@rpc("authority", "call_remote", "reliable")
 func setSide(isW:bool):
-	
+	selfside = 0 if isW else 1;
+	var isUserPlayingW = (selfside == 0);
+	BoardControler.checkAndFlipBoard(isUserPlayingW);
+	isRotatedWhiteDown = isUserPlayingW;
+	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfside != 0);
 	return;
 
 
@@ -730,7 +735,8 @@ func _newGame_OnButtonPress() -> void:
 		if(not isHost):
 			spawnNotice("Only host can start the game", 1.0);
 			return;
-		startGame.rpc()
+		setSide.rpc(selfside != 0);
+		startGame.rpc();
 	if(activePieces):
 		forcedNewGameDialog();
 		return;
