@@ -65,7 +65,7 @@ var isHost = false;
 
 
 ### Signals
-signal gameSwitchedSides(newSideTurn:bool);
+signal gameSwitchedSides(newSideTurn:int);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 
@@ -470,7 +470,7 @@ func killDialog():
 func forceNewGame():
 	killDialog();
 	_resign_OnButtonPress();
-	startGame();
+	startGameFromFen();
 	return;
 
 ## Throw up warning "Game is ALREADY running, end and start another?(y/n)"
@@ -607,29 +607,39 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 ## BUTTONS HELPERS
 ##
 @rpc("authority", "call_remote", "reliable")
-func startGame() -> void:
-	EngineNode._initDefault();
-	syncToEngine()
-	spawnActivePieces();
-	emit_signal("gameSwitchedSides", SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK );
-
-	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
+func setSide(isW:bool):
+	selfside = 0 if isW else 1;
+	
+	var isUserPlayingW = (selfside == 0);
+	BoardControler.checkAndFlipBoard(isUserPlayingW);
+	isRotatedWhiteDown = isUserPlayingW;
+	
+	SideSelect._setSelected(selfside);
+	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfside != 0);
+	
 	return;
+
 ##
-func startGameFromFen(fen:String) -> void:
+@rpc("authority", "call_remote", "reliable")
+func startGameFromFen(stateString : String = "") -> void:
 	if(multiplayerConnected and not isHost): 
 		spawnNotice("Only host can start the game", 1.0);
 		return;
 	
-	if not EngineNode.initiateEngine(fen):
-		spawnNotice("[center]Fen Invalid[/center]", 1.0);
-		return;
+	if(stateString == ""):
+		if not EngineNode._initDefault():
+			spawnNotice("[center]DEFAULT START FAILED[/center]", 1.0);
+			return;
+	else:
+		if not EngineNode.initiateEngine(stateString):
+			spawnNotice("[center]Fen Invalid[/center]", 1.0);
+			return;
 	
 	syncToEngine()
 	spawnActivePieces();
-	emit_signal("gameSwitchedSides", SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK );
-
+	gameSwitchedSides.emit(SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK);
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
+	
 	return;
 ##
 func undoCapture():
@@ -714,15 +724,6 @@ func undoAI():
 	EngineNode._undoLastMove(true);
 	syncUndo();
 	return
-##
-@rpc("authority", "call_remote", "reliable")
-func setSide(isW:bool):
-	selfside = 0 if isW else 1;
-	var isUserPlayingW = (selfside == 0);
-	BoardControler.checkAndFlipBoard(isUserPlayingW);
-	isRotatedWhiteDown = isUserPlayingW;
-	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfside != 0);
-	return;
 
 
 
@@ -731,17 +732,19 @@ func setSide(isW:bool):
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
+	if(activePieces):
+		forcedNewGameDialog();
+		return;
+		
 	if(multiplayerConnected):
 		if(not isHost):
 			spawnNotice("Only host can start the game", 1.0);
 			return;
+		
 		setSide.rpc(selfside != 0);
-		startGame.rpc();
-	if(activePieces):
-		forcedNewGameDialog();
-		return;
+		startGameFromFen.rpc();
 	
-	startGame();
+	startGameFromFen();
 	return;
 
 ## Resign Button Pressed.
