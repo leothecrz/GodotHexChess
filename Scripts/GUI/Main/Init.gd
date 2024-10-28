@@ -57,7 +57,9 @@ var ThreadActive:bool = false;
 var tempDialog:AcceptDialog = null;
 var ThinkingDialogRef:Node = null;
 var FenDialog:Node = null;
-
+#Multiplayer
+var multiplayerConnected = false;
+var isHost = false;
 
 
 
@@ -481,10 +483,11 @@ func forcedNewGameDialog():
 ##
 func resignCleanUp():
 	if(tempDialog): tempDialog.queue_free();
-	#GameDataNode._resign();
+	
 	EngineNode._resign();
 	activePieces.clear();
 	currentLegalMoves.clear();
+	
 	BoardControler.setSignalWhite();
 	TAndFrom.setVis(false);
 	
@@ -492,6 +495,7 @@ func resignCleanUp():
 		for pieceNodes in colorNodes.get_children():
 			for piece in pieceNodes.get_children():
 				piece.queue_free();
+	
 	LeftPanel._updateHist([]);
 	if(LeftPanel._getLabelState()):
 		LeftPanel._swapLabelState();
@@ -505,7 +509,7 @@ func resignCleanUp():
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
 	if(activePieces):
-		# TODO: Throw up warning "Game is ALREADY running, cant change sides during game "
+		spawnNotice("Can't switch sides mid-game.", 1.0);
 		SideSelect._setSelected(selfside);
 		return; 
 	selfside = index;
@@ -514,8 +518,6 @@ func _selectSide_OnItemSelect(index:int) -> void:
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
 	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfside != 0);
-	#print("Type: ", GameDataNode._getEnemyType());
-	#print("IsWhite: ", GameDataNode._getEnemyIsWhite());
 	return;
 
 ##
@@ -523,7 +525,12 @@ func _on_enemy_select_item_selected(index:int) -> void:
 	if(activePieces):
 		EnemySelect._setSelected(EngineNode._getEnemyType());
 		return; 
-		
+	
+	if(multiplayerConnected):
+		spawnNotice("Multiplayer Connected",1.0)
+		EnemySelect._setSelected(EngineNode._getEnemyType());
+		return;
+	
 	var type:int = index;
 	if(index > 1):
 		type = index - 1;
@@ -599,6 +606,7 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 
 ## BUTTONS HELPERS
 ##
+@rpc("authority", "call_remote", "reliable")
 func startGame() -> void:
 	EngineNode._initDefault();
 	syncToEngine()
@@ -609,6 +617,10 @@ func startGame() -> void:
 	return;
 ##
 func startGameFromFen(fen:String) -> void:
+	if(multiplayerConnected and not isHost): 
+		spawnNotice("Only host can start the game", 1.0);
+		return;
+	
 	if not EngineNode.initiateEngine(fen):
 		spawnNotice("[center]Fen Invalid[/center]", 1.0);
 		return;
@@ -702,7 +714,10 @@ func undoAI():
 	EngineNode._undoLastMove(true);
 	syncUndo();
 	return
-
+##
+func setSide(isW:bool):
+	
+	return;
 
 
 
@@ -711,9 +726,15 @@ func undoAI():
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
+	if(multiplayerConnected):
+		if(not isHost):
+			spawnNotice("Only host can start the game", 1.0);
+			return;
+		startGame.rpc()
 	if(activePieces):
 		forcedNewGameDialog();
 		return;
+	
 	startGame();
 	return;
 
@@ -721,6 +742,9 @@ func _newGame_OnButtonPress() -> void:
 func _resign_OnButtonPress() -> void:
 	if(not activePieces):
 		return;
+	if(multiplayerConnected):
+		#TODO :: send resign
+		pass;
 	if(EngineNode._getGameOverStatus()):
 		resignCleanUp();
 		return;
@@ -732,6 +756,9 @@ func _on_undo_pressed():
 	if(EngineNode._getMoveHistorySize() < undoSizeReq):
 		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
 		return;
+	if(multiplayerConnected): 
+		#TODO :: ask if allow undo
+		pass;
 	EngineNode._undoLastMove(true);
 	syncUndo();
 	undoAI();
@@ -746,13 +773,28 @@ func _on_settings_pressed():
 	return;
 
 
+
+
+
+##MULTIPLAYER
+#MULT GUI ON & OFF
 func _on_mult_pressed() -> void:
 	MultDialog.visible = true;
 	MultDialog.z_index = 1;
 	if(activePieces):
 		pieceSelectedLockOthers.emit();
-	pass # Replace with function body.
+	return;
+func _on_mult_gui_mult_gui_closed() -> void:
+	if(activePieces):
+		pieceUnselectedUnlockOthers.emit();
+	return;
 
-
-func _on_mult_gui_host_server(uname: String, adrs: String, port: String) -> void:
-	pass # Replace with function body.
+#MULT ON & OFF
+func _on_multiplayer_multiplayer_enabled(ishost: bool) -> void:
+	multiplayerConnected = true;
+	isHost = ishost;
+	return;
+func _on_multiplayer_multiplayer_disabled() -> void:
+	multiplayerConnected = false;
+	isHost = false;
+	return

@@ -4,6 +4,7 @@ extends Control
 signal hostServer(uname:String,adrs:String,port:String);
 signal joinServer(uname:String,adrs:String,port:String);
 signal shutdownServerClient();
+signal multGUIClosed();
 
 var myname = "";
 
@@ -20,7 +21,7 @@ var myname = "";
 @onready var lbName = $BG/LobbyScreen/MyName;
 @onready var oplbName = $BG/LobbyScreen/OpName;
 
-
+# Close the GUI Dialog
 func _on_close_pressed() -> void:
 	visible = false;
 	pass
@@ -28,12 +29,12 @@ func _on_close_pressed() -> void:
 
 
 
-
+#HJ Screen
 func hostVisible() -> void:
 	HJ.visible = true;
 	Lobby.visible = false;
 	return;
-
+#Lobby Screen
 func lobbyVisible() -> void:
 	HJ.visible = false;
 	Lobby.visible = true;
@@ -43,6 +44,7 @@ func lobbyVisible() -> void:
 
 
 
+#Fill Lobby With PlayerData
 func prepLobby(players:Dictionary) -> void:
 	lobbyVisible();
 	if players.keys().size() != 2 : push_error("Invalid players list")
@@ -58,20 +60,24 @@ func prepLobby(players:Dictionary) -> void:
 #TODO ::
 func isValidADRS(Str:String):
 	if(Str.is_empty()): return false;
+	
 	return true;
-
 #TODO ::
 func isValidPort(Str:String):
 	if(Str.is_empty()): return false;
+	if(not Str.is_valid_int()): return false;
 	return true;
-
 #TODO ::
 func isValidUname(Str:String):
 	if(Str.is_empty()): return false;
 	return true;
-
+#BBCODE Center Str string
 func centerText(Str):
 	return "[center]" + Str + "[/center]";
+
+
+
+
 
 func _on_host_lobby_pressed() -> void:
 	myname = uname.text if isValidUname(uname.text) else "UNKNOWN_PLAYER"
@@ -90,7 +96,6 @@ func _on_join_lobby_pressed() -> void:
 		port.text if isValidPort(port.text) else "4440"
 	);
 	return;
-
 
 func _on_leave_pressed() -> void:
 	hostVisible();

@@ -762,7 +762,7 @@ public partial class HexEngineSharp : Node
 	public int _getEnemyPTo() { return (int) Enemy.EnemyPromotedTo; }
 	public int CaptureType() { return (int) HexState.captureType; }
 	public int CaptureIndex() { return HexState.captureIndex; }
-	public int _getMoveHistorySize() { return historyStack.Count; }
+	public int _getMoveHistorySize() { if (historyStack != null) return historyStack.Count; else return 0; }
 	public int undoType() { return (int) HexState.undoType; }
 	public int undoIndex() { return HexState.undoIndex; }
 	public int _getEnemyChoiceType() { return (int) Enemy.EnemyChoiceType; }

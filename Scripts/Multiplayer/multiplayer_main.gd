@@ -2,15 +2,14 @@ extends Node
 
 @onready var gui = $"../MultGUI";
 
-const SERVER_ID = 1;
-const MAX_CON = 1;
-const DEFAULT_SERVER_IP = "127.0.0.1";
+const SERVER_ID : int = 1;
+const MAX_CON : int = 1;
 
 var SERVER_PORT : int = 4440;
 var SERVER_ADRS : String = "";
-var players = {}
-var player_info = {"name": "Name"}
-var players_loaded = 0
+var players : Dictionary = {}
+var player_info : Dictionary = {"name": "Name"}
+var players_loaded : int = 0
 
 #Server INIT
 #JOINING
@@ -24,8 +23,8 @@ var players_loaded = 0
 signal player_connected(peer_id, player_info)
 signal player_disconnected(peer_id)
 signal server_disconnected
-
-
+signal multiplayer_enabled(ishost:bool);
+signal multiplayer_disabled();
 
 
 # When a peer connects, send them my player info.
@@ -93,6 +92,7 @@ func startServer():
 	player_connected.emit(SERVER_ID, player_info);
 	
 	print("Server INIT");
+	multiplayer_enabled.emit(true);
 	return;
 
 
@@ -103,6 +103,7 @@ func joinAsPlayerTwo():
 		pass;
 	multiplayer.multiplayer_peer = clientPeer;
 	print("JOINING");
+	multiplayer_enabled.emit(false);
 	return;
 
 
