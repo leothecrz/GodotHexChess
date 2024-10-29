@@ -297,7 +297,10 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	if(moveType == MOVE_TYPES.PROMOTE and passInterupt):
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
-		
+	
+	if(multiplayerConnected):
+		receiveMove.rpc(cords, moveType, moveIndex, promoteTo);
+	
 	#GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	
@@ -311,7 +314,11 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	syncToEngine();
 	return;
 
-
+@rpc("any_peer", "call_remote", "reliable")
+func receiveMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=false):
+	print(multiplayer.get_unique_id());
+	print("Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
+	pass;
 
 
 
