@@ -112,7 +112,7 @@ func pressedAndNotDragging(eventPos):
 	
 	if pieceHitbox.has_point(eventPosition):
 		status = STATES.CLICKED;
-		emit_signal("pieceSelected", side, pieceType, pieceCords);
+		pieceSelected.emit(side, pieceType, pieceCords);
 		collisionNode.monitoring = true;
 		offset = currentPiecePosition - eventPosition;
 		preDragPosition = global_position;
@@ -127,12 +127,12 @@ func notPressedAndDragging():
 		moveTo(hexTile.transform.origin);
 		pieceCords = hexTile.hexMove;
 		
-		emit_signal("pieceDeselected", hexTile.hexCords, hexTile.hexKey, hexTile.hexIndex);
+		pieceDeselected.emit(hexTile.hexCords, hexTile.hexKey, hexTile.hexIndex);
 		
 	else:
 		#print("\nCanceled\n")
 		moveTo(preDragPosition);
-		emit_signal("pieceDeselected", Vector2i(), 0, -1);
+		pieceDeselected.emit(Vector2i(), 0, -1);
 		
 	status = STATES.UNSET;
 	preDragPosition = Vector2();

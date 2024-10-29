@@ -45,6 +45,7 @@ grow_horizontal = 2
 current_tab = 0
 tab_count = 2
 tab_0/title = "Host / Join"
+tab_0/disabled = true
 tab_1/title = "Lobby"
 tab_1/disabled = true
 

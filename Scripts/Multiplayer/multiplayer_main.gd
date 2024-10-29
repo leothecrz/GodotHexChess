@@ -20,9 +20,9 @@ var players_loaded : int = 0
 
 
 # GUI SIGNALS
-signal player_connected(peer_id, player_info)
-signal player_disconnected(peer_id)
-signal server_disconnected
+signal player_connected(peer_id, player_info);
+signal player_disconnected(peer_id);
+signal server_disconnected;
 signal multiplayer_enabled(ishost:bool);
 signal multiplayer_disabled();
 
@@ -74,6 +74,7 @@ func serverDisconnected():
 	multiplayer.multiplayer_peer = null
 	players.clear();
 	print("SERVER DISC ", players);
+	server_disconnected.emit();
 	# clean up gameboard and reset for single player
 	pass;
 

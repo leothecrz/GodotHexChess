@@ -29,7 +29,7 @@ signal promotionAccepted(cords, key, index, CHOICE);
 
 ##
 func _on_accept_button_pressed():
-	emit_signal("promotionAccepted", cords, key, index, CHOICE);
+	promotionAccepted.emit(cords, key, index, CHOICE);
 	return;
 
 ##

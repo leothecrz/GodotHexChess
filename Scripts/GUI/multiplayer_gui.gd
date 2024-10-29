@@ -21,9 +21,12 @@ var myname = "";
 @onready var lbName = $BG/LobbyScreen/MyName;
 @onready var oplbName = $BG/LobbyScreen/OpName;
 
+@onready var tabs = $BG/Type;
+
 # Close the GUI Dialog
 func _on_close_pressed() -> void:
 	visible = false;
+	multGUIClosed.emit();
 	pass
 
 
@@ -33,11 +36,13 @@ func _on_close_pressed() -> void:
 func hostVisible() -> void:
 	HJ.visible = true;
 	Lobby.visible = false;
+	tabs.current_tab = 0;
 	return;
 #Lobby Screen
 func lobbyVisible() -> void:
 	HJ.visible = false;
 	Lobby.visible = true;
+	tabs.current_tab = 1;
 	return;
 
 

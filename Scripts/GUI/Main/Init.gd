@@ -43,6 +43,7 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 
 ### State
+var gameRunning = false;
 var undoSizeReq:int = 1;
 # Board Setup
 var selfside:int = 0;
@@ -80,7 +81,7 @@ func axial_to_pixel(axial: Vector2i) -> Vector2:
 	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	return Vector2(x, y);
 ## Spawn a simple pop up that will display TEXT for TIME seconds
-func spawnNotice(TEXT:String, TIME:float):
+func spawnNotice(TEXT:String, TIME:float=1.0):
 	var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
 	notice.NOTICE_TEXT = TEXT;
 	notice.POP_TIME = TIME;
@@ -88,7 +89,8 @@ func spawnNotice(TEXT:String, TIME:float):
 	self.add_child(notice);
 	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
 	pass;
-
+func isItMyTurn():
+	return EngineNode._getIsWhiteTurn() == (selfside == 0);
 
 
 ## MENU HELPERS
@@ -357,9 +359,11 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 func syncMasterAIThreadToMain():
 	if(MasterAIThread.is_started()):
 		MasterAIThread.wait_to_finish();
-		
+	
 	if(ThinkingDialogRef):
 		ThinkingDialogRef.queue_free();
+	
+	ThreadActive = false;
 	
 	var i:int = SIDES.BLACK if(EngineNode._getIsWhiteTurn()) else SIDES.WHITE;
 	var j:int =  EngineNode._getEnemyChoiceType() - 1;
@@ -401,16 +405,18 @@ func allowAITurn():
 	if( EngineNode._getGameOverStatus() ):
 		return
 	
+	ThreadActive = true;
+	
 	pieceSelectedLockOthers.emit();
 	
 	TAndFrom.setVis(false);
+	
 	ThinkingDialogRef = preload("res://Scenes/AI_Turn_Diolog.tscn").instantiate();
 	ThinkingDialogRef.z_index = 1;
 	add_child(ThinkingDialogRef);
 	
 	if ( OK != MasterAIThread.start(passAIToNewThread) ):
 		passAIToNewThread();
-		pass;
 	
 	return;
 
@@ -490,6 +496,7 @@ func resignCleanUp():
 	
 	BoardControler.setSignalWhite();
 	TAndFrom.setVis(false);
+	gameRunning = false;
 	
 	for colorNodes in ChessPiecesNode.get_children():
 		for pieceNodes in colorNodes.get_children():
@@ -508,7 +515,7 @@ func resignCleanUp():
 ## MENUS
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
-	if(activePieces):
+	if(gameRunning):
 		spawnNotice("Can't switch sides mid-game.", 1.0);
 		SideSelect._setSelected(selfside);
 		return; 
@@ -522,7 +529,7 @@ func _selectSide_OnItemSelect(index:int) -> void:
 
 ##
 func _on_enemy_select_item_selected(index:int) -> void:
-	if(activePieces):
+	if(gameRunning):
 		EnemySelect._setSelected(EngineNode._getEnemyType());
 		return; 
 	
@@ -547,29 +554,6 @@ func _on_enemy_select_item_selected(index:int) -> void:
 
 ## SETTINGS
 ##
-func toggleMusic(choice):
-	if choice == 1:
-		BGMusicPlayer._stopPlaying();
-		return;
-	BGMusicPlayer._continuePlaying();
-	return;
-	
-##
-func toggleSound(_choice):
-	return;
-
-##
-func updateSoundBus(bus,choice):
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(bus), choice);
-	return;
-
-##
-func closeSettingsDialog():
-	SettingsDialog.visible = false;
-	pieceUnselectedUnlockOthers.emit();
-	return
-
-##
 func changeRes(choice:int):
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED);
 	match choice:
@@ -586,6 +570,30 @@ func changeRes(choice:int):
 	
 	
 	return;
+
+##
+func toggleMusic(choice):
+	if choice == 1:
+		BGMusicPlayer._stopPlaying();
+		return;
+	BGMusicPlayer._continuePlaying();
+	return;
+##
+func toggleSound(_choice):
+	return;
+
+##
+func updateSoundBus(bus,choice):
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(bus), choice);
+	return;
+
+##
+func closeSettingsDialog():
+	SettingsDialog.visible = false;
+	if(gameRunning and isItMyTurn()):
+		pieceUnselectedUnlockOthers.emit();
+	return
+
 
 ##
 func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
@@ -606,6 +614,15 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 
 ## BUTTONS HELPERS
 ##
+@rpc("any_peer", "call_local", "reliable")
+func syncMultTurn():
+	var isW = selfside == 0;
+	if(EngineNode._getIsWhiteTurn() != isW):
+		pieceSelectedLockOthers.emit();
+		return;
+	pieceUnselectedUnlockOthers.emit();
+	return;
+##
 @rpc("authority", "call_remote", "reliable")
 func setSide(isW:bool):
 	selfside = 0 if isW else 1;
@@ -613,19 +630,11 @@ func setSide(isW:bool):
 	var isUserPlayingW = (selfside == 0);
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
-	
 	SideSelect._setSelected(selfside);
-	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfside != 0);
-	
 	return;
-
 ##
 @rpc("authority", "call_remote", "reliable")
 func startGameFromFen(stateString : String = "") -> void:
-	if(multiplayerConnected and not isHost): 
-		spawnNotice("Only host can start the game", 1.0);
-		return;
-	
 	if(stateString == ""):
 		if not EngineNode._initDefault():
 			spawnNotice("[center]DEFAULT START FAILED[/center]", 1.0);
@@ -635,12 +644,14 @@ func startGameFromFen(stateString : String = "") -> void:
 			spawnNotice("[center]Fen Invalid[/center]", 1.0);
 			return;
 	
+	gameRunning = true;
 	syncToEngine()
 	spawnActivePieces();
 	gameSwitchedSides.emit(SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK);
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
-	
 	return;
+
+
 ##
 func undoCapture():
 	if( not EngineNode.uncaptureValid() ):
@@ -689,7 +700,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex] ;
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
-	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
+	var From = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
 	ref.get_child(refChildCount-1).queue_free();
 
 	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
@@ -699,9 +710,9 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	ref.move_child(newPieceScene,pIndex);
 	
 	TAndFrom.setVis(true);
-	var toV = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveFrom(from.x,from.y);
-	TAndFrom.moveTo(toV.x,toV.y)
+	var ToV = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveFrom(From.x,From.y);
+	TAndFrom.moveTo(ToV.x,ToV.y)
 	
 	return;
 ##
@@ -732,28 +743,40 @@ func undoAI():
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
-	if(activePieces):
+	if(ThreadActive):
+		spawnNotice("Please wait until AI has made its turn");
+		return;
+	if(gameRunning):
 		forcedNewGameDialog();
 		return;
-		
-	if(multiplayerConnected):
-		if(not isHost):
-			spawnNotice("Only host can start the game", 1.0);
-			return;
-		
-		setSide.rpc(selfside != 0);
-		startGameFromFen.rpc();
+	
+	if(multiplayerConnected and not isHost):
+		spawnNotice("Only host can start the game");
+		return;
 	
 	startGameFromFen();
+	
+	if(multiplayerConnected and isHost):
+		setSide.rpc(selfside != 0);
+		startGameFromFen.rpc();
+		syncMultTurn.rpc();
+	
 	return;
 
 ## Resign Button Pressed.
 func _resign_OnButtonPress() -> void:
-	if(not activePieces):
+	if(not gameRunning):
 		return;
+	
+	if(ThreadActive):
+		spawnNotice("Please wait until AI has made its turn");
+		return;
+	
 	if(multiplayerConnected):
-		#TODO :: send resign
-		pass;
+		spawnNotice("Not available yet.", 1.0);
+		return
+	
+	
 	if(EngineNode._getGameOverStatus()):
 		resignCleanUp();
 		return;
@@ -762,12 +785,18 @@ func _resign_OnButtonPress() -> void:
 
 ## Undo Button Pressed
 func _on_undo_pressed():
+	if(ThreadActive):
+		spawnNotice("Please wait until AI has made its turn");
+		return;
+	
 	if(EngineNode._getMoveHistorySize() < undoSizeReq):
 		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
 		return;
+	
 	if(multiplayerConnected): 
-		#TODO :: ask if allow undo
-		pass;
+		spawnNotice("NOT available during multiplayer ... yet.", 1.0);
+		return;
+	
 	EngineNode._undoLastMove(true);
 	syncUndo();
 	undoAI();
@@ -777,7 +806,7 @@ func _on_undo_pressed():
 func _on_settings_pressed():
 	SettingsDialog.visible = true;
 	SettingsDialog.z_index = 1;
-	if(activePieces):
+	if(gameRunning):
 		pieceSelectedLockOthers.emit();
 	return;
 
@@ -790,12 +819,12 @@ func _on_settings_pressed():
 func _on_mult_pressed() -> void:
 	MultDialog.visible = true;
 	MultDialog.z_index = 1;
-	if(activePieces):
-		pieceSelectedLockOthers.emit();
+	if(gameRunning and isItMyTurn()):
+			pieceSelectedLockOthers.emit();
 	return;
 func _on_mult_gui_mult_gui_closed() -> void:
-	if(activePieces):
-		pieceUnselectedUnlockOthers.emit();
+	if(gameRunning and isItMyTurn()):
+			pieceUnselectedUnlockOthers.emit();
 	return;
 
 #MULT ON & OFF

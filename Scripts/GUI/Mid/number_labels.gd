@@ -23,7 +23,7 @@ func flip():
 		setFlip();
 	else:
 		setDef();
-	sideWhite != sideWhite;
+	sideWhite = !sideWhite;
 	return;
 
 func setDef():
