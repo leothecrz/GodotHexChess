@@ -314,13 +314,28 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	syncToEngine();
 	return;
 
+##
 @rpc("any_peer", "call_remote", "reliable")
-func receiveMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=false):
-	print(multiplayer.get_unique_id());
-	print("Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
+func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0, passInterupt=false):
+	print(multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
+	
+	var toPos = currentLegalMoves[cords][moveType][moveIndex];
+	TAndFrom.setVis(true);
+	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveFrom(from.x,from.y);
+	var toV =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toPos) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveTo(toV.x,toV.y)
+	
+	syncCheckMultiplayer.rpc(true);
 	pass;
 
-
+##
+@rpc("any_peer", "call_remote", "reliable")
+func syncCheckMultiplayer(sendSync:bool):
+	print(multiplayer.get_remote_sender_id()," sent sync request to ", multiplayer.get_unique_id());
+	if(sendSync):
+		syncCheckMultiplayer.rpc(false);
+	pass;
 
 ## Move GUI
 ## Setup and display a legal move on GUI
@@ -651,10 +666,11 @@ func startGameFromFen(stateString : String = "") -> void:
 			spawnNotice("[center]Fen Invalid[/center]", 1.0);
 			return;
 	
-	gameRunning = true;
 	syncToEngine()
 	spawnActivePieces();
 	gameSwitchedSides.emit(SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK);
+	gameRunning = true;
+	
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
 
