@@ -7,14 +7,14 @@ extends Control;
 
 
 
-### Const TODO :: Should Be Set By Engine Node
+#Const -- TODO :: Should Be Set By Engine Node
 const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
 enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
 enum SIDES { BLACK, WHITE };
 enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 
-### Position State
+# Position State
 @onready var VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @onready var PIXEL_OFFSET = 35;
 @onready var AXIAL_X_SCALE = 1.4;
@@ -24,7 +24,7 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 
 
-### Node Ref
+# Node Ref
 @onready var EngineNode:HexEngineSharp = $HCE;
 
 @onready var BoardControler = $StaticGUI/Mid;
@@ -42,30 +42,35 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 
 
-### State
-var gameRunning = false;
-var undoSizeReq:int = 1;
-# Board Setup
-var selfside:int = 0;
-var isRotatedWhiteDown:bool = true;
+# State
+
+var MasterAIThread : Thread = Thread.new();
+var ThreadActive : bool = false;
+
+var isRotatedWhiteDown : bool = true;
+var gameRunning : bool = false;
+var undoSizeReq : int = 1;
+var selfside : int = 0;
+
 # Temp
-var activePieces:Array;
-var currentLegalMoves:Dictionary;
-#Threads
-var MasterAIThread:Thread = Thread.new();
-var ThreadActive:bool = false;
+var activePieces : Array;
+var currentLegalMoves : Dictionary;
+
+
+
 #References
-var tempDialog:AcceptDialog = null;
-var ThinkingDialogRef:Node = null;
-var FenDialog:Node = null;
+var tempDialog : AcceptDialog = null;
+var ThinkingDialogRef : Node = null;
+var FenDialog : Node = null;
+
 #Multiplayer
-var multiplayerConnected = false;
-var isHost = false;
+var multiplayerConnected : bool = false;
+var isHost : bool = false;
 
 
 
 
-### Signals
+# Signals
 signal gameSwitchedSides(newSideTurn:int);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
@@ -74,7 +79,7 @@ signal pieceUnselectedUnlockOthers();
 
 
 
-## Utility
+# Utility
 ## Convert Axial Cordinates To Viewport Cords
 func axial_to_pixel(axial: Vector2i) -> Vector2:
 	var x = float(axial.x) * AXIAL_X_SCALE;
@@ -89,11 +94,23 @@ func spawnNotice(TEXT:String, TIME:float=1.0):
 	self.add_child(notice);
 	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
 	pass;
+## Check if it is my turn
 func isItMyTurn():
-	return EngineNode._getIsWhiteTurn() == (selfside == 0);
+	var isWhite = (selfside == 0);
+	return EngineNode._getIsWhiteTurn() == isWhite;
 
 
-## MENU HELPERS
+func positionTandF(fpos:Vector2i, tpos:Vector2i):
+	TAndFrom.setVis(true);
+	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(fpos) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveFrom(from.x,from.y);
+	var to =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(tpos) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.moveTo(to.x,to.y);
+	return;
+
+
+
+# MENU HELPERS
 func FenOK(stir:String, strict:bool) -> void:
 	FenDialog.queue_free();
 	if(not strict):
@@ -111,8 +128,7 @@ func FenCancel() -> void:
 
 
 
-
-## MENUBAR
+# MENUBAR
 func _on_history_id_pressed(id: int) -> void:
 	if(!activePieces): spawnNotice("[center]Game NOT Running[/center]",  0.8); return;
 	if(MasterAIThread.is_started()): spawnNotice("[center]AI Running[/center]",  0.8); return;
@@ -156,7 +172,7 @@ func _on_test_id_pressed(id: int) -> void:
 
 
 
-## DISPLAY PIECES
+# DISPLAY PIECES
 ## Connect Signals For Chess Pieces
 func connectPieceToSignals(newPieceScene:Node) -> void:
 	## Connect Piece To Piece Controller
@@ -303,60 +319,10 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	
-	TAndFrom.setVis(true);
-	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveFrom(from.x,from.y);
 	var toV = currentLegalMoves[cords][moveType][moveIndex];
-	var to =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toV) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveTo(to.x,to.y)
+	positionTandF(cords, toV);
 
 	syncToEngine();
-	return;
-
-##
-@rpc("any_peer", "call_remote", "reliable")
-func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0, passInterupt=false):
-	print(multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
-	
-	var toPos = currentLegalMoves[cords][moveType][moveIndex];
-	TAndFrom.setVis(true);
-	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(cords) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveFrom(from.x,from.y);
-	var toV =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toPos) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveTo(toV.x,toV.y)
-	
-	var t=0;
-	var index = 0;
-	var side = SIDES.BLACK if (selfside != 0) else SIDES.WHITE;
-	for pieceType in activePieces[side]:
-		t = pieceType;
-		index = 0;
-		for piece in activePieces[side][pieceType]:
-			if(piece == cords): break;
-			index +=1;
-	
-	var ref = ChessPiecesNode.get_child(side).get_child(t-1).get_child(index);
-	ref._setPieceCords()
-	
-	if (moveType == MOVE_TYPES.PROMOTE):
-		prepareChessPieceNode(side,promoteTo-1, promoteTo, toPos);
-		ref.get_parent().remove_child(ref);
-		ref.queue_free();
-	else:
-		ref._setPieceCords(toPos, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toPos*(1 if isRotatedWhiteDown else -1))));
-	
-	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
-	syncToEngine();
-	syncCheckMultiplayer.rpc(true);
-	
-	return;
-
-##
-@rpc("any_peer", "call_remote", "reliable")
-func syncCheckMultiplayer(sendSync:bool):
-	print(multiplayer.get_remote_sender_id()," sent sync request to ", multiplayer.get_unique_id());
-	if(sendSync):
-		syncCheckMultiplayer.rpc(false);
 	return;
 
 ## Move GUI
@@ -416,12 +382,8 @@ func syncMasterAIThreadToMain():
 	ref = ref.get_child(j)
 	ref = ref.get_child(k);
 	var to:Vector2i = EngineNode._getEnemyTo();
-	
-	TAndFrom.setVis(true);
-	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveFrom(from.x,from.y);
-	var toV =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(to) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveTo(toV.x,toV.y)
+		
+	positionTandF(ref._getPieceCords(), to);
 	
 	if (EngineNode._getEnemyPromoted()):
 		prepareChessPieceNode(i,EngineNode._getEnemyPTo()-1, EngineNode._getEnemyPTo(), to);
@@ -555,18 +517,20 @@ func resignCleanUp():
 
 
 
-## MENUS
+# GUI MENUS
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
 	if(gameRunning):
 		spawnNotice("Can't switch sides mid-game.", 1.0);
 		SideSelect._setSelected(selfside);
 		return; 
+		
 	selfside = index;
-	
 	var isUserPlayingW = (selfside == 0);
+	
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
+	
 	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfside != 0);
 	return;
 
@@ -610,10 +574,7 @@ func changeRes(choice:int):
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED);
 		4: #Fullscreen
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN);
-	
-	
 	return;
-
 ##
 func toggleMusic(choice):
 	if choice == 1:
@@ -624,20 +585,16 @@ func toggleMusic(choice):
 ##
 func toggleSound(_choice):
 	return;
-
 ##
 func updateSoundBus(bus,choice):
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(bus), choice);
 	return;
-
 ##
 func closeSettingsDialog():
 	SettingsDialog.visible = false;
 	if(gameRunning and isItMyTurn()):
 		pieceUnselectedUnlockOthers.emit();
 	return
-
-
 ##
 func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 	match settingIndex:
@@ -655,7 +612,7 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 
 
 
-## BUTTONS HELPERS
+# BUTTONS HELPERS
 ##
 @rpc("any_peer", "call_local", "reliable")
 func syncMultTurn():
@@ -731,12 +688,8 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 		newPos = activePieces[sideToUndo][uType][uIndex];
 		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
 		var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(pieceREF._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
-		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));
-		
-		TAndFrom.setVis(true);
-		var toV = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos) * (1 if isRotatedWhiteDown else -1));
-		TAndFrom.moveFrom(from.x,from.y);
-		TAndFrom.moveTo(toV.x,toV.y)
+		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(newPos * (1 if isRotatedWhiteDown else -1))));	
+		positionTandF(from, newPos);
 		return;
 	##Undo Promotion
 	var pType = EngineNode.unpromoteType();
@@ -744,7 +697,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex] ;
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
-	var From = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
+	var From = ref._getPieceCords();
 	ref.get_child(refChildCount-1).queue_free();
 
 	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
@@ -753,11 +706,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	ref.add_child(newPieceScene);
 	ref.move_child(newPieceScene,pIndex);
 	
-	TAndFrom.setVis(true);
-	var ToV = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(ref._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.moveFrom(From.x,From.y);
-	TAndFrom.moveTo(ToV.x,ToV.y)
-	
+	positionTandF(From,ref._getPieceCords())
 	return;
 ##
 func syncUndo():
@@ -783,7 +732,7 @@ func undoAI():
 
 
 
-## BUTTONS
+# BUTTONS
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
@@ -859,6 +808,48 @@ func _on_settings_pressed():
 
 
 ##MULTIPLAYER
+##
+@rpc("any_peer", "call_remote", "reliable")
+func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0, passInterupt=false):
+	print(multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
+	
+	var toPos = currentLegalMoves[cords][moveType][moveIndex];
+	positionTandF(cords, toPos);
+
+	var t=0;
+	var index = 0;
+	var side = SIDES.WHITE if (selfside != 0) else SIDES.BLACK;
+	var escapeloop = false;
+	for pieceType in activePieces[side]:
+		if(escapeloop): break;
+		t = pieceType;
+		index = 0;
+		for piece in activePieces[side][pieceType]:
+			if(piece == cords): escapeloop = true; break;
+			index +=1;
+	
+	var ref = ChessPiecesNode.get_child(side).get_child(t-1).get_child(index);
+	
+	if (moveType == MOVE_TYPES.PROMOTE):
+		prepareChessPieceNode(side,promoteTo-1, promoteTo, toPos);
+		ref.get_parent().remove_child(ref);
+		ref.queue_free();
+	else:
+		ref._setPieceCords(toPos, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toPos*(1 if isRotatedWhiteDown else -1))));
+	
+	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
+	syncToEngine();
+	syncCheckMultiplayer.rpc(true);
+	
+	return;
+##
+@rpc("any_peer", "call_remote", "reliable")
+func syncCheckMultiplayer(sendSync:bool):
+	print(multiplayer.get_remote_sender_id()," sent sync request to ", multiplayer.get_unique_id());
+	if(sendSync):
+		syncCheckMultiplayer.rpc(false);
+	return;
+
 #MULT GUI ON & OFF
 func _on_mult_pressed() -> void:
 	MultDialog.visible = true;
