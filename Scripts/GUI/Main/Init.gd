@@ -301,7 +301,6 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 	if(multiplayerConnected):
 		receiveMove.rpc(cords, moveType, moveIndex, promoteTo);
 	
-	#GameDataNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	
 	TAndFrom.setVis(true);
@@ -326,8 +325,31 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0, p
 	var toV =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toPos) * (1 if isRotatedWhiteDown else -1));
 	TAndFrom.moveTo(toV.x,toV.y)
 	
+	var t=0;
+	var index = 0;
+	var side = SIDES.BLACK if (selfside != 0) else SIDES.WHITE;
+	for pieceType in activePieces[side]:
+		t = pieceType;
+		index = 0;
+		for piece in activePieces[side][pieceType]:
+			if(piece == cords): break;
+			index +=1;
+	
+	var ref = ChessPiecesNode.get_child(side).get_child(t-1).get_child(index);
+	ref._setPieceCords()
+	
+	if (moveType == MOVE_TYPES.PROMOTE):
+		prepareChessPieceNode(side,promoteTo-1, promoteTo, toPos);
+		ref.get_parent().remove_child(ref);
+		ref.queue_free();
+	else:
+		ref._setPieceCords(toPos, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axial_to_pixel(toPos*(1 if isRotatedWhiteDown else -1))));
+	
+	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
+	syncToEngine();
 	syncCheckMultiplayer.rpc(true);
-	pass;
+	
+	return;
 
 ##
 @rpc("any_peer", "call_remote", "reliable")
@@ -335,7 +357,7 @@ func syncCheckMultiplayer(sendSync:bool):
 	print(multiplayer.get_remote_sender_id()," sent sync request to ", multiplayer.get_unique_id());
 	if(sendSync):
 		syncCheckMultiplayer.rpc(false);
-	pass;
+	return;
 
 ## Move GUI
 ## Setup and display a legal move on GUI
@@ -415,7 +437,6 @@ func syncMasterAIThreadToMain():
 
 ##
 func passAIToNewThread():
-	#GameDataNode._passToAI();
 	EngineNode._passToAI();
 	syncMasterAIThreadToMain.call_deferred();
 	return;
