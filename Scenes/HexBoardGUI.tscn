@@ -645,12 +645,12 @@ script = ExtResource("10_5jr73")
 [node name="SoundSource" type="AudioStreamPlayer" parent="."]
 bus = &"Sound"
 
-[node name="Multiplayer" type="Node" parent="."]
-script = ExtResource("15_t52bv")
-
-[node name="MultGUI" parent="." instance=ExtResource("15_8pwlq")]
+[node name="MultiplayerGUI" parent="." instance=ExtResource("15_8pwlq")]
 visible = false
 layout_mode = 1
+
+[node name="Multiplayer" type="Node" parent="MultiplayerGUI"]
+script = ExtResource("15_t52bv")
 
 [node name="Settings" parent="." instance=ExtResource("8_avrf3")]
 visible = false
@@ -667,12 +667,13 @@ layout_mode = 1
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
-[connection signal="multiplayer_disabled" from="Multiplayer" to="." method="_on_multiplayer_multiplayer_disabled"]
-[connection signal="multiplayer_enabled" from="Multiplayer" to="." method="_on_multiplayer_multiplayer_enabled"]
-[connection signal="player_disconnected" from="Multiplayer" to="." method="_on_multiplayer_player_disconnected"]
-[connection signal="server_disconnected" from="Multiplayer" to="." method="_on_multiplayer_server_disconnected"]
-[connection signal="hostServer" from="MultGUI" to="Multiplayer" method="_on_mult_gui_host_server"]
-[connection signal="joinServer" from="MultGUI" to="Multiplayer" method="_on_mult_gui_join_server"]
-[connection signal="multGUIClosed" from="MultGUI" to="." method="_on_mult_gui_mult_gui_closed"]
-[connection signal="shutdownServerClient" from="MultGUI" to="." method="_on_mult_gui_shutdown_server_client"]
+[connection signal="hostServer" from="MultiplayerGUI" to="MultiplayerGUI/Multiplayer" method="_on_mult_gui_host_server"]
+[connection signal="joinServer" from="MultiplayerGUI" to="MultiplayerGUI/Multiplayer" method="_on_mult_gui_join_server"]
+[connection signal="multGUIClosed" from="MultiplayerGUI" to="." method="_on_mult_gui_mult_gui_closed"]
+[connection signal="shutdownServerClient" from="MultiplayerGUI" to="." method="_on_mult_gui_shutdown_server_client"]
+[connection signal="multiplayer_disabled" from="MultiplayerGUI/Multiplayer" to="." method="_on_multiplayer_multiplayer_disabled"]
+[connection signal="multiplayer_enabled" from="MultiplayerGUI/Multiplayer" to="." method="_on_multiplayer_multiplayer_enabled"]
+[connection signal="player_connected" from="MultiplayerGUI/Multiplayer" to="." method="_on_multiplayer_player_connected"]
+[connection signal="player_disconnected" from="MultiplayerGUI/Multiplayer" to="." method="_on_multiplayer_player_disconnected"]
+[connection signal="server_disconnected" from="MultiplayerGUI/Multiplayer" to="." method="_on_multiplayer_server_disconnected"]
 [connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]

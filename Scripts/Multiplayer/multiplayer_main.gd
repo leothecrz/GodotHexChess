@@ -1,6 +1,6 @@
 extends Node
 
-@onready var MultiplayerGUI = $"../MultGUI";
+@onready var MultiplayerGUI = $"..";
 
 const SERVER_ID : int = 1;
 const MAX_CON : int = 1;
@@ -11,11 +11,6 @@ var players : Dictionary = {}
 var player_info : Dictionary = {"name": "Name"}
 var players_loaded : int = 0
 
-#Server INIT
-#JOINING
-#Connect OK : 1501180601
-#Adding Player : 1
-#Adding Player : 1501180601
 
 
 
@@ -38,10 +33,11 @@ func player_add(id : int):
 func registerPlayer(new_player_info):
 	var new_player_id = multiplayer.get_remote_sender_id();
 	players[new_player_id] = new_player_info;
-	player_connected.emit(new_player_id, new_player_info);
 	
 	print("Adding Player : ", new_player_id, " PLAYERS : ",players);
 	MultiplayerGUI.prepLobby(players);
+	
+	player_connected.emit(new_player_id, new_player_info);
 	return;
 	
 

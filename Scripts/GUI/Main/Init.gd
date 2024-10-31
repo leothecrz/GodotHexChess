@@ -60,6 +60,7 @@ var fenDialog : Node = null;
 #Multiplayer
 var multiplayerConnected : bool = false;
 var isHost : bool = false;
+var playerCount = 0;
 
 # Signals
 signal gameSwitchedSides(newSideTurn:int);
@@ -902,8 +903,11 @@ func _on_mult_gui_shutdown_server_client() -> void:
 	clientShutdown();
 	return;
 
-
+func _on_multiplayer_player_connected(peer_id: Variant, player_info: Variant) -> void:
+	playerCount +=1;
+	print("PlayerCount : ", playerCount)
+	return;
 func _on_multiplayer_player_disconnected(peer_id: Variant) -> void:
-	pass # Replace with function body.
+	playerCount -=1;
 func _on_multiplayer_server_disconnected() -> void:
 	pass # Replace with function body.
