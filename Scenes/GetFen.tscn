@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cgnk1kugf1aeh"]
 
-[ext_resource type="Script" path="res://Scripts/GUI/GetFen.gd" id="1_ydac7"]
+[ext_resource type="Script" path="res://Scripts/GUI/Dialog/GetFen.gd" id="1_ydac7"]
 
 [node name="ColorRect" type="ColorRect"]
 anchors_preset = 15

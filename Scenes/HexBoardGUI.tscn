@@ -13,7 +13,7 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/letter_labels.gd" id="9_afgne"]
 [ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/number_labels.gd" id="10_h4ubk"]
-[ext_resource type="Script" path="res://Scripts/GUI/ToFrom.gd" id="13_at1p6"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/ToFrom.gd" id="13_at1p6"]
 [ext_resource type="PackedScene" uid="uid://dbeomhtiuxwqb" path="res://Scenes/multiplayerGUI.tscn" id="15_8pwlq"]
 [ext_resource type="Script" path="res://Scripts/Multiplayer/multiplayer_main.gd" id="15_t52bv"]
 

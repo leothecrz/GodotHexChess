@@ -1,9 +1,9 @@
 [gd_scene load_steps=2 format=3 uid="uid://blh5kr11ugthy"]
 
-[ext_resource type="Script" path="res://Scripts/GUI/simple_notice.gd" id="1_fmfgj"]
+[ext_resource type="Script" path="res://Scripts/GUI/Dialog/simple_notice.gd" id="1_fmfgj"]
 
 [node name="PopupPanel" type="PopupPanel"]
-size = Vector2i(155, 64)
+size = Vector2i(175, 64)
 visible = true
 script = ExtResource("1_fmfgj")
 
@@ -11,6 +11,10 @@ script = ExtResource("1_fmfgj")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.140448, 0.140447, 0.140447, 1)
@@ -20,8 +24,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = -8.0
-offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
