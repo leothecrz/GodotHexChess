@@ -649,6 +649,7 @@ func multResign():
 
 
 
+
 # Undo
 ##
 func undoCapture():
@@ -809,7 +810,19 @@ func _on_settings_pressed():
 
 
 
+#
+##
+func hostShutdown():
+	pass;
+##
+func clientShutdown():
+	pass;
+
+
+
+
 #MULTIPLAYER
+##
 ##
 @rpc("any_peer", "call_remote", "reliable")
 func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
@@ -868,7 +881,7 @@ func _on_mult_pressed() -> void:
 	return;
 func _on_mult_gui_mult_gui_closed() -> void:
 	if(gameRunning and isItMyTurn()):
-			pieceUnselectedUnlockOthers.emit();
+		pieceUnselectedUnlockOthers.emit();
 	return;
 
 ##MULTIPLAYER ON & OFF
@@ -880,3 +893,17 @@ func _on_multiplayer_multiplayer_disabled() -> void:
 	multiplayerConnected = false;
 	isHost = false;
 	return
+
+
+func _on_mult_gui_shutdown_server_client() -> void:
+	if (isHost):
+		hostShutdown();
+		return;
+	clientShutdown();
+	return;
+
+
+func _on_multiplayer_player_disconnected(peer_id: Variant) -> void:
+	pass # Replace with function body.
+func _on_multiplayer_server_disconnected() -> void:
+	pass # Replace with function body.

@@ -88,7 +88,6 @@ offset_top = 45.0
 offset_right = 320.0
 offset_bottom = 86.0
 placeholder_text = "127.0.0.1"
-editable = false
 
 [node name="Label2" type="Label" parent="BG/HJScreen"]
 layout_mode = 0
@@ -194,7 +193,7 @@ offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 0
 bbcode_enabled = true
-text = "[center]OPUSERNAME[/center]"
+text = "[center]Empty[/center]"
 
 [node name="Leave" type="Button" parent="BG/LobbyScreen"]
 layout_mode = 1
@@ -258,6 +257,7 @@ grow_vertical = 2
 color = Color(0.470076, 0.470076, 0.470076, 1)
 
 [node name="OpProfIMG" type="TextureRect" parent="BG/LobbyScreen/IMGBG_OP"]
+visible = false
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5

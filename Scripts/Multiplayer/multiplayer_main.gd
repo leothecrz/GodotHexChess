@@ -1,6 +1,6 @@
 extends Node
 
-@onready var gui = $"../MultGUI";
+@onready var MultiplayerGUI = $"../MultGUI";
 
 const SERVER_ID : int = 1;
 const MAX_CON : int = 1;
@@ -41,23 +41,24 @@ func registerPlayer(new_player_info):
 	player_connected.emit(new_player_id, new_player_info);
 	
 	print("Adding Player : ", new_player_id, " PLAYERS : ",players);
-	gui.prepLobby(players);
+	MultiplayerGUI.prepLobby(players);
 	return;
 	
 
 #Client
 func connect_ok():
-	var peer_id = multiplayer.get_unique_id()
-	players[peer_id] = player_info
-	player_connected.emit(peer_id, player_info)
+	var peer_id = multiplayer.get_unique_id();
+	players[peer_id] = player_info;
+	player_connected.emit(peer_id, player_info);
 	print("Connect OK : ", peer_id);
 	return;
 	
 	
 	
 func player_remove(id : int):
-	players.erase(id)
-	player_disconnected.emit(id)
+	players.erase(id);
+	player_disconnected.emit(id);
+	MultiplayerGUI.playerLeft();
 	print("PLAYER LEFT ", players);
 	pass;
 

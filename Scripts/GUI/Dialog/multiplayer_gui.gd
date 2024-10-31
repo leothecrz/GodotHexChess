@@ -8,8 +8,6 @@ signal multGUIClosed();
 
 var myname = "";
 
-
-
 #Screens
 @onready var HJ = $BG/HJScreen;
 @onready var Lobby = $BG/LobbyScreen;
@@ -20,6 +18,7 @@ var myname = "";
 
 @onready var lbName = $BG/LobbyScreen/MyName;
 @onready var oplbName = $BG/LobbyScreen/OpName;
+@onready var opProfIMG = $BG/LobbyScreen/IMGBG_OP/OpProfIMG;
 
 @onready var tabs = $BG/Type;
 
@@ -56,8 +55,13 @@ func prepLobby(players:Dictionary) -> void:
 	var pKeys = players.keys();
 	lbName.text = centerText(players[pKeys[0]]["name"]);
 	oplbName.text = centerText(players[pKeys[1]]["name"]);
+	opProfIMG.visible = true;
 	return;
 
+func playerLeft() -> void:
+	oplbName.text = centerText("Empty");
+	opProfIMG.visible = false;
+	return;
 
 
 
@@ -91,6 +95,7 @@ func _on_host_lobby_pressed() -> void:
 		adrs.text if isValidADRS(adrs.text) else "127.0.0.1",
 		port.text if isValidPort(port.text) else "4440"
 	);
+	lobbyVisible();
 	return;
 
 func _on_join_lobby_pressed() -> void:
