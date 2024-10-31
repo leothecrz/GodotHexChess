@@ -315,15 +315,6 @@ public partial class HexEngineSharp : Node
 			revertEnPassant = true;
 		}
 
-		if(HexState.captureType == PIECES.KING)
-		{
-			GD.Print("Sharp ", moveTo, " ", pieceType); 
-			foreach(HistEntry hist in historyStack)
-			{
-				GD.Print(hist);
-			}
-			GD.Print(" ");
-		}
 
 		BitBoards.ClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!HexState.isWhiteTurn,HexState.captureType);
 		

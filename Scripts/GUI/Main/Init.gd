@@ -614,15 +614,6 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 
 # BUTTONS HELPERS
 ##
-@rpc("any_peer", "call_local", "reliable")
-func syncMultTurn():
-	var isW = selfside == 0;
-	if(EngineNode._getIsWhiteTurn() != isW):
-		pieceSelectedLockOthers.emit();
-		return;
-	pieceUnselectedUnlockOthers.emit();
-	return;
-##
 @rpc("authority", "call_remote", "reliable")
 func setSide(isW:bool):
 	selfside = 0 if isW else 1;
@@ -752,7 +743,7 @@ func _newGame_OnButtonPress() -> void:
 	if(multiplayerConnected and isHost):
 		setSide.rpc(selfside != 0);
 		startGameFromFen.rpc();
-		syncMultTurn.rpc();
+		syncCheckMultiplayer.rpc(true);
 	
 	return;
 
@@ -811,7 +802,7 @@ func _on_settings_pressed():
 ##
 @rpc("any_peer", "call_remote", "reliable")
 func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0, passInterupt=false):
-	print(multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
+	print(Time.get_ticks_usec()/10000000.0," - ", multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
 	
 	var toPos = currentLegalMoves[cords][moveType][moveIndex];
 	positionTandF(cords, toPos);
@@ -840,14 +831,21 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0, p
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	syncToEngine();
 	syncCheckMultiplayer.rpc(true);
-	
 	return;
 ##
 @rpc("any_peer", "call_remote", "reliable")
 func syncCheckMultiplayer(sendSync:bool):
-	print(multiplayer.get_remote_sender_id()," sent sync request to ", multiplayer.get_unique_id());
 	if(sendSync):
+		print(Time.get_ticks_usec()/10000000.0," - ",multiplayer.get_remote_sender_id()," sent a sync request to ", multiplayer.get_unique_id());
 		syncCheckMultiplayer.rpc(false);
+	else:
+		print(Time.get_ticks_usec()/10000000.0," - ", multiplayer.get_unique_id()," is in sync with ", multiplayer.get_remote_sender_id());
+
+	if(isItMyTurn()):
+		print(Time.get_ticks_usec()/10000000.0," - ","My Turn: ", multiplayer.get_unique_id())
+		pieceUnselectedUnlockOthers.emit();
+		return;
+	pieceSelectedLockOthers.emit();
 	return;
 
 #MULT GUI ON & OFF

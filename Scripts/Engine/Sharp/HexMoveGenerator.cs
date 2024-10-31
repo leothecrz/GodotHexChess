@@ -499,8 +499,8 @@ public class HexMoveGenerator
 		stopTime = Time.GetTicksUsec();
 		updateRunningAverage();
 
-		GD.Print($"Running iteration: {count}, Time: {stopTime-startTime}");
-		GD.Print("Running Move Gen Average ", runningAVG);
+		//GD.Print($"Running iteration: {count}, Time: {stopTime-startTime}");
+		//GD.Print("Running Move Gen Average ", runningAVG);
 
 		return;
 	}
