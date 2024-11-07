@@ -36,7 +36,7 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 @onready var BGMusicPlayer = $BGMusic;
 @onready var SettingsDialog = $Settings;
-@onready var MultDialog = $MultGUI;
+@onready var MultiplayerControl = $Multiplayer;
 
 
 # State
@@ -78,7 +78,7 @@ func axialToPixel(axial : Vector2i) -> Vector2:
 	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	return Vector2(x, y);
 ## Spawn a simple pop up that will display TEXT for TIME seconds
-func spawnNotice(TEXT : String, TIME : float = 1.0) -> void:
+func spawnNotice(TEXT : String, TIME : float = 1.8) -> void:
 	var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
 	notice.NOTICE_TEXT = TEXT;
 	notice.POP_TIME = TIME;
@@ -457,7 +457,7 @@ func _on_fen_id_pressed(id: int) -> void:
 		1:
 			if not activePieces : return;
 			DisplayServer.clipboard_set(EngineNode._getBoardFenNow());
-			spawnNotice("Fen copied to clipboard",1.0)
+			spawnNotice("[center]Fen copied to clipboard[/center]",1.0)
 			pass;
 		_: return;
 func _on_test_id_pressed(id: int) -> void:
@@ -483,7 +483,7 @@ func _on_test_id_pressed(id: int) -> void:
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
 	if(gameRunning):
-		spawnNotice("Can't switch sides mid-game.", 1.0);
+		spawnNotice("[center]Can't switch sides mid-game.[/center]", 1.0);
 		SideSelect._setSelected(selfSide);
 		return; 
 		
@@ -502,7 +502,7 @@ func _on_enemy_select_item_selected(index:int) -> void:
 		return; 
 	
 	if(multiplayerConnected):
-		spawnNotice("Multiplayer Connected",1.0)
+		spawnNotice("[center]Multiplayer Connected[/center]",1.0)
 		EnemySelect._setSelected(EngineNode._getEnemyType());
 		return;
 	
@@ -635,7 +635,7 @@ func forceNewGame():
 		if(isHost):
 			forceNewGame.rpc();
 		else:
-			spawnNotice("Host forced a new game.", 1.0);
+			spawnNotice("[center]Host forced a new game.[/center]");
 	return;
 ##
 @rpc("any_peer", "call_remote", "reliable")
@@ -644,7 +644,7 @@ func multResign():
 	if(multiplayer.get_remote_sender_id() == 0):
 		multResign.rpc();
 		return
-	spawnNotice("Opponent Resigned The Match", 1.0);
+	spawnNotice("[center]Opponent has resigned.[/center]");
 	return;
 
 
@@ -737,12 +737,16 @@ func undoAI():
 # Sub : Calls Spawn Pieces
 func _newGame_OnButtonPress() -> void:
 	if(threadActive):
-		spawnNotice("Please wait until AI has made its turn");
+		spawnNotice("[center]Please wait until AI has made its turn[/center]");
 		return;
 	
-	if(multiplayerConnected and not isHost):
-		spawnNotice("Only host can start the game");
-		return;
+	if(multiplayerConnected):
+		if(isHost):
+			if(playerCount != 2):
+				return;
+		else:
+			spawnNotice("[center]Only host can start the game[/center]");
+			return;
 	
 	if(gameRunning):
 		setConfirmTempDialog(ConfirmationDialog.new(), "There is a game already running. Start Another?", forceNewGame);
@@ -763,7 +767,7 @@ func _resign_OnButtonPress() -> void:
 		return;
 	
 	if(threadActive):
-		spawnNotice("Please wait until AI has made its turn");
+		spawnNotice("[center]Please wait until AI has made its turn[/center]");
 		return;
 
 	if(EngineNode._getGameOverStatus()):
@@ -783,7 +787,7 @@ func _resign_OnButtonPress() -> void:
 ## Undo Button Pressed
 func _on_undo_pressed():
 	if(threadActive):
-		spawnNotice("Please wait until AI has made its turn");
+		spawnNotice("[center]Please wait until AI has made its turn[/center]");
 		return;
 	
 	if(EngineNode._getMoveHistorySize() < minimumUndoSizeReq):
@@ -791,7 +795,7 @@ func _on_undo_pressed():
 		return;
 	
 	if(multiplayerConnected): 
-		spawnNotice("NOT available during multiplayer ... yet.", 1.0);
+		spawnNotice("[center]NOT available during multiplayer ... yet.[/center]", 1.0);
 		return;
 	
 	EngineNode._undoLastMove(true);
@@ -813,10 +817,16 @@ func _on_settings_pressed():
 
 #
 ##
-func hostShutdown():
+func hostShutdown(_reason : int):
+	spawnNotice("[center]Host Shutdown[/center]")
 	pass;
 ##
-func clientShutdown():
+func clientShutdown(reason:int):
+	if(reason == 0):
+		spawnNotice("[center]Client Shutdown[/center]");
+	elif(reason == 1):
+		spawnNotice("[center]Disconected from server.[/center]");
+
 	pass;
 
 
@@ -875,10 +885,9 @@ func syncCheckMultiplayer(sendSync:bool):
 
 ##MULTIPLAYER GUI ON & OFF
 func _on_mult_pressed() -> void:
-	MultDialog.visible = true;
-	MultDialog.z_index = 1;
+	MultiplayerControl._showGUI();
 	if(gameRunning and isItMyTurn()):
-			pieceSelectedLockOthers.emit();
+		pieceSelectedLockOthers.emit();
 	return;
 func _on_mult_gui_mult_gui_closed() -> void:
 	if(gameRunning and isItMyTurn()):
@@ -896,18 +905,17 @@ func _on_multiplayer_multiplayer_disabled() -> void:
 	return
 
 
-func _on_mult_gui_shutdown_server_client() -> void:
+func _on_mult_gui_shutdown_server_client(reason:int) -> void:
 	if (isHost):
-		hostShutdown();
+		hostShutdown(reason);
 		return;
-	clientShutdown();
+		
+	clientShutdown(reason);
 	return;
 
 func _on_multiplayer_player_connected(peer_id: Variant, player_info: Variant) -> void:
 	playerCount +=1;
-	print("PlayerCount : ", playerCount)
 	return;
 func _on_multiplayer_player_disconnected(peer_id: Variant) -> void:
 	playerCount -=1;
-func _on_multiplayer_server_disconnected() -> void:
-	pass # Replace with function body.
+	return;
