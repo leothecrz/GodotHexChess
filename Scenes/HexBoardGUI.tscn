@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=19 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Main/Init.gd" id="1_pgjcn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -15,7 +15,6 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/number_labels.gd" id="10_h4ubk"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/ToFrom.gd" id="13_at1p6"]
 [ext_resource type="PackedScene" uid="uid://dbeomhtiuxwqb" path="res://Scenes/multiplayerGUI.tscn" id="15_8pwlq"]
-[ext_resource type="Script" path="res://Scripts/Multiplayer/multiplayer_main.gd" id="15_t52bv"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_754bx"]
 texture = ExtResource("6_mxkma")
@@ -645,12 +644,10 @@ script = ExtResource("10_5jr73")
 [node name="SoundSource" type="AudioStreamPlayer" parent="."]
 bus = &"Sound"
 
-[node name="Multiplayer" type="Node" parent="."]
-script = ExtResource("15_t52bv")
-
-[node name="MultiplayerGUI" parent="Multiplayer" instance=ExtResource("15_8pwlq")]
+[node name="MultiplayerControl" parent="." instance=ExtResource("15_8pwlq")]
 visible = false
 z_index = 1
+layout_mode = 1
 
 [node name="Settings" parent="." instance=ExtResource("8_avrf3")]
 visible = false
@@ -667,13 +664,10 @@ layout_mode = 1
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
-[connection signal="multiplayer_disabled" from="Multiplayer" to="." method="_on_multiplayer_multiplayer_disabled"]
-[connection signal="multiplayer_enabled" from="Multiplayer" to="." method="_on_multiplayer_multiplayer_enabled"]
-[connection signal="player_connected" from="Multiplayer" to="." method="_on_multiplayer_player_connected"]
-[connection signal="player_disconnected" from="Multiplayer" to="." method="_on_multiplayer_player_disconnected"]
-[connection signal="hostServer" from="Multiplayer/MultiplayerGUI" to="Multiplayer" method="_on_mult_gui_host_server"]
-[connection signal="joinServer" from="Multiplayer/MultiplayerGUI" to="Multiplayer" method="_on_mult_gui_join_server"]
-[connection signal="leaveMultiplayer" from="Multiplayer/MultiplayerGUI" to="Multiplayer" method="_on_multiplayer_gui_leave_multiplayer"]
-[connection signal="multGUIClosed" from="Multiplayer/MultiplayerGUI" to="." method="_on_mult_gui_mult_gui_closed"]
-[connection signal="shutdownServerClient" from="Multiplayer/MultiplayerGUI" to="." method="_on_mult_gui_shutdown_server_client"]
+[connection signal="multGUIClosed" from="MultiplayerControl" to="." method="_on_close_gui"]
+[connection signal="multiplayer_disabled" from="MultiplayerControl" to="." method="_on_multiplayer_disabled"]
+[connection signal="multiplayer_enabled" from="MultiplayerControl" to="." method="_on_multiplayer_enabled"]
+[connection signal="player_connected" from="MultiplayerControl" to="." method="_on_multiplayer_player_connected"]
+[connection signal="player_disconnected" from="MultiplayerControl" to="." method="_on_multiplayer_player_disconnected"]
+[connection signal="shutdownServerClient" from="MultiplayerControl" to="." method="_on_mult_gui_shutdown_server_client"]
 [connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]

@@ -36,7 +36,7 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 @onready var BGMusicPlayer = $BGMusic;
 @onready var SettingsDialog = $Settings;
-@onready var MultiplayerControl = $Multiplayer;
+@onready var MultiplayerControl = $MultiplayerControl;
 
 
 # State
@@ -889,17 +889,17 @@ func _on_mult_pressed() -> void:
 	if(gameRunning and isItMyTurn()):
 		pieceSelectedLockOthers.emit();
 	return;
-func _on_mult_gui_mult_gui_closed() -> void:
+func _on_close_gui() -> void:
 	if(gameRunning and isItMyTurn()):
 		pieceUnselectedUnlockOthers.emit();
 	return;
 
 ##MULTIPLAYER ON & OFF
-func _on_multiplayer_multiplayer_enabled(ishost: bool) -> void:
+func _on_multiplayer_enabled(ishost: bool) -> void:
 	multiplayerConnected = true;
 	isHost = ishost;
 	return;
-func _on_multiplayer_multiplayer_disabled() -> void:
+func _on_multiplayer_disabled() -> void:
 	multiplayerConnected = false;
 	isHost = false;
 	return
