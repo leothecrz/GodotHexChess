@@ -121,7 +121,7 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 ## Setup A Chess Piece Scene
 func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	var newPieceScene:Node = preload("res://Scenes/chess_piece.tscn").instantiate();
-	var cords = piece * (1 if isRotatedWhiteDown else -1);
+	var cords : Vector2i = piece * (1 if isRotatedWhiteDown else -1);
 	
 	newPieceScene.side = side;
 	newPieceScene.pieceType = pieceType;
@@ -135,19 +135,18 @@ func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	
 	return newPieceScene;
 
-## Hand piece data to new scene. Connect scene to piece controller. Add to container.
-func prepareChessPieceNode(side:int, typeindex:int, pieceType:int, piece:Vector2i) -> void:
-	var newPieceScene = preloadChessPiece(side, pieceType, piece);
-	ChessPiecesNode.get_child(side).get_child(typeindex).add_child(newPieceScene,);
-	connectPieceToSignals(newPieceScene);
+## Give piece data to a new scene. Connect scene to piece controller. Add to container.
+func prepareChessPieceNode(side:int, pieceType:int, piece:Vector2i) -> void:
+	var newPiece : Node = preloadChessPiece(side, pieceType, piece);
+	ChessPiecesNode.get_child(side).get_child(pieceType-1).add_child(newPiece);
+	connectPieceToSignals(newPiece);
 	return;
-
 ## Spawn all the pieces in 'activePieces' at their positions. AP structure [{{},{}...},{{},{}...}]
 func spawnActivePieces() -> void:
 	for side:int in range(activePieces.size()):
 		for pieceType:int in activePieces[side]:
 			for piece:Vector2i in activePieces[side][pieceType]:
-				prepareChessPieceNode(side, pieceType-1, pieceType, piece);
+				prepareChessPieceNode(side, pieceType, piece);
 	return;
 
 
@@ -176,7 +175,7 @@ func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pT
 			ref = ChessPiecesNode.get_child(i).get_child(PIECES.PAWN-1).get_child(pawnIndex);
 			break;
 	
-	prepareChessPieceNode(ref.side, pTo-1, EngineNode.getPiecetype(pTo), ref.pieceCords);
+	prepareChessPieceNode(ref.side, EngineNode.getPiecetype(pTo), ref.pieceCords);
 
 	ref.get_parent().remove_child(ref);	
 	ref.queue_free();
@@ -323,7 +322,7 @@ func syncMasterAIThreadToMain():
 	repositionToFrom(ref._getPieceCords(), to);
 	
 	if (EngineNode._getEnemyPromoted()):
-		prepareChessPieceNode(i,EngineNode._getEnemyPTo()-1, EngineNode._getEnemyPTo(), to);
+		prepareChessPieceNode(i, EngineNode._getEnemyPTo(), to);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 	else:
@@ -857,7 +856,7 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 	var ref = ChessPiecesNode.get_child(side).get_child(t-1).get_child(index);
 	
 	if (moveType == MOVE_TYPES.PROMOTE):
-		prepareChessPieceNode(side,promoteTo-1, promoteTo, toPos);
+		prepareChessPieceNode(side, promoteTo, toPos);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 	else:
@@ -895,7 +894,7 @@ func _on_close_gui() -> void:
 	return;
 
 ##MULTIPLAYER ON & OFF
-func _on_multiplayer_enabled(ishost: bool) -> void:
+func _on_multiplayer_enabled(ishost : bool) -> void:
 	multiplayerConnected = true;
 	isHost = ishost;
 	return;
@@ -905,17 +904,17 @@ func _on_multiplayer_disabled() -> void:
 	return
 
 
-func _on_mult_gui_shutdown_server_client(reason:int) -> void:
+func _on_mult_gui_shutdown_server_client(reason : int) -> void:
+	
 	if (isHost):
 		hostShutdown(reason);
 		return;
-		
 	clientShutdown(reason);
 	return;
 
-func _on_multiplayer_player_connected(peer_id: Variant, player_info: Variant) -> void:
+func _on_multiplayer_player_connected(_peer_id: Variant, _player_info: Variant) -> void:
 	playerCount +=1;
 	return;
-func _on_multiplayer_player_disconnected(peer_id: Variant) -> void:
+func _on_multiplayer_player_disconnected(_peer_id: Variant) -> void:
 	playerCount -=1;
 	return;

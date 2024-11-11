@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://dbeomhtiuxwqb"]
+[gd_scene load_steps=5 format=3 uid="uid://dbeomhtiuxwqb"]
 
 [ext_resource type="Script" path="res://Scripts/Multiplayer/multMain.gd" id="1_r47su"]
 [ext_resource type="Texture2D" uid="uid://c3cbwpc0b7bio" path="res://Images/defProfile.png" id="2_eo558"]
+[ext_resource type="Script" path="res://Scripts/GUI/Dialog/MultConnect.gd" id="3_htp6n"]
+[ext_resource type="Script" path="res://Scripts/GUI/Dialog/MultSearch.gd" id="3_txlj3"]
 
 [node name="MultGUI" type="Control"]
 layout_mode = 3
@@ -273,7 +275,128 @@ grow_vertical = 2
 texture = ExtResource("2_eo558")
 expand_mode = 1
 
+[node name="Connecting" type="ColorRect" parent="BG"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -25.0
+offset_right = 100.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.392157, 0.392157, 0.392157, 0.803922)
+script = ExtResource("3_htp6n")
+
+[node name="searchText" type="RichTextLabel" parent="BG/Connecting"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "
+[center]Starting Server...[/center]"
+
+[node name="OKConnect" type="Button" parent="BG/Connecting"]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -41.0
+offset_right = 30.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "OK"
+
+[node name="CancelConnect" type="Button" parent="BG/Connecting"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -41.0
+offset_right = 30.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Cancel"
+
+[node name="Searching" type="ColorRect" parent="BG"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -37.5
+offset_right = 100.0
+offset_bottom = 62.5
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.392157, 0.392157, 0.392157, 0.803922)
+script = ExtResource("3_txlj3")
+
+[node name="searchText" type="RichTextLabel" parent="BG/Searching"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "
+[center]Connecting...[/center]"
+
+[node name="OKSearch" type="Button" parent="BG/Searching"]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -41.0
+offset_right = 30.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "OK"
+
+[node name="CancelSearch" type="Button" parent="BG/Searching"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -30.0
+offset_top = -41.0
+offset_right = 30.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Cancel"
+
 [connection signal="pressed" from="BG/Close" to="." method="_on_close_pressed"]
 [connection signal="pressed" from="BG/HJScreen/HostLobby" to="." method="_on_host_lobby_pressed"]
 [connection signal="pressed" from="BG/HJScreen/JoinLobby" to="." method="_on_join_lobby_pressed"]
 [connection signal="pressed" from="BG/LobbyScreen/Leave" to="." method="_on_leave_pressed"]
+[connection signal="pressed" from="BG/Connecting/CancelConnect" to="." method="_on_cancel_connect_pressed"]
+[connection signal="pressed" from="BG/Searching/OKSearch" to="." method="_on_ok_search_pressed"]
+[connection signal="pressed" from="BG/Searching/CancelSearch" to="." method="_on_cancel_search_pressed"]
