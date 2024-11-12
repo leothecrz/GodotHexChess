@@ -154,6 +154,21 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "Join Lobby"
 
+[node name="CheckButton" type="CheckButton" parent="BG/HJScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -46.5
+offset_top = -15.5
+offset_right = 46.5
+offset_bottom = 15.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "UPNP"
+
 [node name="LobbyScreen" type="ColorRect" parent="BG"]
 visible = false
 layout_mode = 1
@@ -275,7 +290,7 @@ grow_vertical = 2
 texture = ExtResource("2_eo558")
 expand_mode = 1
 
-[node name="Connecting" type="ColorRect" parent="BG"]
+[node name="ServerDialog" type="ColorRect" parent="BG"]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -292,7 +307,7 @@ grow_vertical = 2
 color = Color(0.392157, 0.392157, 0.392157, 0.803922)
 script = ExtResource("3_htp6n")
 
-[node name="searchText" type="RichTextLabel" parent="BG/Connecting"]
+[node name="searchText" type="RichTextLabel" parent="BG/ServerDialog"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -303,7 +318,7 @@ bbcode_enabled = true
 text = "
 [center]Starting Server...[/center]"
 
-[node name="OKConnect" type="Button" parent="BG/Connecting"]
+[node name="OKConnect" type="Button" parent="BG/ServerDialog"]
 visible = false
 layout_mode = 1
 anchors_preset = 7
@@ -319,7 +334,7 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "OK"
 
-[node name="CancelConnect" type="Button" parent="BG/Connecting"]
+[node name="CancelConnect" type="Button" parent="BG/ServerDialog"]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -334,7 +349,7 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "Cancel"
 
-[node name="Searching" type="ColorRect" parent="BG"]
+[node name="ClientDialog" type="ColorRect" parent="BG"]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -351,7 +366,7 @@ grow_vertical = 2
 color = Color(0.392157, 0.392157, 0.392157, 0.803922)
 script = ExtResource("3_txlj3")
 
-[node name="searchText" type="RichTextLabel" parent="BG/Searching"]
+[node name="searchText" type="RichTextLabel" parent="BG/ClientDialog"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -362,7 +377,7 @@ bbcode_enabled = true
 text = "
 [center]Connecting...[/center]"
 
-[node name="OKSearch" type="Button" parent="BG/Searching"]
+[node name="OKSearch" type="Button" parent="BG/ClientDialog"]
 visible = false
 layout_mode = 1
 anchors_preset = 7
@@ -378,7 +393,7 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "OK"
 
-[node name="CancelSearch" type="Button" parent="BG/Searching"]
+[node name="CancelSearch" type="Button" parent="BG/ClientDialog"]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -396,7 +411,8 @@ text = "Cancel"
 [connection signal="pressed" from="BG/Close" to="." method="_on_close_pressed"]
 [connection signal="pressed" from="BG/HJScreen/HostLobby" to="." method="_on_host_lobby_pressed"]
 [connection signal="pressed" from="BG/HJScreen/JoinLobby" to="." method="_on_join_lobby_pressed"]
+[connection signal="toggled" from="BG/HJScreen/CheckButton" to="." method="_on_check_button_toggled"]
 [connection signal="pressed" from="BG/LobbyScreen/Leave" to="." method="_on_leave_pressed"]
-[connection signal="pressed" from="BG/Connecting/CancelConnect" to="." method="_on_cancel_connect_pressed"]
-[connection signal="pressed" from="BG/Searching/OKSearch" to="." method="_on_ok_search_pressed"]
-[connection signal="pressed" from="BG/Searching/CancelSearch" to="." method="_on_cancel_search_pressed"]
+[connection signal="pressed" from="BG/ServerDialog/CancelConnect" to="." method="_on_cancel_connect_pressed"]
+[connection signal="pressed" from="BG/ClientDialog/OKSearch" to="." method="_on_ok_search_pressed"]
+[connection signal="pressed" from="BG/ClientDialog/CancelSearch" to="." method="_on_cancel_search_pressed"]
