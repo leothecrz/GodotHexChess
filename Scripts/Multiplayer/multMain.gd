@@ -144,7 +144,7 @@ func serverPeerSetupErrorHandle(err):
 	ref.canceled.connect(dialogfunc)
 	match (err):
 		20:
-			ref.dialog_text = "Cant create multiplayer peer " % err;
+			ref.dialog_text = "Cant create multiplayer peer";
 		_:
 			ref.dialog_text = "Peer setup failed because: ERROR %d " % err;
 
@@ -317,11 +317,11 @@ func shutdownCleanUp(reason : REASONS):
 	shutdownServerClient.emit(reason);
 	multiplayer_disabled.emit();
 	multiplayer.multiplayer_peer = null;
+	players.clear();
 	return;
 #Called when peer disconnects from server
 func onDisconnect():
 	shutdownCleanUp(REASONS.SERVERSHUTODWN);
-	players.clear();
 	print("SERVER DISCONECTED");
 	return
 

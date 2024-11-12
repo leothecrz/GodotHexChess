@@ -27,6 +27,9 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 @onready var BoardControler = $StaticGUI/Mid;
 @onready var LeftPanel = $StaticGUI/Left
+
+@onready var RightPanel = $StaticGUI/Right
+# TODO :: OPTIONS SHOULD BE ACCESSED THORUGH RIGHTPANEL
 @onready var SideSelect = $StaticGUI/Right/BG/Options/SideSelect
 @onready var EnemySelect = $StaticGUI/Right/BG/Options/EnemySelect
 
@@ -825,8 +828,7 @@ func clientShutdown(reason:int):
 		spawnNotice("[center]Client Shutdown[/center]");
 	elif(reason == 1):
 		spawnNotice("[center]Disconected from server.[/center]");
-
-	pass;
+	return;
 
 
 
@@ -884,6 +886,9 @@ func syncCheckMultiplayer(sendSync:bool):
 
 ##MULTIPLAYER GUI ON & OFF
 func _on_mult_pressed() -> void:
+	if(not multiplayerConnected and gameRunning):
+		spawnNotice("Finish the current game to start an online session")
+		return;
 	MultiplayerControl._showGUI();
 	if(gameRunning and isItMyTurn()):
 		pieceSelectedLockOthers.emit();
@@ -897,15 +902,17 @@ func _on_close_gui() -> void:
 func _on_multiplayer_enabled(ishost : bool) -> void:
 	multiplayerConnected = true;
 	isHost = ishost;
+	RightPanel._multSignalOn();
 	return;
 func _on_multiplayer_disabled() -> void:
+	
 	multiplayerConnected = false;
 	isHost = false;
+	RightPanel._multSignalOff();
 	return
 
 
 func _on_mult_gui_shutdown_server_client(reason : int) -> void:
-	
 	if (isHost):
 		hostShutdown(reason);
 		return;
@@ -917,4 +924,5 @@ func _on_multiplayer_player_connected(_peer_id: Variant, _player_info: Variant) 
 	return;
 func _on_multiplayer_player_disconnected(_peer_id: Variant) -> void:
 	playerCount -=1;
+	spawnNotice("Opponent has disconnected")
 	return;
