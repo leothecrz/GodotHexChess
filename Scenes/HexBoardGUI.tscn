@@ -618,8 +618,8 @@ grow_vertical = 2
 alignment = 1
 selected = 0
 item_count = 2
-popup/item_0/text = "White"
-popup/item_1/text = "Black"
+popup/item_0/text = "Black"
+popup/item_1/text = "White"
 popup/item_1/id = 1
 script = ExtResource("5_ref6b")
 

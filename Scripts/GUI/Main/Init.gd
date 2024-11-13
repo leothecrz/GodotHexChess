@@ -2,7 +2,6 @@ extends Control;
 
 # Entry Point of Game
 #
-#
 # Error Codes
 # 1 No Game Data Node
 
@@ -12,26 +11,12 @@ enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
 enum SIDES { BLACK, WHITE };
 enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
-
-# Position State
-@onready var VIEWPORT_CENTER_POSITION = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-@onready var PIXEL_OFFSET = 35;
-@onready var AXIAL_X_SCALE = 1.4;
-@onready var AXIAL_Y_SCALE = 0.9395;
-@onready var PIECE_SCALE = 0.18;
-@onready var MOVE_SCALE = 0.015;
-
-
 # Node Ref
 @onready var EngineNode:HexEngineSharp = $HCE;
 
 @onready var BoardControler = $StaticGUI/Mid;
 @onready var LeftPanel = $StaticGUI/Left
-
 @onready var RightPanel = $StaticGUI/Right
-# TODO :: OPTIONS SHOULD BE ACCESSED THORUGH RIGHTPANEL
-@onready var SideSelect = $StaticGUI/Right/BG/Options/SideSelect
-@onready var EnemySelect = $StaticGUI/Right/BG/Options/EnemySelect
 
 @onready var TAndFrom = $DynamicGUI/PosGUI;
 @onready var MoveNode = $DynamicGUI/MoveGUI;
@@ -41,36 +26,44 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 @onready var SettingsDialog = $Settings;
 @onready var MultiplayerControl = $MultiplayerControl;
 
+# Position State
+var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
+var PIXEL_OFFSET : int = 35;
+var AXIAL_X_SCALE : float = 1.4;
+var AXIAL_Y_SCALE : float = 0.9395;
+var PIECE_SCALE : float = 0.18;
+var MOVE_SCALE : float = 0.015;
 
-# State
+# AI - THREAD
 var masterAIThread : Thread = Thread.new();
 var threadActive : bool = false;
-
+#Board
 var isRotatedWhiteDown : bool = true;
+#Game
 var gameRunning : bool = false;
 var minimumUndoSizeReq : int = 1;
 var selfSide : int = 0;
-
 # Temp
 var activePieces : Array;
 var currentLegalMoves : Dictionary;
 
-#References
-var tempDialog : AcceptDialog = null;
-var thinkingDialogRef : Node = null;
-var fenDialog : Node = null;
 
 #Multiplayer
 var multiplayerConnected : bool = false;
 var isHost : bool = false;
 var playerCount = 0;
 
+#References
+var tempDialog : AcceptDialog = null;
+var thinkingDialogRef : Node = null;
+var fenDialog : Node = null;
+
+
+
 # Signals
 signal gameSwitchedSides(newSideTurn:int);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
-
-
 
 
 
@@ -89,12 +82,6 @@ func spawnNotice(TEXT : String, TIME : float = 1.8) -> void:
 	self.add_child(notice);
 	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
 	return;
-## Check if it is my turn
-func isItMyTurn() -> bool:
-	var isWhite = (selfSide == 0);
-	return EngineNode._getIsWhiteTurn() == isWhite;
-
-
 ##
 func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
 	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(fpos) * (1 if isRotatedWhiteDown else -1));
@@ -103,9 +90,12 @@ func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
 	TAndFrom.moveFrom(from.x,from.y);
 	TAndFrom.moveTo(to.x,to.y);
 	return;
-
-
-
+##
+func isWhite() -> bool:
+	return(selfSide == SIDES.WHITE);
+## Check if it is my turn
+func isItMyTurn() -> bool:
+	return EngineNode._getIsWhiteTurn() == isWhite();
 
 
 
@@ -120,7 +110,6 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 	pieceSelectedLockOthers.connect(newPieceScene._on_Control_LockPiece);
 	pieceUnselectedUnlockOthers.connect(newPieceScene._on_Control_UnlockPiece);
 	return;
-
 ## Setup A Chess Piece Scene
 func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	var newPieceScene:Node = preload("res://Scenes/chess_piece.tscn").instantiate();
@@ -137,7 +126,6 @@ func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	newPieceScene.scale.y = PIECE_SCALE;
 	
 	return newPieceScene;
-
 ## Give piece data to a new scene. Connect scene to piece controller. Add to container.
 func prepareChessPieceNode(side:int, pieceType:int, piece:Vector2i) -> void:
 	var newPiece : Node = preloadChessPiece(side, pieceType, piece);
@@ -151,8 +139,6 @@ func spawnActivePieces() -> void:
 			for piece:Vector2i in activePieces[side][pieceType]:
 				prepareChessPieceNode(side, pieceType, piece);
 	return;
-
-
 
 
 
@@ -170,7 +156,6 @@ func updateScenceTree_OfCapture() -> void:
 	LeftPanel._pushCapture(i,j+1);
 	
 	return;
-
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
 func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
 	var ref:Node;
@@ -192,7 +177,6 @@ func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pT
 	
 	allowAITurn();
 	return;
-
 ## Get new state data from engine
 func updateGUI_Elements() -> void:
 	if(EngineNode._getGameInCheck() != LeftPanel._getLabelState()):
@@ -207,7 +191,6 @@ func updateGUI_Elements() -> void:
 
 	if(EngineNode._getGameOverStatus()):
 		if(EngineNode._getGameInCheck()):
-			
 			setConfirmTempDialog(AcceptDialog.new(),\
 			"%s has won by CheckMate." % ["White" if EngineNode._getIsBlackTurn() else "Black"],\
 			killDialog);
@@ -219,7 +202,6 @@ func updateGUI_Elements() -> void:
 	
 	LeftPanel._updateHist(EngineNode._getHistTop());
 	return;
-
 ## Handle post move gui updates
 func syncToEngine() -> void:
 	activePieces = EngineNode._getActivePieces();
@@ -228,8 +210,6 @@ func syncToEngine() -> void:
 		updateScenceTree_OfCapture();
 	updateGUI_Elements();
 	return;
-
-
 
 
 
@@ -244,7 +224,6 @@ func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
 	dialog.promotionAccepted.connect(updateScenceTree_OfPromotionInterupt); # signal connect
 	add_child(dialog);
 	return;
-
 ## Sumbit a move to the engine and update state
 func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
 	
@@ -262,8 +241,6 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passIn
 
 	syncToEngine();
 	return;
-
-
 
 
 
@@ -291,7 +268,6 @@ func spawnAMove(moves:Array, color:Color, key, cords):
 		
 		activeScene.SpriteNode.set_modulate(color);
 	return;
-
 ## Spawn the moves from the given 'moves' dictionary for the piece 'cords'
 func spawnMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
@@ -301,8 +277,6 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 			MOVE_TYPES.PROMOTE: 		spawnAMove(moves[key], Color.DARK_KHAKI, key, cords);
 			MOVE_TYPES.ENPASSANT: 		spawnAMove(moves[key], Color.SEA_GREEN, key, cords);
 	return;
-
-
 
 
 
@@ -336,13 +310,11 @@ func syncMasterAIThreadToMain():
 	syncToEngine();
 	pieceUnselectedUnlockOthers.emit();
 	return;
-
 ##
 func passAIToNewThread():
 	EngineNode._passToAI();
 	syncMasterAIThreadToMain.call_deferred();
 	return;
-
 ##
 func allowAITurn():
 	if(  not EngineNode._getIsEnemyAI() ):
@@ -362,8 +334,6 @@ func allowAITurn():
 		passAIToNewThread();
 	
 	return;
-
-
 
 
 
@@ -394,8 +364,6 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 
 
 
-
-
 # DIALOGS
 ##
 func killDialog():
@@ -416,11 +384,6 @@ func setConfirmTempDialog(type:AcceptDialog, input:String, method:Callable):
 
 
 
-
-
-
-
-
 # MENU HELPERS
 func FenOK(stir:String, strict:bool) -> void:
 	fenDialog.queue_free();
@@ -435,7 +398,6 @@ func FenOK(stir:String, strict:bool) -> void:
 func FenCancel() -> void:
 	fenDialog.queue_free();
 	return;
-
 
 
 
@@ -481,46 +443,42 @@ func _on_test_id_pressed(id: int) -> void:
 
 
 
-
-
 # GUI MENUS
 ## Set item select value.
 func _selectSide_OnItemSelect(index:int) -> void:
 	if(gameRunning):
 		spawnNotice("[center]Can't switch sides mid-game.[/center]", 1.0);
-		SideSelect._setSelected(selfSide);
+		RightPanel._setSide(selfSide);
 		return; 
 		
 	selfSide = index;
-	var isUserPlayingW = (selfSide == 0);
+	var isUserPlayingW = isWhite();
 	
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
 	
-	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), selfSide != 0);
+	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), not isWhite());
 	return;
 ##
 func _on_enemy_select_item_selected(index:int) -> void:
 	if(gameRunning):
-		EnemySelect._setSelected(EngineNode._getEnemyType());
+		RightPanel._setEnemy(EngineNode._getEnemyType());
 		return; 
 	
 	if(multiplayerConnected):
-		spawnNotice("[center]Multiplayer Connected[/center]",1.0)
-		EnemySelect._setSelected(EngineNode._getEnemyType());
+		spawnNotice("[center]Multiplayer Connected[/center]")
+		RightPanel._setEnemy(EngineNode._getEnemyType());
 		return;
 	
 	var type:int = index;
 	if(index > 1):
 		type = index - 1;
-	EngineNode.UpdateEnemy(type, selfSide != 0);
+	EngineNode.UpdateEnemy(type, not isWhite());
 	
 	minimumUndoSizeReq = 1;
 	if(type == 0):
 		minimumUndoSizeReq += 1;
 	return;
-
-
 
 
 
@@ -575,18 +533,16 @@ func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 
 
 
-
-
 # BUTTONS HELPERS
 ##
 @rpc("authority", "call_remote", "reliable")
 func setSide(isW:bool):
-	selfSide = 0 if isW else 1;
+	selfSide = 1 if isW else 0;
 	
-	var isUserPlayingW = (selfSide == 0);
+	var isUserPlayingW = isWhite();
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
-	SideSelect._setSelected(selfSide);
+	RightPanel._setSide(selfSide);
 	return;
 ##
 @rpc("authority", "call_remote", "reliable")
@@ -652,8 +608,6 @@ func multResign():
 		return
 	spawnNotice("[center]Opponent has resigned.[/center]");
 	return;
-
-
 
 
 
@@ -738,8 +692,6 @@ func undoAI():
 
 
 
-
-
 # BUTTONS
 ## New Game Button Pressed.
 # Sub : Calls Spawn Pieces
@@ -763,7 +715,7 @@ func _newGame_OnButtonPress() -> void:
 	startGameFromFen();
 	
 	if(multiplayerConnected and isHost):
-		setSide.rpc(selfSide != 0);
+		setSide.rpc(not isWhite());
 		startGameFromFen.rpc();
 		syncCheckMultiplayer.rpc(true);
 	
@@ -821,8 +773,6 @@ func _on_settings_pressed():
 
 
 
-
-
 #
 ##
 func hostShutdown(_reason : int):
@@ -838,7 +788,6 @@ func clientShutdown(reason:int):
 
 
 
-
 #MULTIPLAYER
 ##
 ##
@@ -851,7 +800,7 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 
 	var t=0;
 	var index = 0;
-	var side = SIDES.WHITE if (selfSide != 0) else SIDES.BLACK;
+	var side = SIDES.WHITE if (not isWhite()) else SIDES.BLACK;
 	var escapeloop = false;
 	for pieceType in activePieces[side]:
 		if(escapeloop): break;
