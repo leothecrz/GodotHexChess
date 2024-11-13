@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=21 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Main/Init.gd" id="1_pgjcn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Left/LeftPanel.gd" id="5_ermre"]
 [ext_resource type="Script" path="res://Scripts/GUI/Right/SideSelect.gd" id="5_ref6b"]
 [ext_resource type="Script" path="res://Scripts/GUI/Left/move_history.gd" id="5_scl7f"]
+[ext_resource type="Script" path="res://Scripts/GUI/Left/captures.gd" id="6_d06rp"]
 [ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
 [ext_resource type="Texture2D" uid="uid://b7ynqeqd2uut2" path="res://Images/PerfectHexagon.png" id="6_mxkma"]
 [ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
@@ -150,6 +151,57 @@ item_count = 2
 item_0/text = "Run Engine Suite"
 item_1/text = "Evaluate Board"
 item_1/id = 1
+
+[node name="Captures" type="Control" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_d06rp")
+
+[node name="ColorRect" type="ColorRect" parent="StaticGUI/Left/BG/Captures"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -107.5
+offset_top = -80.0
+offset_right = 107.5
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.392157)
+
+[node name="WCapture" type="RichTextLabel" parent="StaticGUI/Left/BG/Captures/ColorRect"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 80.0
+grow_horizontal = 2
+bbcode_enabled = true
+text = "W Captures:"
+
+[node name="BCapture" type="RichTextLabel" parent="StaticGUI/Left/BG/Captures/ColorRect"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -80.0
+grow_horizontal = 2
+grow_vertical = 0
+bbcode_enabled = true
+text = "B Captures:"
 
 [node name="Mid" type="Control" parent="StaticGUI"]
 layout_mode = 1

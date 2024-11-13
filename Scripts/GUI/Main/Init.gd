@@ -167,6 +167,8 @@ func updateScenceTree_OfCapture() -> void:
 	ref.get_parent().remove_child(ref);
 	ref.queue_free();
 	
+	LeftPanel._pushCapture(i,j+1);
+	
 	return;
 
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
@@ -598,6 +600,8 @@ func startGameFromFen(stateString : String = "") -> void:
 			spawnNotice("[center]Fen Invalid[/center]", 1.0);
 			return;
 	
+	LeftPanel._resetCaptures();
+	
 	syncToEngine()
 	spawnActivePieces();
 	gameSwitchedSides.emit(SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK);
@@ -660,8 +664,8 @@ func undoCapture():
 		return;
 	##Undo Uncapture
 	var captureSideToUndo = SIDES.BLACK if EngineNode._getIsWhiteTurn() else SIDES.WHITE;
-	var cType = EngineNode._getCaptureType();
-	var cIndex = EngineNode._getCaptureIndex();
+	var cType = EngineNode.CaptureType();
+	var cIndex = EngineNode.CaptureIndex();
 	var newPos = activePieces[captureSideToUndo][cType][cIndex];
 	var newPieceScene = preloadChessPiece(captureSideToUndo, cType, newPos);
 	connectPieceToSignals(newPieceScene);
@@ -669,6 +673,8 @@ func undoCapture():
 	var ref  = ChessPiecesNode\
 	.get_child(captureSideToUndo)\
 	.get_child(cType-1);
+	
+	LeftPanel._undoCapture(captureSideToUndo);
 	
 	## respawn captured piece
 	if( ref.get_child_count(false) > 0):
