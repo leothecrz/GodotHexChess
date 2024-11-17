@@ -4,6 +4,18 @@ extends Control
 @onready var sideSelect = $BG/Options/SideSelect;
 @onready var enemySelect = $BG/Options/EnemySelect;
 
+@onready var resignButton = $BG/Buttons/ResignButton;
+
+## Resign Button
+func _setResignOn():
+	resignButton.text = "Resign";
+	return;
+
+func _setResignOff():
+	resignButton.text = "Clean Up";
+	return;
+
+
 ## SETS
 func _setSide(type:int):
 	sideSelect._setSelected(type);

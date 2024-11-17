@@ -27,12 +27,12 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 @onready var MultiplayerControl = $MultiplayerControl;
 
 # Position State
-var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-var PIXEL_OFFSET : int = 35;
-var AXIAL_X_SCALE : float = 1.4;
-var AXIAL_Y_SCALE : float = 0.9395;
-var PIECE_SCALE : float = 0.18;
-var MOVE_SCALE : float = 0.015;
+@onready var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
+@onready var PIXEL_OFFSET : int = 35;
+@onready var AXIAL_X_SCALE : float = 1.4;
+@onready var AXIAL_Y_SCALE : float = 0.9395;
+@onready var PIECE_SCALE : float = 0.18;
+@onready var MOVE_SCALE : float = 0.015;
 
 # AI - THREAD
 var masterAIThread : Thread = Thread.new();
@@ -42,7 +42,7 @@ var isRotatedWhiteDown : bool = true;
 #Game
 var gameRunning : bool = false;
 var minimumUndoSizeReq : int = 1;
-var selfSide : int = 0;
+var selfSide : int = 1;
 # Temp
 var activePieces : Array;
 var currentLegalMoves : Dictionary;
@@ -194,11 +194,14 @@ func updateGUI_Elements() -> void:
 			setConfirmTempDialog(AcceptDialog.new(),\
 			"%s has won by CheckMate." % ["White" if EngineNode._getIsBlackTurn() else "Black"],\
 			killDialog);
+			
 		else:
 			setConfirmTempDialog(AcceptDialog.new(),\
 			"StaleMate. Game ends in a draw.",\
 			killDialog);
-	
+		RightPanel._setResignOff();
+	else:
+		RightPanel._setResignOn();
 	
 	LeftPanel._updateHist(EngineNode._getHistTop());
 	return;
@@ -556,7 +559,7 @@ func startGameFromFen(stateString : String = "") -> void:
 			spawnNotice("[center]Fen Invalid[/center]", 1.0);
 			return;
 	
-	LeftPanel._resetCaptures();
+	RightPanel._setResignOn();
 	
 	syncToEngine()
 	spawnActivePieces();
@@ -574,6 +577,7 @@ func resignCleanUp():
 	activePieces.clear();
 	currentLegalMoves.clear();
 	
+	LeftPanel._resetCaptures();
 	BoardControler.setSignalWhite();
 	TAndFrom.setVis(false);
 	gameRunning = false;

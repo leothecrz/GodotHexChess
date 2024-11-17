@@ -43,6 +43,7 @@ sources/4 = SubResource("TileSetAtlasSource_poe7d")
 sources/0 = SubResource("TileSetAtlasSource_754bx")
 
 [node name="Control" type="Control"]
+editor_description = "Master GUI cordinator."
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -52,9 +53,11 @@ grow_vertical = 2
 script = ExtResource("1_pgjcn")
 
 [node name="HCE" type="Node" parent="."]
+editor_description = "Hexagonal Chess Engine. Logic controler for hexchess game state."
 script = ExtResource("2_gq2xx")
 
 [node name="StaticGUI" type="ColorRect" parent="."]
+editor_description = "GUI elements that will always remain. GUI elements are not added nor removed during execution."
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -186,10 +189,13 @@ color = Color(0, 0, 0, 0.392157)
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 80.0
+offset_left = 7.5
+offset_right = -7.5
+offset_bottom = 75.0
 grow_horizontal = 2
 bbcode_enabled = true
-text = "W Captures:"
+text = "W Captures:
+"
 
 [node name="BCapture" type="RichTextLabel" parent="StaticGUI/Left/BG/Captures/ColorRect"]
 layout_mode = 1
@@ -197,11 +203,14 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 7.5
 offset_top = -80.0
+offset_right = -7.5
 grow_horizontal = 2
 grow_vertical = 0
 bbcode_enabled = true
-text = "B Captures:"
+text = "B Captures:
+"
 
 [node name="Mid" type="Control" parent="StaticGUI"]
 layout_mode = 1
@@ -557,6 +566,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Settings
 "
+language = "en_US"
 
 [node name="Mult" type="Button" parent="StaticGUI/Right/BG/Buttons"]
 layout_mode = 1
@@ -616,7 +626,7 @@ offset_bottom = 355.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
-selected = 0
+selected = 1
 item_count = 2
 popup/item_0/text = "Black"
 popup/item_1/text = "White"
@@ -683,6 +693,7 @@ grow_vertical = 2
 text = "Play Against:"
 
 [node name="DynamicGUI" type="Node" parent="."]
+editor_description = "GUI elements that are added and removed by code during execution of the program."
 
 [node name="PosGUI" type="Node" parent="DynamicGUI"]
 script = ExtResource("13_at1p6")
@@ -734,10 +745,12 @@ texture = ExtResource("4_p44o5")
 [node name="King" type="Node" parent="DynamicGUI/PiecesContainer/White"]
 
 [node name="BGMusic" type="AudioStreamPlayer" parent="."]
+editor_description = "Background music source"
 bus = &"Music"
 script = ExtResource("10_5jr73")
 
 [node name="SoundSource" type="AudioStreamPlayer" parent="."]
+editor_description = "Main source emiter for any SFX sounds."
 bus = &"Sound"
 
 [node name="MultiplayerControl" parent="." instance=ExtResource("15_8pwlq")]
