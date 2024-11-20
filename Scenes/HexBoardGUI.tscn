@@ -56,6 +56,8 @@ script = ExtResource("1_pgjcn")
 editor_description = "Hexagonal Chess Engine. Logic controler for hexchess game state."
 script = ExtResource("2_gq2xx")
 
+[node name="SchemeControl" type="Node" parent="."]
+
 [node name="StaticGUI" type="ColorRect" parent="."]
 editor_description = "GUI elements that will always remain. GUI elements are not added nor removed during execution."
 layout_mode = 1

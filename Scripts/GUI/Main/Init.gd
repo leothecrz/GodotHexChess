@@ -275,7 +275,7 @@ func spawnAMove(moves:Array, color:Color, key, cords):
 func spawnMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
-			MOVE_TYPES.MOVES: 			spawnAMove(moves[key], Color.WHITE, key, cords);
+			MOVE_TYPES.MOVES: 			spawnAMove(moves[key], Color.KHAKI, key, cords);
 			MOVE_TYPES.CAPTURE: 		spawnAMove(moves[key], Color.DARK_RED, key, cords);
 			MOVE_TYPES.PROMOTE: 		spawnAMove(moves[key], Color.DARK_KHAKI, key, cords);
 			MOVE_TYPES.ENPASSANT: 		spawnAMove(moves[key], Color.SEA_GREEN, key, cords);

@@ -1,6 +1,6 @@
 extends Node2D
 ### REFS
-@onready var SpriteNode:Sprite2D = $Sprite2D;
+@onready var SpriteNode:Sprite2D = $Sprite2D2;
 
 ###
 ###
@@ -19,7 +19,7 @@ var hexKey:int = -1;
 func highlight() -> void:
 	if(!defColor):
 		defColor = SpriteNode.modulate;
-	SpriteNode.set_modulate(Color(1,1,1,1));
+	SpriteNode.set_modulate(Color.WEB_PURPLE);
 	return;
 
 ## Reset highlight

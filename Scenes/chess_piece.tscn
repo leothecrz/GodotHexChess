@@ -1,10 +1,11 @@
 [gd_scene load_steps=5 format=3 uid="uid://jaoakuonoimi"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/ChessPiece.gd" id="1_gl8qw"]
-[ext_resource type="Texture2D" uid="uid://b3v70gamlfti5" path="res://Images/1pxArt.png" id="2_5lpx1"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_cxifi"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_asb6a"]
-atlas = ExtResource("2_5lpx1")
+atlas = SubResource("CompressedTexture2D_cxifi")
 region = Rect2(0, 0, 320, 320)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7ceko"]

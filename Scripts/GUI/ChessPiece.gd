@@ -14,7 +14,7 @@ signal pieceDeselected(SIDE:int, TYPE:String, CORDS:Vector2i, MOVE);
 var locked:bool = true;
 var anotherSelected:bool = false;
 
-var chessTexture:AtlasTexture = preload("res://Textures/chessPiece.tres");
+var chessTexture:AtlasTexture = preload("res://Textures/chessPieceTwo.tres");
 
 var isSetup:bool;
 var side:int;
@@ -151,6 +151,7 @@ func _input(event) -> void:
 		
 	if (status == STATES.CLICKED) and (event is InputEventMouseMotion):
 		status = STATES.DRAGGING;
+		
 	if (event is InputEventMouseMotion):
 		mousePos = event.global_position;
 	return;
