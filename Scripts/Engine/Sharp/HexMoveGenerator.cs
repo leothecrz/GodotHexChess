@@ -18,7 +18,7 @@ public class HexMoveGenerator
 	public Dictionary<int, Dictionary<int,int>> BlackAttackBoard {get; set;}
 
 	//PIECES
-	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces {get; set;} = null;
+	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces {get; set;}
 	public Dictionary<Vector2I, List<Vector2I>> influencedPieces {get; set;}
 	public Dictionary<Vector2I, List<Vector2I>> blockingPieces {get; set;}
 
@@ -44,6 +44,7 @@ public class HexMoveGenerator
 		BBRef = bbref;
 		
 		influencedPieces = new Dictionary<Vector2I, List<Vector2I>>();
+		lastInfluencedPieces = new Dictionary<Vector2I, List<Vector2I>>(); 
 
 		blockingPieces = new Dictionary<Vector2I, List<Vector2I>> {};
 
@@ -90,7 +91,7 @@ public class HexMoveGenerator
 
 
 	// Pawn Moves
-	private bool EnPassantLegal()
+	public bool EnPassantLegal()
 	{
 		Vector2I targetPos = new Vector2I(BoardRef.EnPassantCords.X, BoardRef.EnPassantCords.Y + ( BoardRef.isWhiteTurn ? 1 : -1));
 		

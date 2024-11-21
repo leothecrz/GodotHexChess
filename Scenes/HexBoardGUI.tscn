@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=23 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Main/Init.gd" id="1_pgjcn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -17,6 +17,8 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Right/right_main.gd" id="11_il1km"]
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/ToFrom.gd" id="13_at1p6"]
 [ext_resource type="PackedScene" uid="uid://dbeomhtiuxwqb" path="res://Scenes/multiplayerGUI.tscn" id="15_8pwlq"]
+[ext_resource type="Script" path="res://Scripts/SoundControl/sound_source.gd" id="16_34fi1"]
+[ext_resource type="AudioStream" uid="uid://c4j1077g457iq" path="res://SFX/piece-placemen_rmx2.mp3" id="16_ey4ea"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_754bx"]
 texture = ExtResource("6_mxkma")
@@ -753,7 +755,9 @@ script = ExtResource("10_5jr73")
 
 [node name="SoundSource" type="AudioStreamPlayer" parent="."]
 editor_description = "Main source emiter for any SFX sounds."
+stream = ExtResource("16_ey4ea")
 bus = &"Sound"
+script = ExtResource("16_34fi1")
 
 [node name="MultiplayerControl" parent="." instance=ExtResource("15_8pwlq")]
 visible = false

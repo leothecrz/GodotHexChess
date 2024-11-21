@@ -23,6 +23,7 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 @onready var ChessPiecesNode = $DynamicGUI/PiecesContainer;
 
 @onready var BGMusicPlayer = $BGMusic;
+@onready var SoundSource = $SoundSource
 @onready var SettingsDialog = $Settings;
 @onready var MultiplayerControl = $MultiplayerControl;
 
@@ -282,7 +283,6 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 	return;
 
 
-
 # AI Moves
 ##
 func syncMasterAIThreadToMain():
@@ -344,6 +344,9 @@ func allowAITurn():
 ## Submit a move to engine or Deselect 
 func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 	var isNotPromoteMove = key != MOVE_TYPES.PROMOTE;
+	
+	SoundSource._playPlace();
+	
 	for node in MoveNode.get_children():
 		MoveNode.remove_child(node);
 		node.queue_free();
@@ -359,6 +362,9 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 ## Sub :: Spawn Piece's Moves 
 func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	pieceSelectedLockOthers.emit();
+	
+	
+	
 	var thisPiecesMoves = {};
 	for key in currentLegalMoves[CORDS].keys():
 		thisPiecesMoves[key] = currentLegalMoves[CORDS][key];
@@ -390,13 +396,28 @@ func setConfirmTempDialog(type:AcceptDialog, input:String, method:Callable):
 # MENU HELPERS
 func FenOK(stir:String, strict:bool) -> void:
 	fenDialog.queue_free();
+	
+	if(multiplayerConnected and not isHost):
+		spawnNotice("[center]Only host can start the game[/center]");
+		return;
+	
 	if(not strict):
 		startGameFromFen(stir);
+		if(multiplayerConnected):
+			setSide.rpc(not isWhite());
+			startGameFromFen.rpc(stir);
+			syncCheckMultiplayer.rpc(true);
 		return;
-	if(EngineNode._FENCHECK(stir)):
-		startGameFromFen(stir);
+	
+	spawnNotice("[center]FEN Strict check is WIP[/center]", 1.0);
+	if(not EngineNode._FENCHECK(stir)):
+		spawnNotice("[center]String Failed Fen Check[/center]", 1.0);
 		return;
-	spawnNotice("[center]String Failed Fen Check[/center]", 1.0);
+	startGameFromFen(stir);
+	if(multiplayerConnected):
+		setSide.rpc(not isWhite());
+		startGameFromFen.rpc(stir);
+		syncCheckMultiplayer.rpc(true);
 	return;
 func FenCancel() -> void:
 	fenDialog.queue_free();
@@ -518,7 +539,9 @@ func updateSoundBus(bus,choice):
 ##
 func closeSettingsDialog():
 	SettingsDialog.visible = false;
-	if(gameRunning and isItMyTurn()):
+	if(gameRunning):
+		if(multiplayerConnected and not isItMyTurn()):
+			return;
 		pieceUnselectedUnlockOthers.emit();
 	return
 ##
