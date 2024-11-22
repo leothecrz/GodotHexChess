@@ -517,9 +517,9 @@ func changeRes(choice:int):
 			DisplayServer.window_set_size(Vector2i(1728,972));
 		2: #2
 			DisplayServer.window_set_size(Vector2i(2304,1296));
-		3: #Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED);
 		4: #Fullscreen
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED);
+		5: #Fullscreen
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN);
 	return;
 ##
@@ -530,7 +530,8 @@ func toggleMusic(choice):
 	BGMusicPlayer._continuePlaying();
 	return;
 ##
-func toggleSound(_choice):
+func toggleSound(choice):
+	AudioServer.set_bus_mute(AudioServer.get_bus_index("Sound"), choice == 1)
 	return;
 ##
 func updateSoundBus(bus,choice):
@@ -812,8 +813,6 @@ func clientShutdown(reason:int):
 	elif(reason == 1):
 		spawnNotice("[center]Disconected from server.[/center]");
 	return;
-
-
 
 #MULTIPLAYER
 ##
