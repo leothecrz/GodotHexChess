@@ -55,7 +55,6 @@ func _on_bishop_button_pressed():
 
 ##
 func _on_queen_button_pressed():
-	
 	if(CHOICE == RETURNS.QUEEN):
 		qButton.button_pressed = true;
 	CHOICE = RETURNS.QUEEN;

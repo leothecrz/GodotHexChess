@@ -28,6 +28,7 @@ func _exit_tree():
 
 ## SETUP MENU OPTIONS
 func _ready():
+	#TODO :: FIX
 	debounce_timer = Timer.new();
 	debounce_timer.timeout.connect(_on_debounce_timer_timeout)
 	debounce_timer.one_shot = true;

@@ -167,6 +167,11 @@ offset_right = 46.5
 offset_bottom = 15.5
 grow_horizontal = 2
 grow_vertical = 2
+tooltip_text = "Enables the program to automatically
+open and close ports on your network.
+Games over the internet will require 
+open ports, UPNP is not the only option. 
+You could foward(open) your own ports."
 text = "UPNP"
 
 [node name="LobbyScreen" type="ColorRect" parent="BG"]

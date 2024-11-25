@@ -79,7 +79,6 @@ func spawnNotice(TEXT : String, TIME : float = 1.8) -> void:
 	var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
 	notice.NOTICE_TEXT = TEXT;
 	notice.POP_TIME = TIME;
-	
 	self.add_child(notice);
 	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
 	return;
@@ -362,9 +361,6 @@ func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
 ## Sub :: Spawn Piece's Moves 
 func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 	pieceSelectedLockOthers.emit();
-	
-	
-	
 	var thisPiecesMoves = {};
 	for key in currentLegalMoves[CORDS].keys():
 		thisPiecesMoves[key] = currentLegalMoves[CORDS][key];
@@ -413,7 +409,9 @@ func FenOK(stir:String, strict:bool) -> void:
 	if(not EngineNode._FENCHECK(stir)):
 		spawnNotice("[center]String Failed Fen Check[/center]", 1.0);
 		return;
+		
 	startGameFromFen(stir);
+	
 	if(multiplayerConnected):
 		setSide.rpc(not isWhite());
 		startGameFromFen.rpc(stir);
@@ -886,7 +884,6 @@ func _on_multiplayer_enabled(ishost : bool) -> void:
 	RightPanel._multSignalOn();
 	return;
 func _on_multiplayer_disabled() -> void:
-	
 	multiplayerConnected = false;
 	isHost = false;
 	RightPanel._multSignalOff();
@@ -894,6 +891,8 @@ func _on_multiplayer_disabled() -> void:
 
 
 func _on_mult_gui_shutdown_server_client(reason : int) -> void:
+	if(gameRunning):
+		resignCleanUp();
 	if (isHost):
 		hostShutdown(reason);
 		return;

@@ -29,11 +29,11 @@ func rotate_tilemap():
 	return;
 
 func setSignalWhite():
-	turnSignal.modulate = Color(1, 1, 0.514);
+	turnSignal.modulate = Color(1, 1, 1);
 	return;
 	
 func setSignalBlack():
-	turnSignal.modulate = Color(0.125, 0.18, 0.663);
+	turnSignal.modulate = Color(0, 0, 0);
 	return;
 
 ###
