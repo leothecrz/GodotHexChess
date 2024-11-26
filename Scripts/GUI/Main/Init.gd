@@ -29,11 +29,11 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 
 # Position State
 @onready var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-@onready var PIXEL_OFFSET : int = 35;
-@onready var AXIAL_X_SCALE : float = 1.4;
-@onready var AXIAL_Y_SCALE : float = 0.9395;
-@onready var PIECE_SCALE : float = 0.18;
-@onready var MOVE_SCALE : float = 0.015;
+@export var PIXEL_OFFSET : int = 35;
+@export  var AXIAL_X_SCALE : float = 1.4;
+@export var AXIAL_Y_SCALE : float = 0.9395;
+@export var PIECE_SCALE : float = 0.18;
+@export var MOVE_SCALE : float = 0.015;
 
 # AI - THREAD
 var masterAIThread : Thread = Thread.new();
@@ -48,16 +48,13 @@ var selfSide : int = 1;
 var activePieces : Array;
 var currentLegalMoves : Dictionary;
 
-
 #Multiplayer
 var multiplayerConnected : bool = false;
 var isHost : bool = false;
 var playerCount = 0;
 
 #References
-var tempDialog : AcceptDialog = null;
 var thinkingDialogRef : Node = null;
-var fenDialog : Node = null;
 
 
 
@@ -83,19 +80,14 @@ func spawnNotice(TEXT : String, TIME : float = 1.8) -> void:
 	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
 	return;
 ##
-func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
-	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(fpos) * (1 if isRotatedWhiteDown else -1));
-	var to =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(tpos) * (1 if isRotatedWhiteDown else -1));
-	TAndFrom.setVis(true);
-	TAndFrom.moveFrom(from.x,from.y);
-	TAndFrom.moveTo(to.x,to.y);
-	return;
-##
 func isWhite() -> bool:
 	return(selfSide == SIDES.WHITE);
 ## Check if it is my turn
 func isItMyTurn() -> bool:
 	return EngineNode._getIsWhiteTurn() == isWhite();
+##
+func cordinateToOrigin(cords : Vector2i) -> Vector2:
+	return VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(cords * 1 if isRotatedWhiteDown else -1));
 
 
 
@@ -113,14 +105,12 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 ## Setup A Chess Piece Scene
 func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	var newPieceScene:Node = preload("res://Scenes/chess_piece.tscn").instantiate();
-	var cords : Vector2i = piece * (1 if isRotatedWhiteDown else -1);
 	
 	newPieceScene.side = side;
 	newPieceScene.pieceType = pieceType;
 	newPieceScene.pieceCords = piece;
 	newPieceScene.isSetup = true;
-	newPieceScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(cords));
-	
+	newPieceScene.transform.origin = cordinateToOrigin(piece);
 	# TODO: FIX SCALE-ING
 	newPieceScene.scale.x = PIECE_SCALE;
 	newPieceScene.scale.y = PIECE_SCALE;
@@ -154,7 +144,6 @@ func updateScenceTree_OfCapture() -> void:
 	ref.queue_free();
 	
 	LeftPanel._pushCapture(i,j+1);
-	
 	return;
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
 func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
@@ -166,14 +155,11 @@ func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pT
 			break;
 	
 	prepareChessPieceNode(ref.side, EngineNode.getPiecetype(pTo), ref.pieceCords);
-
-	ref.get_parent().remove_child(ref);	
+	ref.get_parent().remove_child(ref);
 	ref.queue_free();
 
 	submitMove(cords, key, index, pTo, false);
 	pieceUnselectedUnlockOthers.emit();
-	
-	get_child(get_child_count() - 1).queue_free();
 	
 	allowAITurn();
 	return;
@@ -192,13 +178,11 @@ func updateGUI_Elements() -> void:
 	if(EngineNode._getGameOverStatus()):
 		if(EngineNode._getGameInCheck()):
 			setConfirmTempDialog(AcceptDialog.new(),\
-			"%s has won by CheckMate." % ["White" if EngineNode._getIsBlackTurn() else "Black"],\
-			killDialog);
+			"%s has won by CheckMate." % ["White" if EngineNode._getIsBlackTurn() else "Black"]);
 			
 		else:
 			setConfirmTempDialog(AcceptDialog.new(),\
-			"StaleMate. Game ends in a draw.",\
-			killDialog);
+			"StaleMate. Game ends in a draw.");
 		RightPanel._setResignOff();
 	else:
 		RightPanel._setResignOn();
@@ -229,7 +213,6 @@ func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
 	return;
 ## Sumbit a move to the engine and update state
 func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, doInterupt=true) -> void:
-	
 	if(moveType == MOVE_TYPES.PROMOTE and doInterupt):
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
@@ -245,28 +228,33 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, doInte
 
 
 # Move GUI
+##
+func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
+	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(fpos) * (1 if isRotatedWhiteDown else -1));
+	var to =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(tpos) * (1 if isRotatedWhiteDown else -1));
+	TAndFrom.setVis(true);
+	TAndFrom.moveFrom(from.x,from.y);
+	TAndFrom.moveTo(to.x,to.y);
+	return;
 ## Setup and display a legal move on GUI
 func spawnAMove(moves:Array, color:Color, key, cords):
 	for i in range(moves.size()):
-		var move = moves[i];
-		var activeScene = preload("res://Scenes/HexTile.tscn").instantiate();
-		var cord = move if isRotatedWhiteDown else (move * -1);
+		var newMove = preload("res://Scenes/HexTile.tscn").instantiate();
+		newMove.hexCords = cords;
+		newMove.hexKey = key;
+		newMove.hexIndex = i;
+		newMove.hexMove = moves[i];
+		newMove.transform.origin = cordinateToOrigin(moves[i])
+		newMove.rotation_degrees = 90;
+		newMove.z_index = 1;
+		newMove.isSetup = true;
 		
-		activeScene.hexCords = cords;
-		activeScene.hexKey = key;
-		activeScene.hexIndex = i;
-		activeScene.hexMove = move;
-		activeScene.transform.origin = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(cord));
-		activeScene.rotation_degrees = 90;
-		activeScene.z_index = 1;
-		activeScene.isSetup = true;
+		newMove.scale.x = MOVE_SCALE;
+		newMove.scale.y = MOVE_SCALE;
 		
-		activeScene.scale.x = MOVE_SCALE;
-		activeScene.scale.y = MOVE_SCALE;
-		
-		MoveNode.add_child(activeScene);
-		
-		activeScene.SpriteNode.set_modulate(color);
+		MoveNode.add_child(newMove);
+	
+		newMove.SpriteNode.set_modulate(color);
 	return;
 ## Spawn the moves from the given 'moves' dictionary for the piece 'cords'
 func spawnMoves(moves:Dictionary, cords) -> void:
@@ -277,6 +265,7 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 			MOVE_TYPES.PROMOTE: 		spawnAMove(moves[key], Color.DARK_KHAKI, key, cords);
 			MOVE_TYPES.ENPASSANT: 		spawnAMove(moves[key], Color.SEA_GREEN, key, cords);
 	return;
+
 
 
 # AI Moves
@@ -334,6 +323,8 @@ func allowAITurn():
 	
 	return;
 
+
+
 ##
 func queueFreeMoves() -> void:
 	for node : Node in MoveNode.get_children():
@@ -369,29 +360,22 @@ func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
 
 
 
-# DIALOGS
+#Dialog
 ##
-func killDialog():
-	if(tempDialog != null):
-		tempDialog.queue_free()
-		tempDialog = null;
-	return;
-##
-func setConfirmTempDialog(type:AcceptDialog, input:String, method:Callable):
-	tempDialog = type;
-	tempDialog.confirmed.connect(method);
-	tempDialog.canceled.connect(killDialog);
-	add_child(tempDialog)
-	tempDialog.dialog_text = input;
-	tempDialog.move_to_center();
-	tempDialog.visible = true;
+func setConfirmTempDialog(type:AcceptDialog, input:String, method:Callable=func():type.queue_free()):
+	type.dialog_text = input;
+	type.confirmed.connect(method);
+	type.canceled.connect(func () : type.queue_free());
+	add_child(type)
+	type.move_to_center();
+	type.visible = true;
 	return;
 
 
 
 # MENU HELPERS
-func FenOK(stir:String, strict:bool) -> void:
-	fenDialog.queue_free();
+func FenOK(stir:String, strict:bool, ref:Node) -> void:
+	ref.queue_free();
 	
 	if(multiplayerConnected and not isHost):
 		spawnNotice("[center]Only host can start the game[/center]");
@@ -417,9 +401,6 @@ func FenOK(stir:String, strict:bool) -> void:
 		startGameFromFen.rpc(stir);
 		syncCheckMultiplayer.rpc(true);
 	return;
-func FenCancel() -> void:
-	fenDialog.queue_free();
-	return;
 
 
 
@@ -437,9 +418,9 @@ func _on_fen_id_pressed(id: int) -> void:
 	match(id):
 		0:
 			if activePieces : return;
-			fenDialog = preload("res://Scenes/GetFen.tscn").instantiate();
+			var fenDialog = preload("res://Scenes/GetFen.tscn").instantiate();
 			fenDialog.OKButtonPressed.connect(FenOK);
-			fenDialog.CANCELButtonPressed.connect(FenCancel);
+			fenDialog.CANCELButtonPressed.connect(func (): fenDialog.queue_free());
 			add_child(fenDialog);
 			pass;
 		1:
@@ -593,7 +574,6 @@ func startGameFromFen(stateString : String = "") -> void:
 ##
 @rpc("any_peer", "call_remote", "reliable")
 func resignCleanUp():
-	if(tempDialog and is_instance_valid(tempDialog)): tempDialog.queue_free();
 	
 	EngineNode._resign();
 	activePieces.clear();
@@ -616,7 +596,6 @@ func resignCleanUp():
 ## TODO :: FIX FORCED NEW GAME
 @rpc("authority", "call_remote", "reliable")
 func forceNewGame():
-	killDialog();
 	resignCleanUp();
 	startGameFromFen();
 	if(multiplayerConnected):
@@ -777,7 +756,7 @@ func _on_undo_pressed():
 		return;
 	
 	if(EngineNode._getMoveHistorySize() < minimumUndoSizeReq):
-		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", killDialog);
+		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", func (): self.queue_free());
 		return;
 	
 	if(multiplayerConnected): 

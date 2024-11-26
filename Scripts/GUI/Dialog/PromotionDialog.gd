@@ -30,6 +30,7 @@ signal promotionAccepted(cords, key, index, CHOICE);
 ##
 func _on_accept_button_pressed():
 	promotionAccepted.emit(cords, key, index, CHOICE);
+	queue_free();
 	return;
 
 ##
