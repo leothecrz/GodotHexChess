@@ -3,7 +3,7 @@ extends AudioStreamPlayer
 var placeStream : AudioStream;
 var pickUpStream : AudioStream;
 
-func _playPlace():
+func _playPlaceSFX():
 	if(stream != placeStream):
 		stream = placeStream;
 	play()

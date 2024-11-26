@@ -377,11 +377,11 @@ public partial class HexEngineSharp : Node
 				activePieces[selfColor][pieceType].RemoveAt(i);
 				pieceType = PieceTypeOf((int)promoteTo);
 				pieceVal = ToPieceInt(pieceType, !HexState.isWhiteTurn);
-				activePieces[selfColor][pieceType].Append(moveTo);
+				activePieces[selfColor][pieceType].Add(moveTo);
 				
 				histEntry.FlipPromote();
-				histEntry.pPiece = ((int)pieceType);
-				histEntry.pIndex = (i);
+				histEntry.pPiece = (int)pieceType;
+				histEntry.pIndex = i;
 				break;
 				
 

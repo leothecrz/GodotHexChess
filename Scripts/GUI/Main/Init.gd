@@ -228,20 +228,17 @@ func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
 	add_child(dialog);
 	return;
 ## Sumbit a move to the engine and update state
-func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, passInterupt=true) -> void:
+func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, doInterupt=true) -> void:
 	
-	if(moveType == MOVE_TYPES.PROMOTE and passInterupt):
+	if(moveType == MOVE_TYPES.PROMOTE and doInterupt):
 		submitMoveInterupt(cords, moveType, moveIndex);
 		return
 	
 	if(multiplayerConnected):
 		receiveMove.rpc(cords, moveType, moveIndex, promoteTo);
-	
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	
-	var toV = currentLegalMoves[cords][moveType][moveIndex];
-	repositionToFrom(cords, toV);
-
+	repositionToFrom(cords, currentLegalMoves[cords][moveType][moveIndex]);
 	syncToEngine();
 	return;
 
@@ -337,25 +334,28 @@ func allowAITurn():
 	
 	return;
 
-
-
-## CLICK AND DRAG (MOUSE) API
-## Submit a move to engine or Deselect 
-func  _chessPiece_OnPieceDESELECTED(cords:Vector2i, key, index:int) -> void:
-	var isNotPromoteMove = key != MOVE_TYPES.PROMOTE;
-	
-	SoundSource._playPlace();
-	
-	for node in MoveNode.get_children():
+##
+func queueFreeMoves() -> void:
+	for node : Node in MoveNode.get_children():
 		MoveNode.remove_child(node);
 		node.queue_free();
-		
-	if (isNotPromoteMove): pieceUnselectedUnlockOthers.emit();
+	return;
+## CLICK AND DRAG (MOUSE) API
+## Submit a move to engine or Deselect 
+func  _chessPiece_OnPieceDESELECTED(cords : Vector2i, key, index : int) -> void:
+	var isNotPromoteMove : bool = (key != MOVE_TYPES.PROMOTE);
 	
-	if (index >= 0):
-		submitMove(cords, key, index);
-		if(isNotPromoteMove):
-			allowAITurn();
+	SoundSource._playPlaceSFX();
+	queueFreeMoves();
+	
+	if (isNotPromoteMove): 
+		pieceUnselectedUnlockOthers.emit();
+	if (index == -1): # -1 is used when a piece is deselected and a move not choosen.
+		return;
+	
+	submitMove(cords, key, index);
+	if(isNotPromoteMove):
+		allowAITurn();
 	return;
 ## Lock Other Pieces
 ## Sub :: Spawn Piece's Moves 
