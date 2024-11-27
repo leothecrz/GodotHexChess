@@ -433,7 +433,7 @@ public partial class HexEngineSharp : Node
 		
 		if(hist.Promote)
 		{
-			BitBoards.AddPieceOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, PIECES.PAWN);
+			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, PIECES.PAWN);
 			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, (PIECES) hist.pPiece);
 			
 			int size = activePieces[selfSide][(PIECES) hist.pPiece].Count;
@@ -680,10 +680,15 @@ public partial class HexEngineSharp : Node
 		var selfColor = (int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK);
 		int index = 0;
 		
+		GD.Print(activeMove);
+
 		// Default Undo
-		BitBoards.ClearIndexOf(QRToIndex(UndoNewTo.X,UndoNewTo.Y), HexState.isWhiteTurn, pieceType);
+
+		
+		BitBoards.ClearIndexOf(QRToIndex(UndoNewTo.X,UndoNewTo.Y), HexState.isWhiteTurn, pieceType); 
 		BitBoards.AddPieceOf(QRToIndex(UndoNewFrom.X,UndoNewFrom.Y), HexState.isWhiteTurn, pieceType);
 		
+
 		foreach( Vector2I pieceCords in activePieces[selfColor][pieceType] )
 		{
 			if(pieceCords == UndoNewTo)
