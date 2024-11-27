@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 using Godot;
 
@@ -232,16 +233,7 @@ public class BitboardState
 	// Assumes Piece Exists. Clears index of selected side.
 	public void ClearIndexFrom(int index, bool isWhite)
 	{
-		PIECES type = PieceTypeOf(index, !isWhite);
-		Bitboard128[] activeBoard; 
-		if(isWhite) activeBoard = WHITE_BB; 
-		else activeBoard = BLACK_BB;
-		Bitboard128 mask = Bitboard128.OneBitAt(index);
-		int pos = (int) type - 1;
-		Bitboard128 result = activeBoard[pos].XOR(mask);
-		mask = null;
-		activeBoard[pos] = null;
-		activeBoard[pos] = result;
+		ClearIndexOf(index, isWhite, PieceTypeOf(index, !isWhite));
 		return;
 	}
 	// Assumes Piece Exists. Clears index of selected side from selected type.
@@ -250,8 +242,9 @@ public class BitboardState
 		Bitboard128[] activeBoard;
 		if(isWhite) activeBoard = WHITE_BB; else activeBoard = BLACK_BB;
 		Bitboard128 mask = Bitboard128.OneBitAt(index);
+		mask = mask.FLIP();
 		int pos = (int) type - 1;
-		var result = activeBoard[pos].XOR(mask);
+		var result = activeBoard[pos].AND(mask);
 		mask = null;
 		activeBoard[pos] = null;
 		activeBoard[pos] = result;

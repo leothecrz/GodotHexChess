@@ -47,6 +47,10 @@ namespace HexChess
 		{
 			return new Bitboard128(Front & to.Front, Back & to.Back);
 		}
+		public Bitboard128 FLIP()
+		{
+			return new Bitboard128(~Front, ~Back);
+		}
 		public bool EQUAL(Bitboard128 to)
 		{
 			return ((Front ^ to.Front) == 0) && ((Back ^ to.Back) == 0);

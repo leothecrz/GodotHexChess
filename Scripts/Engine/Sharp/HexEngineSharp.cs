@@ -433,7 +433,7 @@ public partial class HexEngineSharp : Node
 		
 		if(hist.Promote)
 		{
-			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, PIECES.PAWN);
+			//BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, PIECES.PAWN);
 			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, (PIECES) hist.pPiece);
 			
 			int size = activePieces[selfSide][(PIECES) hist.pPiece].Count;
@@ -665,7 +665,7 @@ public partial class HexEngineSharp : Node
 	{
 		if(historyStack.Count < 1)
 			return false;
-		
+
 		HexState.uncaptureValid = false;
 		HexState.unpromoteValid = false;
 		HexState.decrementTurnNumber();
