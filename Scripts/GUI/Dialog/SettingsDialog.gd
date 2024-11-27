@@ -51,7 +51,18 @@ func _input(event:InputEvent):
 
 ##
 func _on_resolution_options_item_selected(index):
-	settingsUpdated.emit(0, index);
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED);
+	match index:
+		0: #Def
+			DisplayServer.window_set_size(Vector2i(1152,648));
+		1: #1.5
+			DisplayServer.window_set_size(Vector2i(1728,972));
+		2: #2
+			DisplayServer.window_set_size(Vector2i(2304,1296));
+		4: #Fullscreen
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED);
+		5: #Fullscreen
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN);
 	return;
 
 ##

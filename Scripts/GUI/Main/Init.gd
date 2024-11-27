@@ -230,8 +230,8 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, doInte
 # Move GUI
 ##
 func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
-	var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(fpos) * (1 if isRotatedWhiteDown else -1));
-	var to =  VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(tpos) * (1 if isRotatedWhiteDown else -1));
+	var from = cordinateToOrigin(fpos);
+	var to =  cordinateToOrigin(tpos);
 	TAndFrom.setVis(true);
 	TAndFrom.moveFrom(from.x,from.y);
 	TAndFrom.moveTo(to.x,to.y);
@@ -282,6 +282,8 @@ func syncMasterAIThreadToMain():
 	var i : int = SIDES.BLACK if (EngineNode._getIsWhiteTurn()) else SIDES.WHITE;
 	var j : int = EngineNode._getEnemyChoiceType() - 1;
 	var k : int = EngineNode._getEnemyChoiceIndex();
+	
+	
 	var ref : Node = ChessPiecesNode.get_child(i);
 	ref = ref.get_child(j)
 	ref = ref.get_child(k);
@@ -293,7 +295,7 @@ func syncMasterAIThreadToMain():
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 	else:
-		ref._setPieceCords(to, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(to*(1 if isRotatedWhiteDown else -1))));
+		ref._setPieceCords(to,cordinateToOrigin(to));
 	
 	syncToEngine();
 	pieceUnselectedUnlockOthers.emit();
@@ -487,21 +489,6 @@ func _on_enemy_select_item_selected(index:int) -> void:
 
 ## SETTINGS
 ##
-func changeRes(choice:int):
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED);
-	match choice:
-		0: #Def
-			DisplayServer.window_set_size(Vector2i(1152,648));
-		1: #1.5
-			DisplayServer.window_set_size(Vector2i(1728,972));
-		2: #2
-			DisplayServer.window_set_size(Vector2i(2304,1296));
-		4: #Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED);
-		5: #Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN);
-	return;
-##
 func toggleMusic(choice):
 	if choice == 1:
 		BGMusicPlayer._stopPlaying();
@@ -527,7 +514,6 @@ func closeSettingsDialog():
 ##
 func _on_settings_dialog_settings_updated(settingIndex:int, choice:int):
 	match settingIndex:
-		0:changeRes(choice);
 		1:pass;
 		2:toggleMusic(choice);
 		3:toggleSound(choice);
@@ -618,7 +604,7 @@ func multResign():
 
 # Undo
 ##
-func undoCapture():
+func undoCapture() -> void:
 	if( not EngineNode.uncaptureValid() ):
 		return;
 	##Undo Uncapture
@@ -648,22 +634,27 @@ func undoCapture():
 	## ID which piece needs to be moved
 	return;
 ##
-func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
-	var newPos;
+func undoDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
+	var newPos = activePieces[sideToUndo][uType][uIndex];
+	var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
+	var from = cordinateToOrigin(pieceREF._getPieceCords());
+	pieceREF._setPieceCords(newPos , cordinateToOrigin(newPos));
+	repositionToFrom(from, newPos);
+	return;
+##
+func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 	if(not EngineNode.unpromoteValid()):
-		newPos = activePieces[sideToUndo][uType][uIndex];
-		var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
-		var from = VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(pieceREF._getPieceCords()) * (1 if isRotatedWhiteDown else -1));
-		pieceREF._setPieceCords(newPos , VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(newPos * (1 if isRotatedWhiteDown else -1))));	
-		repositionToFrom(from, newPos);
+		undoDefault(uType,uIndex,sideToUndo);
 		return;
 	##Undo Promotion
 	var pType = EngineNode.unpromoteType();
 	var pIndex = EngineNode.unpromoteIndex();
-	newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex] ;
+	var newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex];
+	
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
-	var From = ref._getPieceCords();
+	
+	var From = ref.get_child(refChildCount-1)._getPieceCords();
 	ref.get_child(refChildCount-1).queue_free();
 
 	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
@@ -672,10 +663,10 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int):
 	ref.add_child(newPieceScene);
 	ref.move_child(newPieceScene,pIndex);
 	
-	repositionToFrom(From,ref._getPieceCords())
+	repositionToFrom(From,ref.get_child(pIndex)._getPieceCords())
 	return;
 ##
-func syncUndo():
+func syncUndo() -> void:
 	var uType:int = EngineNode.undoType();
 	var uIndex:int = EngineNode.undoIndex();
 	var sideToUndo:int = SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK;
@@ -688,7 +679,7 @@ func syncUndo():
 	updateGUI_Elements();
 	return;
 ##
-func undoAI():
+func undoAI() -> void:
 	if(not EngineNode._getIsEnemyAI()):
 		return;
 	EngineNode._undoLastMove(true);
@@ -750,13 +741,13 @@ func _resign_OnButtonPress() -> void:
 	return;
 
 ## Undo Button Pressed
-func _on_undo_pressed():
+func _on_undo_pressed() -> void:
 	if(threadActive):
 		spawnNotice("[center]Please wait until AI has made its turn[/center]");
 		return;
 	
 	if(EngineNode._getMoveHistorySize() < minimumUndoSizeReq):
-		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.", func (): self.queue_free());
+		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.");
 		return;
 	
 	if(multiplayerConnected): 
@@ -769,7 +760,7 @@ func _on_undo_pressed():
 	return;
 
 ## Settings Button Pressed
-func _on_settings_pressed():
+func _on_settings_pressed() -> void:
 	SettingsDialog.visible = true;
 	SettingsDialog.z_index = 1;
 	if(gameRunning):
@@ -778,13 +769,12 @@ func _on_settings_pressed():
 
 
 
-#
 ##
-func hostShutdown(_reason : int):
+func hostShutdown(_reason : int) -> void:
 	spawnNotice("[center]Host Shutdown[/center]")
 	pass;
 ##
-func clientShutdown(reason:int):
+func clientShutdown(reason:int) -> void:
 	if(reason == 0):
 		spawnNotice("[center]Client Shutdown[/center]");
 	elif(reason == 1):
@@ -820,7 +810,7 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 	else:
-		ref._setPieceCords(toPos, VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(toPos*(1 if isRotatedWhiteDown else -1))));
+		ref._setPieceCords(toPos, cordinateToOrigin(toPos));
 	
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	syncToEngine();
