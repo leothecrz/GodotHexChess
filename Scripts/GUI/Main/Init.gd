@@ -663,7 +663,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 	ref.add_child(newPieceScene);
 	ref.move_child(newPieceScene,pIndex);
 	
-	repositionToFrom(From,ref.get_child(pIndex)._getPieceCords())
+	repositionToFrom(From,newPieceScene._getPieceCords())
 	return;
 ##
 func syncUndo() -> void:
