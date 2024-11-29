@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Dialog/simple_notice.gd" id="1_fmfgj"]
 
 [node name="PopupPanel" type="PopupPanel"]
-size = Vector2i(175, 64)
+size = Vector2i(300, 90)
 visible = true
 script = ExtResource("1_fmfgj")
 

@@ -679,8 +679,6 @@ public partial class HexEngineSharp : Node
 		var pieceType = PieceTypeOf(pieceVal);
 		var selfColor = (int)( HexState.isWhiteTurn ? SIDES.WHITE : SIDES.BLACK);
 		int index = 0;
-		
-		GD.Print(activeMove);
 
 		// Default Undo
 

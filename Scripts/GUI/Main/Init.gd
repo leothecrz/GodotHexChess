@@ -105,16 +105,13 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 ## Setup A Chess Piece Scene
 func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	var newPieceScene:Node = preload("res://Scenes/chess_piece.tscn").instantiate();
-	
 	newPieceScene.side = side;
 	newPieceScene.pieceType = pieceType;
 	newPieceScene.pieceCords = piece;
 	newPieceScene.isSetup = true;
 	newPieceScene.transform.origin = cordinateToOrigin(piece);
-	# TODO: FIX SCALE-ING
 	newPieceScene.scale.x = PIECE_SCALE;
 	newPieceScene.scale.y = PIECE_SCALE;
-	
 	return newPieceScene;
 ## Give piece data to a new scene. Connect scene to piece controller. Add to container.
 func prepareChessPieceNode(side:int, pieceType:int, piece:Vector2i) -> void:
@@ -202,7 +199,7 @@ func syncToEngine() -> void:
 
 # Move Submit
 ## Interupt a promotion submission to get promotion type
-func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
+func interuptSubmitMove(cords:Vector2i, moveType:int, moveIndex:int) -> void:
 	var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
 	dialog.z_index = 1; #place on foreground
 	dialog.cords = cords;
@@ -214,7 +211,7 @@ func submitMoveInterupt(cords:Vector2i, moveType:int, moveIndex:int) -> void:
 ## Sumbit a move to the engine and update state
 func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, doInterupt=true) -> void:
 	if(moveType == MOVE_TYPES.PROMOTE and doInterupt):
-		submitMoveInterupt(cords, moveType, moveIndex);
+		interuptSubmitMove(cords, moveType, moveIndex);
 		return
 	
 	if(multiplayerConnected):
@@ -273,17 +270,15 @@ func spawnMoves(moves:Dictionary, cords) -> void:
 func syncMasterAIThreadToMain():
 	if(masterAIThread.is_started()):
 		masterAIThread.wait_to_finish();
+		threadActive = false;
+	
 	if(thinkingDialogRef):
 		thinkingDialogRef.queue_free();
 	
-	threadActive = false;
-
 	var to : Vector2i = EngineNode._getEnemyTo();
 	var i : int = SIDES.BLACK if (EngineNode._getIsWhiteTurn()) else SIDES.WHITE;
 	var j : int = EngineNode._getEnemyChoiceType() - 1;
 	var k : int = EngineNode._getEnemyChoiceIndex();
-	
-	
 	var ref : Node = ChessPiecesNode.get_child(i);
 	ref = ref.get_child(j)
 	ref = ref.get_child(k);
@@ -747,7 +742,7 @@ func _on_undo_pressed() -> void:
 		return;
 	
 	if(EngineNode._getMoveHistorySize() < minimumUndoSizeReq):
-		setConfirmTempDialog(ConfirmationDialog.new(), "There is NO history to undo.");
+		spawnNotice("[center]There is no history to undo.[/center]", 1.0);
 		return;
 	
 	if(multiplayerConnected): 

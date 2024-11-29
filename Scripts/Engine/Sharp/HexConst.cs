@@ -450,86 +450,97 @@ public class HexConst
 		//Hueristic Functions
 
 
-		private const long DIST_VALUE = 10000;
-		private const long KING_DIST_VALUE = DIST_VALUE / 5;
-		private const long CHECK_VAL = 15000;
+		private const long CHECK_VAL = 1500;
+		private const long NOPAWNPEN_VAL = 500;
 		//skip ZERO and ignore king *(its always present) 
-		private static readonly long[] PIECE_VALUES = new long[] {0, 1000, 3000, 5000, 3000, 9000, 0};
+		private static readonly long[] PIECE_VALUES = new long[] {0, 100, 300, 500, 300, 900, 0};
 		private static readonly long [][] PIECE_BOARDS = 
 			{
-				new long[] {  }, //ZERO
-				new long[] { // PAWNS 
-						120,50,25,25,50,120,
-						110,50,25,0,25,50,110,
-					100,50,25,0,0,25,50,100,
-					100,50,25,0,0,0,25,50,100,
-					100,50,25,0,0,0,0,25,50,100,
-					100,50,25,0,0,0,0,0,25,50,100,
-					100,50,25,0,0,0,0,25,50,100,
-					100,50,25,0,0,0,25,50,100,
-					100,50,25,0,0,25,50,100,
-						110,50,25,0,25,50,110,
-						120,50,25,25,50,120, },
+				Array.Empty<long>(), //ZERO
+				new long[] { //PAWNS 
+					        0,  0, 25, 30, 50,  0,
+					       5,  5,  0, 25, 30, 50,  0,
+					     0, 10,  0,  0, 10, 20, 50,  0,
+					    0,  0, 10,  0,  0,  5, 20, 50,  0,
+					  0,   0,  0,-20, 20, 20, 5, 10, 50,  0,
+					 0,   0,  0,  0,-20, 20, 0, 5, 5, 50,  0,
+					  0,   0,  0,-20, 20, 20, 5, 10, 50,  0,
+					    0,  0, 10,  0,  0,  5, 20, 50,  0,
+					     0, 10,  0,  0, 10, 20, 50,  0,
+					       5,  5,  0, 25, 30, 50,  0,
+					        0,  0, 25, 30, 50,  0 },
 				new long[] { //KNIGHT
-							10,10,10,10,10,10,
-						10,20,20,20,20,20,10,
-						10,20,50,50,50,50,20,10,
-						10,20,50,100,100,100,50,20,10,
-					10,20,50,100,100,100,100,50,20,10,
-					10,20,50,100,100,100,100,100,50,20,10,
-					10,20,50,100,100,100,100,50,20,10,
-						10,20,50,100,100,100,50,20,10,
-						10,20,50,50,50,50,20,10,
-						10,20,20,20,20,20,10,
-							10,10,10,10,10,10, },
+					         -50,-40,-30,-30,-40,-50,
+					        -40,-20,  0,  5,  0,-20,-40,
+					      -30,  0, 10,  0,  0, 10,  0,-30,
+					     -30,  5,  0, 20, 20, 20,  0,  5,-30,
+					   -40,  0,  0, 20, 40, 40, 20,  0  ,0,-40,
+					 -50,-20,  0, 20, 40, 50, 40, 20,  0,-20,-50,
+					   -40,  0,  0, 20, 40, 40, 20,  0,  0,-40,
+					     -30,  5,  0, 20, 20, 20,  0,  5,-30,
+					       -30,  0, 10,  0,  0, 10,  0,-30,
+					         -40,-20,  0,  5,  0,-20,-40,
+					          -50,-40,-30,-30,-40,-50, },
 				new long[] { //ROOK
-						0,100,0,0,100,0,
-						0,100,0,0,0,100,0,
-					0,100,0,0,0,0,100,0,
-					0,100,0,100,100,100,0,100,0,
-					0,100,0,100,0,0,100,0,100,0,
-					0,100,0,100,0,100,0,100,0,100,0,
-					0,100,0,100,0,0,100,0,100,0,
-					0,100,0,100,100,100,0,100,0,
-					0,100,0,0,0,0,100,0,
-						0,100,0,0,0,100,0,
-						0,100,0,0,100,0, },
+					             5,  0,  0,  0,  0,  5,
+					           0,  0,  0,  5,  0, 10,  0,
+					         5,  0,  0,  0,  5, 10,  0,  0,
+					       5,  5,  0,  0,  5, 10,  0,  0,  0,
+					     5,  5,  5,  0,  5, 10,  0,  0  ,0,  0,
+					    5,  5,  5,  5,  5, 10,  0, 10,  0,  0,  5,
+					     5,  5,  5,  0,  5, 10,  0,  0,  0,  0,
+					       5,  5,  0,  0,  5, 10,  0,  0,  0,
+					         5,  0,  0,  0,  5, 10,  0,  0,
+					           0,  0,  0,  5,  0, 10,  0,
+					             5,  0,  0,  0,  0,  5, },
 				new long[] { //BISHOP
-						0,0,0,0,0,0,
-						50,0,0,0,0,0,50,
-					40,60,0,0,0,0,60,40,
-					30,0,0,70,0,0,70,0,30,
-					20,30,0,80,80,80,80,0,30,20,
-					0,0,0,125,125,100,125,125,0,0,0,
-					20,30,0,80,80,80,80,0,30,20,
-					30,0,0,70,0,0,70,0,30,
-					40,60,0,0,0,0,60,40,
-						50,0,0,0,0,0,50,
-						0,0,0,0,0,0, },
+					         -20,-10,-10,-10,-10,-20,
+					        -10, 5, 10,  5,  0,  0,-10,
+					      -10,  0, 10, 10,  5,  0,  0,-10,
+					     -10,  0,  0, 10, 10,  5,  0,  0,-10,
+					   -10,  0,  0,  0, 10, 10, 10,  0  ,0,-10,
+					 -20,  0,  0,  0,  0, 10, 10, 10,  0,  0,-20,
+					   -10,  0,  0,  0, 10, 10, 10,  0,  0,-10,
+					     -10,  0,  0, 10, 10,  5,  0,  0,-10,
+					       -10,  0, 10, 10,  5,  0,  0,-10,
+					         -10,  5, 10,  5,  0,  0,-10,
+					          -20,-10,-10,-10,-10,-20, },
 				new long[] { //QUEEN
-						0,0,0,0,0,0,
-						0,0,0,0,0,0,0,
-					0,0,0,0,0,0,0,0,
-					0,0,0,0,0,0,0,0,0,
-					0,0,0,0,0,0,0,0,0,0,
-					0,0,0,0,0,0,0,0,0,0,0,
-					0,0,0,0,0,0,0,0,0,0,
-					0,0,0,0,0,0,0,0,0,
-					0,0,0,0,0,0,0,0,
-						0,0,0,0,0,0,0,
-						0,0,0,0,0,0, },
-				new long[] { //KING
-							10,10,10,10,10,10,
-						10,20,20,20,20,20,10,
-						10,20,50,50,50,50,20,10,
-						10,20,50,100,100,100,50,20,10,
-					10,20,50,100,100,100,100,50,20,10,
-					10,20,50,100,100,100,100,100,50,20,10,
-					10,20,50,100,100,100,100,50,20,10,
-						10,20,50,100,100,100,50,20,10,
-						10,20,50,50,50,50,20,10,
-						10,20,20,20,20,20,10,
-							10,10,10,10,10,10, }
+					          -20,-10, -5, -5,  0,-20,
+					         -10, 0,  0,  0,  0,  0,-10,
+					       -10,  0,  5,  0,  0,  0,  0,-10,
+					     -10,  0,  5,  5,  5,  5,  0,  0,-10,
+					   -10,  5,  0,  5,  5,  5,  5,  0,  -5,-10,
+					    0,  0,  0,  5,  5,  5,  5,  5,  0,  -5,-20,
+					   -10,  0,  0,  5,  5,  5,  5,  0,  -5,-10,
+					      -5,  0,  0,  5,  5,  5,  0,  0,-10,
+					        -5,  0,  0,  0,  0,  0,  0,-10,
+					         -10,  0,  0,  0,  0,  0,-10,
+					          -20,-10,-5, -5,-10,-20, },
+				new long[] { //KING START
+					           -30,-30,-30,-30,-30,-30,
+					         -20,-20,-30,-30,-30,-40,-40,
+					        20,-20,-20,-30,-30,-30,-40,-40,
+					      30, 20,-20,-20,-30,-30,-30,-40,-50,
+					     0,  0, 20,-20,-20,-30,-30,-40,-50,-50,
+					   0,  0,  0,  0,-20,-20,-30,-40,-50,-50,-50,
+					     0, 20, 20,-20,-20,-30,-30,-40,-50,-50,
+					      30, 20,-20,-20,-30,-30,-30,-40,-50,
+					        20,-20,-20,-30,-30,-30,-40,-40,
+					         -20,-20,-30,-30,-30,-40,-40,
+					           -30,-30,-30,-30,-30,-30, },
+				new long[] { //KING END
+					          -50,-40,-30,-30,-40,-50,
+					        -40,-20,  0,  5,  0,-20,-40,
+					      -30,  0, 10,  0,  0, 10,  0,-30,
+					     -30,  5,  0, 20, 20, 20,  0,  5,-30,
+					   -40,  0,  0, 20, 40, 40, 20,  0  ,0,-40,
+					 -50,-20,  0, 20, 40, 50, 40, 20,  0,-20,-50,
+					   -40,  0,  0, 20, 40, 40, 20,  0,  0,-40,
+					     -30,  5,  0, 20, 20, 20,  0,  5,-30,
+					       -30,  0, 10,  0,  0, 10,  0,-30,
+					         -40,-20,  0,  5,  0,-20,-40,
+					          -50,-40,-30,-30,-40,-50, },
 			};
 
 		// Measure Board State
@@ -545,19 +556,20 @@ public class HexConst
 				}
 				else return 0; // StaleMate
 			}
+
 			long H = 0;
 			//Check
 			if(hexEngine._getGameInCheck())
-				if(hexEngine._getIsWhiteTurn())
-					H += CHECK_VAL;
-				else
-					H -= CHECK_VAL;
-			//Piece Comparison
+			{
+				if(hexEngine._getIsWhiteTurn()) H += CHECK_VAL;
+				else H -= CHECK_VAL;
+			}
+			//Simple Material and their Position
 			foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.BLACK].Keys)
 				foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.BLACK][piecetype])
 				{
 					H += PIECE_VALUES[(int)piecetype];
-					H += PIECE_BOARDS[(int)piecetype][QRToIndex(piece.X,piece.Y)];
+					H += PIECE_BOARDS[(int)piecetype][QRToIndex(piece.X * -1,piece.Y * -1)];
 				}
 			foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.WHITE].Keys)
 				foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.WHITE][piecetype])
@@ -565,10 +577,24 @@ public class HexConst
 					H -= PIECE_VALUES[(int)piecetype];
 					H -= PIECE_BOARDS[(int)piecetype][QRToIndex(piece.X,piece.Y)];
 				}
-
-
+			//Material Bonuses & Penalties
+			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.BISHOP].Count == 3)
+				H += PIECE_VALUES[(int)PIECES.BISHOP];
+			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.BISHOP].Count == 3)
+				H -= PIECE_VALUES[(int)PIECES.BISHOP];
+			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.ROOK].Count == 2)
+				H -= PIECE_VALUES[(int)PIECES.ROOK] / 3;
+			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.ROOK].Count == 2)
+				H +=  PIECE_VALUES[(int)PIECES.ROOK] / 3;
+			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.KNIGHT].Count == 2)
+				H -= PIECE_VALUES[(int)PIECES.KNIGHT] / 3;
+			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.KNIGHT].Count == 2)
+				H +=  PIECE_VALUES[(int)PIECES.KNIGHT] / 3;
+			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.PAWN].Count == 0)
+				H -= NOPAWNPEN_VAL;
+			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.PAWN].Count == 0)
+				H +=  NOPAWNPEN_VAL;
 			return H;
 		}
-
 }
 }
