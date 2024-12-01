@@ -682,7 +682,7 @@ public class HexMoveGenerator
 	private void fillRookCheckMoves(Vector2I kingCords, Vector2I moveToCords)
 	{
 		var deltaQ = kingCords.X - moveToCords.X;
-		var deltaR = kingCords.X - moveToCords.Y;
+		var deltaR = kingCords.Y - moveToCords.Y;
 		var direction = new Vector2I(0,0);
 
 		if(deltaQ > 0)
@@ -701,8 +701,10 @@ public class HexMoveGenerator
 			moveToCords.X += direction.X;
 			moveToCords.Y += direction.Y;
 			if( Bitboard128.IsLegalHexCords(moveToCords.X, moveToCords.Y) )
+			{
 				if(! BBRef.IsIndexEmpty(QRToIndex(moveToCords.X, moveToCords.Y)))
 					break;
+			}
 			else
 				break;
 		}
@@ -772,6 +774,10 @@ public class HexMoveGenerator
 				else
 					fillBishopCheckMoves(kingCords, cords);
 				break;
+		}
+		foreach (var i in GameInCheckMoves)
+		{
+			GD.Print(i);
 		}
 		return;
 	}
