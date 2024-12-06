@@ -766,19 +766,15 @@ public class HexMoveGenerator
 				fillBishopCheckMoves(kingCords, cords);
 				break;
 			case PIECES.QUEEN:
-				if(
-					(cords.X == kingCords.X) || //same Q
-						(cords.Y == kingCords.Y) || //same R
-						(cords.X+cords.Y) == (kingCords.X+kingCords.Y) ) // same s
+				if( (cords.X == kingCords.X) || //same Q
+					(cords.Y == kingCords.Y) || //same R
+					(cords.X+cords.Y) == (kingCords.X+kingCords.Y) ) // same s
 					fillRookCheckMoves(kingCords, cords);
 				else
 					fillBishopCheckMoves(kingCords, cords);
 				break;
 		}
-		foreach (var i in GameInCheckMoves)
-		{
-			GD.Print(i);
-		}
+
 		return;
 	}
 	

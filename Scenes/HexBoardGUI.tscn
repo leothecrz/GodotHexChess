@@ -136,7 +136,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
-text = "[center][font_size=28] LAST 5 MOVES[/font_size][/center]"
+text = "[center][font_size=28] History[/font_size][/center]"
 
 [node name="MenuBar" type="MenuBar" parent="StaticGUI/Left/BG"]
 layout_mode = 1

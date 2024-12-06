@@ -1,4 +1,6 @@
 
+using System;
+using System.Runtime.InteropServices;
 using Godot;
 
 using static HexChess.HexConst;
@@ -68,12 +70,30 @@ namespace HexChess
 			return CaptureTopSneak;
 		}
 		public string SimpleString()
-		{
-			return $"{piece} {EncodeFEN(from.X,from.Y)} {EncodeFEN(to.X,to.Y)}";
+		{	
+			PIECES tempPiece = (piece > 0b1000) ? (PIECES)(piece - 0b1000) : (PIECES)(piece);
+
+			char dispSym = tempPiece switch {
+				PIECES.PAWN => 'p',
+				PIECES.KNIGHT => 'n',
+				PIECES.ROOK => 'r',
+				PIECES.BISHOP => 'b',
+				PIECES.QUEEN => 'q',
+				PIECES.KING => 'k',
+				_ => 'e'};
+			
+			if (piece > 0b1000) dispSym -= ' ';
+			return $"{dispSym} - {EncodeFEN(from.X,from.Y),3:t}:{EncodeFEN(to.X,to.Y),3:t}";
 		} 
-		public override string ToString()
+
+		public string FullString()
 		{
 			return $"P:{piece}, from:({from.X},{from.Y}), to:({to.X},{to.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{pPiece} index:{pIndex} -- cap:{Capture} top:{CaptureTopSneak} type:{cPiece} index:{cIndex}";
+		}
+
+		public override string ToString()
+		{
+			return $"P:{piece}, from:({from.X},{from.Y}), to:({to.X},{to.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{pPiece} -- cap:{Capture} top:{CaptureTopSneak} type:{cPiece}";
 		}
 	}
 }
