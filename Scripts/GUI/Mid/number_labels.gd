@@ -1,11 +1,10 @@
-extends Control
+extends Control;
 
 const defVal = [
 '1', '2', '3', '4', '5',
 '6','7','8','9','10',
 '11','11','11','11','11','11'
 ];
-
 const flipedVal = [
 '11', '10', '9', '8', '7',
 '6','5','4','3','2',
@@ -14,11 +13,8 @@ const flipedVal = [
 
 @onready var sideWhite = true;
 
-func _ready() -> void:
-	setLabelsOf(defVal);
-	pass;
-
-func flip():
+#PUBLIC
+func __flip():
 	if(sideWhite):
 		setFlip();
 	else:
@@ -26,6 +22,7 @@ func flip():
 	sideWhite = !sideWhite;
 	return;
 
+#INTERNAL
 func setDef():
 	setLabelsOf(defVal);
 	pass;
@@ -42,3 +39,8 @@ func setLabelsOf(labels:Array):
 		node.text = labels[i];
 		i +=1;
 	return;
+
+#GODOT
+func _ready() -> void:
+	setLabelsOf(defVal);
+	pass;

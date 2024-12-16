@@ -223,38 +223,26 @@ func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, doInte
 func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
 	var from = cordinateToOrigin(fpos);
 	var to =  cordinateToOrigin(tpos);
-	TAndFrom.setVis(true);
-	TAndFrom.moveFrom(from.x,from.y);
-	TAndFrom.moveTo(to.x,to.y);
+	TAndFrom.__setVis(true);
+	TAndFrom.__moveFrom(from.x,from.y);
+	TAndFrom.__moveTo(to.x,to.y);
 	return;
 ## Setup and display a legal move on GUI
 func spawnAMove(moves:Array, color:Color, key, cords):
 	for i in range(moves.size()):
-		var newMove = preload("res://Scenes/HexTile.tscn").instantiate();
-		newMove.hexCords = cords;
-		newMove.hexKey = key;
-		newMove.hexIndex = i;
-		newMove.hexMove = moves[i];
-		newMove.transform.origin = cordinateToOrigin(moves[i])
-		newMove.rotation_degrees = 90;
-		newMove.z_index = 1;
-		newMove.isSetup = true;
-		
-		newMove.scale.x = MOVE_SCALE;
-		newMove.scale.y = MOVE_SCALE;
-		
+		var newMove : HexTile = preload("res://Scenes/HexTile.tscn").instantiate();
+		newMove.__setSetupVars(cords, key, i, moves[i], cordinateToOrigin(moves[i]), MOVE_SCALE);
 		MoveNode.add_child(newMove);
-	
 		newMove.SpriteNode.set_modulate(color);
 	return;
 ## Spawn the moves from the given 'moves' dictionary for the piece 'cords'
 func spawnMoves(moves:Dictionary, cords) -> void:
 	for key in moves.keys():
 		match key:
-			MOVE_TYPES.MOVES: 			spawnAMove(moves[key], Color.KHAKI, key, cords);
-			MOVE_TYPES.CAPTURE: 		spawnAMove(moves[key], Color.DARK_RED, key, cords);
-			MOVE_TYPES.PROMOTE: 		spawnAMove(moves[key], Color.DARK_KHAKI, key, cords);
-			MOVE_TYPES.ENPASSANT: 		spawnAMove(moves[key], Color.SEA_GREEN, key, cords);
+			MOVE_TYPES.MOVES: 		spawnAMove(moves[key], Color("#EDAE49"), key, cords); #YELLOW
+			MOVE_TYPES.CAPTURE: 	spawnAMove(moves[key], Color("#990D35"), key, cords); #RED
+			MOVE_TYPES.PROMOTE: 	spawnAMove(moves[key], Color("#F4A259"), key, cords); #GOLD
+			MOVE_TYPES.ENPASSANT: 	spawnAMove(moves[key], Color("#31E981"), key, cords); #GREEN
 	return;
 
 
@@ -303,7 +291,7 @@ func allowAITurn():
 	
 	threadActive = true;
 	pieceSelectedLockOthers.emit();
-	TAndFrom.setVis(false);
+	TAndFrom.__setVis(false);
 	
 	thinkingDialogRef = preload("res://Scenes/AI_Turn_Diolog.tscn").instantiate();
 	thinkingDialogRef.z_index = 1;
@@ -448,7 +436,7 @@ func _selectSide_OnItemSelect(index:int) -> void:
 	selfSide = index;
 	var isUserPlayingW = isWhite();
 	
-	BoardControler.checkAndFlipBoard(isUserPlayingW);
+	BoardControler.__checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
 	
 	EngineNode.UpdateEnemy(EngineNode._getEnemyType(), not isWhite());
@@ -523,7 +511,7 @@ func setSide(isW:bool):
 	selfSide = 1 if isW else 0;
 	
 	var isUserPlayingW = isWhite();
-	BoardControler.checkAndFlipBoard(isUserPlayingW);
+	BoardControler.__checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
 	RightPanel.__setSide(selfSide);
 	return;
@@ -558,7 +546,7 @@ func resignCleanUp():
 	
 	LeftPanel._resetCaptures();
 	BoardControler.setSignalWhite();
-	TAndFrom.setVis(false);
+	TAndFrom.__setVis(false);
 	gameRunning = false;
 	
 	for colorNodes in ChessPiecesNode.get_children():
@@ -841,12 +829,12 @@ func _on_close_gui() -> void:
 func _on_multiplayer_enabled(ishost : bool) -> void:
 	multiplayerConnected = true;
 	isHost = ishost;
-	RightPanel._multSignalOn();
+	RightPanel.__multSignalOn();
 	return;
 func _on_multiplayer_disabled() -> void:
 	multiplayerConnected = false;
 	isHost = false;
-	RightPanel._multSignalOff();
+	RightPanel.__multSignalOff();
 	return
 
 

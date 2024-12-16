@@ -1,9 +1,11 @@
 extends Control;
 
+
 @onready var MultiplayerSignal : ColorRect = $BG/Buttons/Mult/Border/MultOn;
 @onready var sideSelect = $BG/Options/SideSelect;
 @onready var enemySelect = $BG/Options/EnemySelect;
 @onready var resignButton = $BG/Buttons/ResignButton;
+
 
 #PUBLIC
 ## Resign Button
@@ -21,22 +23,19 @@ func __setEnemy(enemy : int):
 	enemySelect.__setSelected(enemy);
 	return;
 ## GETS
-func _getSide() -> int:
+func __getSelectedSide() -> int:
 	return sideSelect.selected;
-func _getEnemy() -> int:
+func __getSelectedEnemy() -> int:
 	return enemySelect.selected;
 ## Mult signal
-func _multSignalOn():
+func __multSignalOn() -> void:
 	MultiplayerSignal.color = Color.GREEN;
 	return;
-func _multSignalOff():
+func __multSignalOff() -> void:
 	MultiplayerSignal.color = Color.BLACK;
 	return;
 
+
 #GODOT
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(_delta: float) -> void:
-	pass
+	return;
