@@ -526,12 +526,12 @@ public partial class HexEngineSharp : Node
 			case ENEMY_TYPES.RANDOM:
 				Enemy.EnemyAI = new RandomAI(Enemy.EnemyPlaysWhite);
 				break;
-			case ENEMY_TYPES.MIN_MAX:
-				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 2);
-				break;
 			case ENEMY_TYPES.NN:
 				GD.PushWarning("NN Agent not yet implemented, using RNG");
 				Enemy.EnemyAI = new RandomAI(Enemy.EnemyPlaysWhite);
+				break;
+			case ENEMY_TYPES.MIN_MAX:
+				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 2);
 				break;
 		}
 		return;
@@ -725,8 +725,14 @@ public partial class HexEngineSharp : Node
 	{
 		Enemy.EnemyType = type;
 		Enemy.EnemyPlaysWhite = isWhite;
-		if(Enemy.EnemyType < ENEMY_TYPES.RANDOM) Enemy.EnemyIsAI = false;
-		else Enemy.EnemyIsAI = true;
+		if(Enemy.EnemyType < ENEMY_TYPES.RANDOM)
+			Enemy.EnemyIsAI = false;
+		else 
+		{
+			Enemy.EnemyIsAI = true;
+			// GD.Print("Diff: ", difficulty);
+			// Enemy.EnemyDifficulty = difficulty;
+		}
 		return;
 	}
 	public void DisableAIMoveLock()
@@ -762,6 +768,7 @@ public partial class HexEngineSharp : Node
 	public int _getEnemyChoiceType() { return (int) Enemy.EnemyChoiceType; }
 	public int _getEnemyChoiceIndex() { return Enemy.EnemyChoiceIndex; }
 	public int _getEnemyType() { return (int) Enemy.EnemyType; }
+	public int _getEnemyDiff() { return Enemy.EnemyDifficulty; }
 	public int getPiecetype(int p) { return (int)PieceTypeOf(p); }
 	public int unpromoteType() { return (int) HexState.unpromoteType; }
 	public int unpromoteIndex() { return (int) HexState.unpromoteIndex; }

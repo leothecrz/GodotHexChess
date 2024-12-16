@@ -1,21 +1,21 @@
 extends AudioStreamPlayer
 
-var placeStream : AudioStream;
-var pickUpStream : AudioStream;
+@export var placeStream : AudioStream;
+@export var pickUpStream : AudioStream;
 
-func _playPlaceSFX():
+##PUBLIC
+func __playPlaceSFX():
 	if(stream != placeStream):
 		stream = placeStream;
 	play()
 	return;
 
-func _playPickUp():
+func __playPickUp():
 	if(stream != pickUpStream):
 		stream = pickUpStream;
 	play()
 	return;
-
+##INTERNAL
+##GODOT
 func _ready() -> void:
-	placeStream = load("res://SFX/piece-placemen_rmx2.mp3");
-	
 	return;

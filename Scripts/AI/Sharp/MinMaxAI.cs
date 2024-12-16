@@ -90,7 +90,43 @@ public partial class MinMaxAI : AIBase
 	}
 
 
-	
+	private static long QuiescenceSearch(HexEngineSharp hexEngine, int multiplier, long alpha, long beta)
+	{
+		long standingValue = multiplier * Hueristic(hexEngine);
+		if(standingValue >= beta) return beta;
+		if(alpha < standingValue) alpha = standingValue;
+		GD.Print("PreQuiescenece: ", standingValue);
+		int index;
+		long value = long.MinValue;
+		var legalmoves = DeepCopyLegalMoves(hexEngine._getmoves());
+
+		foreach( Vector2I piece in legalmoves.Keys )
+		{
+			index = 0;
+			foreach( Vector2I move in legalmoves[piece][MOVE_TYPES.CAPTURE] )
+			{
+				var WAB = hexEngine._duplicateWAB();
+				var BAB = hexEngine._duplicateBAB();
+				var BP = hexEngine._duplicateBP();
+				var InPi = hexEngine._duplicateIP();
+				
+				hexEngine._makeMove(piece, MOVE_TYPES.CAPTURE, index, PIECES.QUEEN);
+				var newVal = multiplier * Hueristic(hexEngine);
+				GD.Print("PostQuiescenece: ", newVal);
+				value = Math.Max(newVal, value);
+				alpha = Math.Max(alpha, value);
+				
+				hexEngine._undoLastMove(false);
+				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+				index += 1;
+				
+				if(alpha >= beta) goto ESCAPELOOP;
+			}
+		}
+		ESCAPELOOP:
+
+		return alpha;
+	}
 
 	// Recursive Move Check
 	private long NegativeMaximum(HexEngineSharp hexEngine, int depth, int multiplier, long alpha, long beta)
@@ -98,8 +134,7 @@ public partial class MinMaxAI : AIBase
 		counter += 1;
 		
 		long positionHash = getPositionHash(hexEngine, multiplier < 0);
-		TableEntry entry;
-		bool hasEntry = transpositionTable.TryGetValue(positionHash, out entry);
+		bool hasEntry = transpositionTable.TryGetValue(positionHash, out TableEntry entry);
 		if(hasEntry && entry.depth >= depth)
 		{
 			positionsFound += 1;
@@ -115,7 +150,8 @@ public partial class MinMaxAI : AIBase
 		if( depth == 0 || hexEngine._getGameOverStatus())
 		{
 			statesEvaluated += 1;
-			return multiplier * Hueristic(hexEngine);
+			return QuiescenceSearch(hexEngine, -multiplier, alpha, beta);
+			//return multiplier * Hueristic(hexEngine);
 		}
 			
 		int index = 0;
@@ -202,6 +238,7 @@ public partial class MinMaxAI : AIBase
 							selectMove(piece, (int)movetype, index, move);
 							GD.Print($"Cords: ({CORDS.X},{CORDS.Y}), To: ({TO.X},{TO.Y}), Type: {MOVETYPE}, Index: {MOVEINDEX} \n");
 						}
+
 						hexEngine._undoLastMove(false);
 						hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
 					}

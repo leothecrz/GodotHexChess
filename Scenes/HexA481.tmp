@@ -19,7 +19,7 @@
 [ext_resource type="Script" path="res://Scripts/GUI/Mid/ToFrom.gd" id="13_at1p6"]
 [ext_resource type="Theme" uid="uid://dfc81p3bm6afg" path="res://THEMES/base.tres" id="14_xjes1"]
 [ext_resource type="PackedScene" uid="uid://dbeomhtiuxwqb" path="res://Scenes/multiplayerGUI.tscn" id="15_8pwlq"]
-[ext_resource type="Script" path="res://Scripts/GUI/Sounds/sound_source.gd" id="16_34fi1"]
+[ext_resource type="Script" path="res://Scripts/SoundControl/sound_source.gd" id="16_34fi1"]
 [ext_resource type="AudioStream" uid="uid://c4j1077g457iq" path="res://SFX/piece-placemen_rmx2.mp3" id="16_ey4ea"]
 
 [sub_resource type="Theme" id="Theme_86tg1"]
@@ -701,7 +701,6 @@ selected = 0
 item_count = 8
 popup/item_0/text = "Player"
 popup/item_1/text = "AI"
-popup/item_1/id = 1
 popup/item_1/disabled = true
 popup/item_1/separator = true
 popup/item_2/text = "AI-Random"
@@ -793,9 +792,9 @@ script = ExtResource("10_5jr73")
 
 [node name="SoundSource" type="AudioStreamPlayer" parent="."]
 editor_description = "Main source emiter for any SFX sounds."
+stream = ExtResource("16_ey4ea")
 bus = &"Sound"
 script = ExtResource("16_34fi1")
-placeStream = ExtResource("16_ey4ea")
 
 [node name="MultiplayerControl" parent="." instance=ExtResource("15_8pwlq")]
 visible = false

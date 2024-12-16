@@ -8,6 +8,9 @@ using static HexChess.HexConst;
 
 namespace HexChess
 {
+
+//TODO :: Offload onto GPU?
+
 public class HexMoveGenerator
 {
 	//MOVE DICT
@@ -785,8 +788,8 @@ public class HexMoveGenerator
 		int selfside = -1;
 		if(BoardRef.isWhiteTurn)
 		{
-			ZeroBoard(WhiteAttackBoard);
 			selfside = (int) SIDES.WHITE;
+			ZeroBoard(WhiteAttackBoard);
 		}
 		else
 		{

@@ -12,7 +12,7 @@ public class HexConst
 		public enum PIECES {ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING};
 		public enum SIDES {BLACK, WHITE};
 		public enum MOVE_TYPES {MOVES, CAPTURE, ENPASSANT, PROMOTE};
-		public enum ENEMY_TYPES { PLAYER_TWO, RANDOM, MIN_MAX, NN };
+		public enum ENEMY_TYPES { PLAYER_TWO, RANDOM, NN, MIN_MAX };
 		public enum MATE_STATUS {NONE, CHECK, OVER};
 		public enum UNDO_FLAGS {NONE, ENPASSANT, CHECK, GAME_OVER };
 		//	Const

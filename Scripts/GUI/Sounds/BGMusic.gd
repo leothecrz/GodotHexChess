@@ -1,12 +1,19 @@
-extends AudioStreamPlayer
+extends AudioStreamPlayer;
 
-const folder_path:String = "res://Music/";
-var files:Array;
+const folder_path : String = "res://Music/";
+var files : Array;
 
-func _stopPlaying():
+##PUBLIC
+#
+func __stopPlaying():
 	stop();
-	return
-
+	return;
+#
+func __continuePlaying():
+	selecSongAndPlay();
+	return;
+	
+##INTERNAL
 func selecSongAndPlay():
 	if files.size() > 0:
 		var random_file = files[randi() % files.size()]
@@ -15,10 +22,7 @@ func selecSongAndPlay():
 		play(0);
 	return;
 
-func _continuePlaying():
-	selecSongAndPlay();
-	return
-
+##GODOT
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	var dir = DirAccess.open(folder_path)
@@ -34,8 +38,7 @@ func _ready():
 		dir.list_dir_end()
 	selecSongAndPlay();
 	return;
-
 func _on_finished():
 	stream = null;
 	selecSongAndPlay()
-	pass # Replace with function body.
+	return;

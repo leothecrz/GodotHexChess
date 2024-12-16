@@ -12,6 +12,7 @@ namespace HexChess
 		public AIBase EnemyAI {get; set;} = null;
 		public ENEMY_TYPES EnemyType {get; set;} = ENEMY_TYPES.PLAYER_TWO;
 		public PIECES EnemyPromotedTo {get; set;} = PIECES.ZERO;
+		
 
 		// Enemy Bool
 		public bool EnemyIsAI {get; set;} = false;
@@ -21,6 +22,7 @@ namespace HexChess
 		// ENemy Info
 		public PIECES EnemyChoiceType {get; set;}
 		public int EnemyChoiceIndex {get; set;}
+		public int EnemyDifficulty {get; set;} = 0;
 		public Vector2I EnemyTo {get; set;}
 
 

@@ -30,7 +30,7 @@ enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
 # Position State
 @onready var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @export var PIXEL_OFFSET : int = 35;
-@export  var AXIAL_X_SCALE : float = 1.4;
+@export var AXIAL_X_SCALE : float = 1.4;
 @export var AXIAL_Y_SCALE : float = 0.9395;
 @export var PIECE_SCALE : float = 0.18;
 @export var MOVE_SCALE : float = 0.015;
@@ -47,12 +47,10 @@ var selfSide : int = 1;
 # Temp
 var activePieces : Array;
 var currentLegalMoves : Dictionary;
-
 #Multiplayer
 var multiplayerConnected : bool = false;
 var isHost : bool = false;
 var playerCount = 0;
-
 #References
 var thinkingDialogRef : Node = null;
 
@@ -87,8 +85,10 @@ func isItMyTurn() -> bool:
 	return EngineNode._getIsWhiteTurn() == isWhite();
 ##
 func cordinateToOrigin(cords : Vector2i) -> Vector2:
-	return VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(cords * 1 if isRotatedWhiteDown else -1));
-
+	return VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(cords * (1 if isRotatedWhiteDown else -1)));
+##
+func getTimeUtil() -> float:
+	return Time.get_ticks_usec()/10000000.0;
 
 
 # DISPLAY PIECES
@@ -104,14 +104,8 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 	return;
 ## Setup A Chess Piece Scene
 func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
-	var newPieceScene:Node = preload("res://Scenes/chess_piece.tscn").instantiate();
-	newPieceScene.side = side;
-	newPieceScene.pieceType = pieceType;
-	newPieceScene.pieceCords = piece;
-	newPieceScene.isSetup = true;
-	newPieceScene.transform.origin = cordinateToOrigin(piece);
-	newPieceScene.scale.x = PIECE_SCALE;
-	newPieceScene.scale.y = PIECE_SCALE;
+	var newPieceScene : HexPiece = preload("res://Scenes/chess_piece.tscn").instantiate();
+	newPieceScene.__setSetupVars(side, pieceType, piece, cordinateToOrigin(piece), PIECE_SCALE);
 	return newPieceScene;
 ## Give piece data to a new scene. Connect scene to piece controller. Add to container.
 func prepareChessPieceNode(side:int, pieceType:int, piece:Vector2i) -> void:
@@ -180,9 +174,9 @@ func updateGUI_Elements() -> void:
 		else:
 			setConfirmTempDialog(AcceptDialog.new(),\
 			"StaleMate. Game ends in a draw.");
-		RightPanel._setResignOff();
+		RightPanel.__setResignOff();
 	else:
-		RightPanel._setResignOn();
+		RightPanel.__setResignOn();
 	
 	LeftPanel._updateHist(EngineNode._getHistTop());
 	return;
@@ -283,14 +277,14 @@ func syncMasterAIThreadToMain():
 	ref = ref.get_child(j)
 	ref = ref.get_child(k);
 		
-	repositionToFrom(ref._getPieceCords(), to);
+	repositionToFrom(ref.__getPieceCords(), to);
 	
 	if (EngineNode._getEnemyPromoted()):
 		prepareChessPieceNode(i, EngineNode._getEnemyPTo(), to);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 	else:
-		ref._setPieceCords(to,cordinateToOrigin(to));
+		ref.__setPieceCords(to,cordinateToOrigin(to));
 	
 	syncToEngine();
 	pieceUnselectedUnlockOthers.emit();
@@ -333,7 +327,7 @@ func queueFreeMoves() -> void:
 func  _chessPiece_OnPieceDESELECTED(cords : Vector2i, key, index : int) -> void:
 	var isNotPromoteMove : bool = (key != MOVE_TYPES.PROMOTE);
 	
-	SoundSource._playPlaceSFX();
+	SoundSource.__playPlaceSFX();
 	queueFreeMoves();
 	
 	if (isNotPromoteMove): 
@@ -448,7 +442,7 @@ func _on_test_id_pressed(id: int) -> void:
 func _selectSide_OnItemSelect(index:int) -> void:
 	if(gameRunning):
 		spawnNotice("[center]Can't switch sides mid-game.[/center]", 1.0);
-		RightPanel._setSide(selfSide);
+		RightPanel.__setSide(selfSide);
 		return; 
 		
 	selfSide = index;
@@ -462,19 +456,21 @@ func _selectSide_OnItemSelect(index:int) -> void:
 ##
 func _on_enemy_select_item_selected(index:int) -> void:
 	if(gameRunning):
-		RightPanel._setEnemy(EngineNode._getEnemyType());
+		RightPanel.__setEnemy(EngineNode._getEnemyType());
 		return; 
 	
 	if(multiplayerConnected):
 		spawnNotice("[center]Multiplayer Connected[/center]")
-		RightPanel._setEnemy(EngineNode._getEnemyType());
+		RightPanel.__setEnemy(EngineNode._getEnemyType());
 		return;
 	
 	var type:int = index;
+	#var difficulty:int = 0;
 	if(index > 1):
 		type = index - 1;
+	#if(index > 2): # TODO :: DEFINE DIFICULTY SLIDER
+		#difficulty = index - 3;
 	EngineNode.UpdateEnemy(type, not isWhite());
-	
 	minimumUndoSizeReq = 1;
 	if(type == 0):
 		minimumUndoSizeReq += 1;
@@ -486,9 +482,9 @@ func _on_enemy_select_item_selected(index:int) -> void:
 ##
 func toggleMusic(choice):
 	if choice == 1:
-		BGMusicPlayer._stopPlaying();
+		BGMusicPlayer.__stopPlaying();
 		return;
-	BGMusicPlayer._continuePlaying();
+	BGMusicPlayer.__continuePlaying();
 	return;
 ##
 func toggleSound(choice):
@@ -529,7 +525,7 @@ func setSide(isW:bool):
 	var isUserPlayingW = isWhite();
 	BoardControler.checkAndFlipBoard(isUserPlayingW);
 	isRotatedWhiteDown = isUserPlayingW;
-	RightPanel._setSide(selfSide);
+	RightPanel.__setSide(selfSide);
 	return;
 ##
 @rpc("authority", "call_remote", "reliable")
@@ -543,7 +539,7 @@ func startGameFromFen(stateString : String = "") -> void:
 			spawnNotice("[center]Fen Invalid[/center]", 1.0);
 			return;
 	
-	RightPanel._setResignOn();
+	RightPanel.__setResignOn();
 	
 	syncToEngine()
 	spawnActivePieces();
@@ -632,8 +628,8 @@ func undoCapture() -> void:
 func undoDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 	var newPos = activePieces[sideToUndo][uType][uIndex];
 	var pieceREF = ChessPiecesNode.get_child(sideToUndo).get_child(uType-1).get_child(uIndex);
-	var from = cordinateToOrigin(pieceREF._getPieceCords());
-	pieceREF._setPieceCords(newPos , cordinateToOrigin(newPos));
+	var from = cordinateToOrigin(pieceREF.__getPieceCords());
+	pieceREF.__setPieceCords(newPos , cordinateToOrigin(newPos));
 	repositionToFrom(from, newPos);
 	return;
 ##
@@ -649,7 +645,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
 	
-	var From = ref.get_child(refChildCount-1)._getPieceCords();
+	var From = ref.get_child(refChildCount-1).__getPieceCords();
 	ref.get_child(refChildCount-1).queue_free();
 
 	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
@@ -658,7 +654,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 	ref.add_child(newPieceScene);
 	ref.move_child(newPieceScene,pIndex);
 	
-	repositionToFrom(From,newPieceScene._getPieceCords())
+	repositionToFrom(From,newPieceScene.__getPieceCords())
 	return;
 ##
 func syncUndo() -> void:
@@ -781,7 +777,7 @@ func clientShutdown(reason:int) -> void:
 ##
 @rpc("any_peer", "call_remote", "reliable")
 func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
-	print(Time.get_ticks_usec()/10000000.0," - ", multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
+	print(getTimeUtil()," - ", multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
 	
 	var toPos = currentLegalMoves[cords][moveType][moveIndex];
 	repositionToFrom(cords, toPos);
@@ -805,7 +801,7 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();
 	else:
-		ref._setPieceCords(toPos, cordinateToOrigin(toPos));
+		ref.__setPieceCords(toPos, cordinateToOrigin(toPos));
 	
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
 	syncToEngine();
@@ -815,13 +811,13 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 @rpc("any_peer", "call_remote", "reliable")
 func syncCheckMultiplayer(sendSync:bool):
 	if(sendSync):
-		print(Time.get_ticks_usec()/10000000.0," - ",multiplayer.get_remote_sender_id()," sent a sync request to ", multiplayer.get_unique_id());
+		print(getTimeUtil()," - ",multiplayer.get_remote_sender_id()," sent a sync request to ", multiplayer.get_unique_id());
 		syncCheckMultiplayer.rpc(false);
 	else:
-		print(Time.get_ticks_usec()/10000000.0," - ", multiplayer.get_unique_id()," is in sync with ", multiplayer.get_remote_sender_id());
+		print(getTimeUtil()," - ", multiplayer.get_unique_id()," is in sync with ", multiplayer.get_remote_sender_id());
 
 	if(isItMyTurn()):
-		print(Time.get_ticks_usec()/10000000.0," - ","My Turn: ", multiplayer.get_unique_id())
+		print(getTimeUtil()," - ","My Turn: ", multiplayer.get_unique_id())
 		pieceUnselectedUnlockOthers.emit();
 		return;
 	pieceSelectedLockOthers.emit();
@@ -869,4 +865,6 @@ func _on_multiplayer_player_connected(_peer_id: Variant, _player_info: Variant) 
 func _on_multiplayer_player_disconnected(_peer_id: Variant) -> void:
 	playerCount -=1;
 	spawnNotice("Opponent has disconnected")
+	if(gameRunning and isHost):
+		resignCleanUp();
 	return;

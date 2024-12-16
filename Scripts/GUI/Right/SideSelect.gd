@@ -1,5 +1,11 @@
-extends OptionButton
-
-func _setSelected(index: int):
+extends OptionButton;
+##PUBLIC
+func __setSelected(index: int):
 	selected = index;
-	return
+	return;
+	
+##GODOT
+func _ready() -> void:
+	get_popup().transparent = true;
+	return;
+
