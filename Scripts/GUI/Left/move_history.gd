@@ -15,4 +15,4 @@ func setText(stir:Array):
 	"[font_size=28] History\n [/font_size]" +\
 	"[font_size=20]%s\n%s\n%s\n%s\n%s[/font_size]" % text_lines +\
 	"[/center]";
-	pass;
+	return;

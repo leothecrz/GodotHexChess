@@ -1,14 +1,24 @@
-extends PopupPanel
+extends PopupPanel;
+class_name SimpleNotice;
 
-var NOTICE_TEXT:String = "";
-var POP_TIME:float = 0;
-var fade_duration = 0;
-var fading = false;
 
+var fade_duration : float = 0.0;
+var fading : bool = false;
+
+var POP_TIME : float = 0.0;
+var NOTICE_TEXT : String = "";
+
+#PUBLIC
+func __setSetupVars(txt : String, time : float):
+	NOTICE_TEXT = txt;
+	POP_TIME = time;
+	return;
+
+#GODOT
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	var timer:Timer = $Timer;
-	var text = $ColorRect/NoticeText;
+	var timer : Timer = $Timer;
+	var text : RichTextLabel = $ColorRect/NoticeText;
 	
 	text.append_text(NOTICE_TEXT);
 	timer.wait_time = POP_TIME/2;

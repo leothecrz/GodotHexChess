@@ -70,12 +70,11 @@ func axialToPixel(axial : Vector2i) -> Vector2:
 	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	return Vector2(x, y);
 ## Spawn a simple pop up that will display TEXT for TIME seconds
-func spawnNotice(TEXT : String, TIME : float = 1.8) -> void:
-	var notice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
-	notice.NOTICE_TEXT = TEXT;
-	notice.POP_TIME = TIME;
+func spawnNotice(txt : String, time : float = 1.8) -> void:
+	var notice : SimpleNotice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
+	notice.__setSetupVars(txt, time);
 	self.add_child(notice);
-	notice.position = Vector2i(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2),550);
+	notice.position = Vector2i((int)(VIEWPORT_CENTER_POSITION.x-(notice.size.x/2.0)),550);
 	return;
 ##
 func isWhite() -> bool:
@@ -134,7 +133,7 @@ func updateScenceTree_OfCapture() -> void:
 	ref.get_parent().remove_child(ref);
 	ref.queue_free();
 	
-	LeftPanel._pushCapture(i,j+1);
+	LeftPanel.__pushCapture(i,j+1);
 	return;
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
 func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
@@ -156,8 +155,8 @@ func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pT
 	return;
 ## Get new state data from engine
 func updateGUI_Elements() -> void:
-	if(EngineNode._getGameInCheck() != LeftPanel._getLabelState()):
-		LeftPanel._swapLabelState();
+	if(EngineNode._getGameInCheck() != LeftPanel.__getLabelState()):
+		LeftPanel.__swapLabelState();
 
 	if(EngineNode._getIsWhiteTurn()):
 		emit_signal("gameSwitchedSides", SIDES.WHITE);
@@ -178,7 +177,7 @@ func updateGUI_Elements() -> void:
 	else:
 		RightPanel.__setResignOn();
 	
-	LeftPanel._updateHist(EngineNode._getHistTop());
+	LeftPanel.__updateHist(EngineNode._getHistTop());
 	return;
 ## Handle post move gui updates
 func syncToEngine() -> void:
@@ -544,7 +543,7 @@ func resignCleanUp():
 	activePieces.clear();
 	currentLegalMoves.clear();
 	
-	LeftPanel._resetCaptures();
+	LeftPanel.__resetCaptures();
 	BoardControler.setSignalWhite();
 	TAndFrom.__setVis(false);
 	gameRunning = false;
@@ -554,9 +553,9 @@ func resignCleanUp():
 			for piece in pieceNodes.get_children():
 				piece.queue_free();
 	
-	LeftPanel._updateHist([]);
-	if(LeftPanel._getLabelState()):
-		LeftPanel._swapLabelState();
+	LeftPanel.__updateHist([]);
+	if(LeftPanel.__getLabelState()):
+		LeftPanel.__swapLabelState();
 	return;
 ## TODO :: FIX FORCED NEW GAME
 @rpc("authority", "call_remote", "reliable")
@@ -598,7 +597,7 @@ func undoCapture() -> void:
 	.get_child(captureSideToUndo)\
 	.get_child(cType-1);
 	
-	LeftPanel._undoCapture(captureSideToUndo);
+	LeftPanel.__undoCapture(captureSideToUndo);
 	
 	## respawn captured piece
 	if( ref.get_child_count(false) > 0):
@@ -814,7 +813,7 @@ func syncCheckMultiplayer(sendSync:bool):
 ##MULTIPLAYER GUI ON & OFF
 func _on_mult_pressed() -> void:
 	if(not multiplayerConnected and gameRunning):
-		spawnNotice("Finish the current game to start an online session")
+		spawnNotice("[center]Finish the current game to start an online session[/center]")
 		return;
 	MultiplayerControl._showGUI();
 	if(gameRunning and isItMyTurn()):
@@ -852,7 +851,7 @@ func _on_multiplayer_player_connected(_peer_id: Variant, _player_info: Variant) 
 	return;
 func _on_multiplayer_player_disconnected(_peer_id: Variant) -> void:
 	playerCount -=1;
-	spawnNotice("Opponent has disconnected")
+	spawnNotice("[center]Opponent has disconnected[/center]")
 	if(gameRunning and isHost):
 		resignCleanUp();
 	return;

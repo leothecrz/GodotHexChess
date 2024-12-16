@@ -1,11 +1,13 @@
-extends Control
+extends Control;
+class_name MultiplayerMain;
 
-enum REASONS {DEFAULT, SERVERSHUTODWN}
+enum REASONS {DEFAULT, SERVERSHUTODWN};
 
 const SERVER_ID : int = 1;
 const MAX_CON : int = 1;
 const TIMEOUTSECS : int = 10;
 const UPNP_FAILURE_NO_GATEWAY = -1
+
 
 # Signals
 signal shutdownServerClient(reason:int);
@@ -16,6 +18,7 @@ signal player_connected(peer_id, player_info);
 signal player_disconnected(peer_id);
 signal multiplayer_enabled(ishost:bool);
 signal multiplayer_disabled();
+
 
 #References
 @onready var tabs = $BG/Type;
@@ -49,11 +52,22 @@ var portsAreOpen = false;
 var cancelled = false;
 var useUPNP
 
+
 ##UTILITY
 #TODO ::
 func isValidADRS(Str:String) -> bool:
 	if(Str.is_empty()): return false;
-	
+	var parts : PackedStringArray = Str.split('.');
+	if(parts.size() != 4):
+		return false;
+	for part : String in parts:
+		if(not part.is_valid_int()):
+			return false;
+		var num = int(part);
+		if((num < 0) or (num > 255)):
+			return false;
+		if part != String(num):
+			return false;
 	return true;
 #TODO ::
 func isValidPort(Str:String) -> bool:

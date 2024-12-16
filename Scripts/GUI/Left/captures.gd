@@ -1,15 +1,15 @@
-extends Control
-
+extends Control;
 
 @onready var whiteCapture = $ColorRect/WCapture;
 @onready var blackCapture = $ColorRect/BCapture;
 
-func _resetCaptures():
+#PUBLIC
+func __resetCaptures():
 	whiteCapture.text = "W Captures:\n";
 	blackCapture.text = "B Captures:\n";
 	return;
 
-func _pushCapture(side:int, captured:int):
+func __pushCapture(side:int, captured:int):
 	var toUpdate = whiteCapture if (side == 0) else blackCapture;
 	var text = toUpdate.text;
 	match(captured):
@@ -21,16 +21,14 @@ func _pushCapture(side:int, captured:int):
 	toUpdate.text = text;
 	return;
 
-func _undoCapture(side:int):
+func __undoCapture(side:int):
 	if(side == 0):
 		whiteCapture.text = whiteCapture.text.left(-3);
 		return;
 	blackCapture.text = blackCapture.text.left(-3);
 	return;
 
+#GODOT
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+	return;

@@ -1,31 +1,31 @@
-extends Control
-###
-###
+extends Control;
+
 ### State
 @onready var inCheckLabel = $BG/InCheck/TurnSig;
 @onready var HistoryNode = $BG/MoveHistory;
 @onready var CaptureNode = $BG/Captures;
-###
-###
-### User Created
+
+#Public
 ##
-
-func _updateHist(stir:Array):
+func __updateHist(stir:Array):
 	HistoryNode.setText(stir);
-
-func _swapLabelState() -> void:
+##
+func __swapLabelState() -> void:
 	inCheckLabel.visible = !inCheckLabel.visible;
 	return;
 
-func _getLabelState() -> bool:
+##
+func __getLabelState() -> bool:
 	return inCheckLabel.visible;
-
-func _undoCapture(side:int):
-	CaptureNode._undoCapture(side);
+##
+func __undoCapture(side:int):
+	CaptureNode.__undoCapture(side);
 	return;
-func _pushCapture(side:int, captured:int):
-	CaptureNode._pushCapture(side,captured);
+##
+func __pushCapture(side:int, captured:int):
+	CaptureNode.__pushCapture(side,captured);
 	return;
-func _resetCaptures():
-	CaptureNode._resetCaptures();
+##
+func __resetCaptures():
+	CaptureNode.__resetCaptures();
 	return;
