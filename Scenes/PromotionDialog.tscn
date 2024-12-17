@@ -2,29 +2,29 @@
 
 [ext_resource type="Script" path="res://Scripts/GUI/Dialog/PromotionDialog.gd" id="1_6v1g2"]
 [ext_resource type="ButtonGroup" uid="uid://dnhog44arg4nm" path="res://ButtonGroups/PromotionDialog.tres" id="1_16i12"]
-[ext_resource type="Texture2D" uid="uid://dwwlqi4e7837t" path="res://Textures/chessPieceTwo.tres" id="3_yrxm8"]
+[ext_resource type="Texture2D" uid="uid://dxhduylcn2rax" path="res://Images/schemeThree.png" id="4_xfyd6"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_05e3k"]
+atlas = ExtResource("4_xfyd6")
+region = Rect2(320, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_58mxs"]
+atlas = ExtResource("4_xfyd6")
+region = Rect2(960, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0okps"]
+atlas = ExtResource("4_xfyd6")
+region = Rect2(640, 0, 320, 320)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_il7b1"]
+atlas = ExtResource("4_xfyd6")
+region = Rect2(1280, 0, 320, 320)
 
 [sub_resource type="InputEventKey" id="InputEventKey_jqlyk"]
 keycode = 4194309
 
 [sub_resource type="Shortcut" id="Shortcut_q0aqc"]
 events = [SubResource("InputEventKey_jqlyk")]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_61chd"]
-atlas = ExtResource("3_yrxm8")
-region = Rect2(960, 0, 320, 320)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_rmqpi"]
-atlas = ExtResource("3_yrxm8")
-region = Rect2(1280, 0, 320, 320)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ehute"]
-atlas = ExtResource("3_yrxm8")
-region = Rect2(640, 0, 320, 320)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_8d3f4"]
-atlas = ExtResource("3_yrxm8")
-region = Rect2(320, 0, 320, 320)
 
 [node name="Control" type="Control"]
 layout_mode = 3
@@ -64,6 +64,92 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.294118)
 
+[node name="Control" type="Control" parent="BackGround"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -100.0
+offset_right = 200.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="NewQueen" type="Button" parent="BackGround/Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -100.0
+offset_right = 128.0
+offset_bottom = 228.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.25, 0.25)
+toggle_mode = true
+button_pressed = true
+button_group = ExtResource("1_16i12")
+icon = SubResource("AtlasTexture_05e3k")
+
+[node name="NewKnight" type="Button" parent="BackGround/Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_top = -100.0
+offset_right = 328.0
+offset_bottom = 228.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.25, 0.25)
+toggle_mode = true
+button_group = ExtResource("1_16i12")
+icon = SubResource("AtlasTexture_58mxs")
+
+[node name="NewBishop" type="Button" parent="BackGround/Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 228.0
+offset_bottom = 228.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.25, 0.25)
+toggle_mode = true
+button_group = ExtResource("1_16i12")
+icon = SubResource("AtlasTexture_0okps")
+
+[node name="NewRook" type="Button" parent="BackGround/Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 100.0
+offset_top = -100.0
+offset_right = 428.0
+offset_bottom = 228.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.25, 0.25)
+toggle_mode = true
+button_group = ExtResource("1_16i12")
+icon = SubResource("AtlasTexture_il7b1")
+
 [node name="AcceptButton" type="Button" parent="BackGround"]
 layout_mode = 1
 anchors_preset = 7
@@ -80,66 +166,8 @@ grow_vertical = 0
 shortcut = SubResource("Shortcut_q0aqc")
 text = "ACCEPT"
 
-[node name="Control" type="Control" parent="BackGround"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -20.0
-offset_right = 20.0
-offset_bottom = 40.0
-grow_horizontal = 2
-
-[node name="KnightButton" type="CheckButton" parent="BackGround/Control"]
-layout_mode = 0
-offset_left = -212.0
-offset_top = 66.0
-offset_right = 152.0
-offset_bottom = 394.0
-scale = Vector2(0.25, 0.25)
-tooltip_text = "Knight"
-button_group = ExtResource("1_16i12")
-icon = SubResource("AtlasTexture_61chd")
-
-[node name="RookButton" type="CheckButton" parent="BackGround/Control"]
-layout_mode = 0
-offset_left = -101.0
-offset_top = 66.0
-offset_right = 263.0
-offset_bottom = 394.0
-scale = Vector2(0.25, 0.25)
-tooltip_text = "Rook"
-button_group = ExtResource("1_16i12")
-icon = SubResource("AtlasTexture_rmqpi")
-
-[node name="BishopButton" type="CheckButton" parent="BackGround/Control"]
-layout_mode = 0
-offset_left = 20.0
-offset_top = 66.0
-offset_right = 384.0
-offset_bottom = 394.0
-scale = Vector2(0.25, 0.25)
-tooltip_text = "Bishop"
-button_group = ExtResource("1_16i12")
-icon = SubResource("AtlasTexture_ehute")
-
-[node name="QueenButton" type="CheckButton" parent="BackGround/Control"]
-layout_mode = 0
-offset_left = 131.0
-offset_top = 66.0
-offset_right = 495.0
-offset_bottom = 394.0
-scale = Vector2(0.25, 0.25)
-tooltip_text = "Queen"
-button_pressed = true
-button_group = ExtResource("1_16i12")
-icon = SubResource("AtlasTexture_8d3f4")
-alignment = 1
-icon_alignment = 1
-vertical_icon_alignment = 0
-
+[connection signal="toggled" from="BackGround/Control/NewQueen" to="." method="_on_new_queen_toggled"]
+[connection signal="toggled" from="BackGround/Control/NewKnight" to="." method="_on_new_knight_toggled"]
+[connection signal="toggled" from="BackGround/Control/NewBishop" to="." method="_on_new_bishop_toggled"]
+[connection signal="toggled" from="BackGround/Control/NewRook" to="." method="_on_new_rook_toggled"]
 [connection signal="pressed" from="BackGround/AcceptButton" to="." method="_on_accept_button_pressed"]
-[connection signal="pressed" from="BackGround/Control/KnightButton" to="." method="_on_knight_button_pressed"]
-[connection signal="pressed" from="BackGround/Control/RookButton" to="." method="_on_rook_button_pressed"]
-[connection signal="pressed" from="BackGround/Control/BishopButton" to="." method="_on_bishop_button_pressed"]
-[connection signal="pressed" from="BackGround/Control/QueenButton" to="." method="_on_queen_button_pressed"]

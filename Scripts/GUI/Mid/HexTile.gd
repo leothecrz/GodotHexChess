@@ -6,7 +6,7 @@ class_name HexTile
 ### STATE
 var isSetup:bool;
 var hexIndex:int;
-var hexKey:int = -1;
+var hexKey:GDHexConst.MOVE_TYPES;
 var hexCords:Vector2i;
 var hexMove:Vector2i;
 var defColor:Color;
@@ -14,7 +14,7 @@ var defColor:Color;
 
 #Public
 ##
-func __setSetupVars(cords : Vector2i, key : int, i : int, move : Vector2i, origin : Vector2, x : float):
+func __setSetupVars(cords : Vector2i, key : GDHexConst.MOVE_TYPES, i : int, move : Vector2i, origin : Vector2, x : float):
 	isSetup = true;
 	transform.origin = origin;
 	hexCords = cords;

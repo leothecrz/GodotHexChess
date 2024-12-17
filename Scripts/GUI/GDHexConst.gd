@@ -1,0 +1,7 @@
+extends Node
+class_name GDHexConst;
+
+const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
+enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
+enum SIDES { BLACK, WHITE };
+enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}

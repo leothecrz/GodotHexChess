@@ -10,7 +10,6 @@ func _ready() -> void:
 	return;
 
 func load_credits():
-	ResourceLoader
 	var dir = DirAccess.open(creditsDir);
 	if dir != null:
 		dir.list_dir_begin()

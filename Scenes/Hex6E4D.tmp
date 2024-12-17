@@ -1,0 +1,828 @@
+[gd_scene load_steps=28 format=4 uid="uid://8egy1g11ynam"]
+
+[ext_resource type="Script" path="res://Scripts/GUI/Main/Init.gd" id="1_pgjcn"]
+[ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/Central.gd" id="2_tcmm4"]
+[ext_resource type="Texture2D" uid="uid://cxugnfc6a1kk6" path="res://Images/ChessHexOfficial.png" id="4_p44o5"]
+[ext_resource type="Script" path="res://Scripts/GUI/Left/LeftPanel.gd" id="5_ermre"]
+[ext_resource type="Script" path="res://Scripts/GUI/Right/SideSelect.gd" id="5_ref6b"]
+[ext_resource type="Script" path="res://Scripts/GUI/Left/move_history.gd" id="5_scl7f"]
+[ext_resource type="Theme" uid="uid://ckil4gul778m0" path="res://THEMES/MenuBarPop.tres" id="6_4nxpu"]
+[ext_resource type="Script" path="res://Scripts/GUI/Left/captures.gd" id="6_d06rp"]
+[ext_resource type="Texture2D" uid="uid://oj3b5u6rnmqk" path="res://Images/TurnSignal.png" id="6_dt4tv"]
+[ext_resource type="Texture2D" uid="uid://b7ynqeqd2uut2" path="res://Images/PerfectHexagon.png" id="6_mxkma"]
+[ext_resource type="PackedScene" uid="uid://wk4h8xfbxice" path="res://Scenes/SettingsDialog.tscn" id="8_avrf3"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/letter_labels.gd" id="9_afgne"]
+[ext_resource type="Script" path="res://Scripts/GUI/Sounds/BGMusic.gd" id="10_5jr73"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/number_labels.gd" id="10_h4ubk"]
+[ext_resource type="Script" path="res://Scripts/GUI/Right/right_main.gd" id="11_il1km"]
+[ext_resource type="Script" path="res://Scripts/GUI/Mid/ToFrom.gd" id="13_at1p6"]
+[ext_resource type="Theme" uid="uid://dfc81p3bm6afg" path="res://THEMES/base.tres" id="14_xjes1"]
+[ext_resource type="PackedScene" uid="uid://dbeomhtiuxwqb" path="res://Scenes/multiplayerGUI.tscn" id="15_8pwlq"]
+[ext_resource type="Script" path="res://Scripts/GUI/Sounds/sound_source.gd" id="16_34fi1"]
+[ext_resource type="AudioStream" uid="uid://c4j1077g457iq" path="res://SFX/piece-placemen_rmx2.mp3" id="16_ey4ea"]
+
+[sub_resource type="Theme" id="Theme_86tg1"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_754bx"]
+texture = ExtResource("6_mxkma")
+texture_region_size = Vector2i(600, 600)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_poe7d"]
+texture = ExtResource("4_p44o5")
+texture_region_size = Vector2i(65, 57)
+0:0/next_alternative_id = 5
+0:0/0 = 0
+0:0/1 = 1
+0:0/1/modulate = Color(0.111197, 0.111197, 0.111197, 1)
+0:0/2 = 2
+0:0/3 = 3
+0:0/3/modulate = Color(0.490196, 0.490196, 0.490196, 1)
+
+[sub_resource type="TileSet" id="TileSet_7e04f"]
+tile_shape = 3
+tile_layout = 1
+tile_offset_axis = 1
+tile_size = Vector2i(65, 57)
+sources/4 = SubResource("TileSetAtlasSource_poe7d")
+sources/0 = SubResource("TileSetAtlasSource_754bx")
+
+[sub_resource type="InputEventKey" id="InputEventKey_2fedx"]
+device = -1
+keycode = 4194305
+
+[sub_resource type="Shortcut" id="Shortcut_lr20m"]
+events = [SubResource("InputEventKey_2fedx")]
+
+[node name="Control" type="Control"]
+editor_description = "Master GUI cordinator."
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_pgjcn")
+
+[node name="HCE" type="Node" parent="."]
+editor_description = "Hexagonal Chess Engine. Logic controler for hexchess game state."
+script = ExtResource("2_gq2xx")
+
+[node name="SchemeControl" type="Node" parent="."]
+
+[node name="StaticGUI" type="ColorRect" parent="."]
+editor_description = "GUI elements that will always remain. GUI elements are not added nor removed during execution."
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.0509804, 0.0509804, 1)
+
+[node name="Left" type="Control" parent="StaticGUI"]
+layout_mode = 1
+anchors_preset = 0
+script = ExtResource("5_ermre")
+
+[node name="BG" type="ColorRect" parent="StaticGUI/Left"]
+layout_mode = 0
+offset_right = 230.0
+offset_bottom = 648.0
+color = Color(1, 1, 1, 0.0588235)
+
+[node name="InCheck" type="Control" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 0
+offset_right = 230.0
+offset_bottom = 322.0
+
+[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Left/BG/InCheck"]
+visible = false
+modulate = Color(0.763723, 0.3167, 0.431369, 1)
+z_index = 1
+position = Vector2(306, 54)
+rotation = 0.785398
+scale = Vector2(0.135, 0.135)
+texture = ExtResource("6_dt4tv")
+
+[node name="MoveHistory" type="Control" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -222.0
+offset_right = 230.0
+grow_vertical = 0
+script = ExtResource("5_scl7f")
+
+[node name="ColorRect" type="ColorRect" parent="StaticGUI/Left/BG/MoveHistory"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -107.5
+offset_top = -111.0
+offset_right = 107.5
+offset_bottom = 89.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.392157)
+
+[node name="History" type="RichTextLabel" parent="StaticGUI/Left/BG/MoveHistory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+text = "[center][font_size=28] History[/font_size][/center]"
+
+[node name="MenuBar" type="MenuBar" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 40.0
+offset_top = 2.0
+offset_right = -39.0
+offset_bottom = 33.0
+grow_horizontal = 2
+theme = SubResource("Theme_86tg1")
+
+[node name="History" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+transparent_bg = true
+size = Vector2i(139, 100)
+transparent = true
+theme = ExtResource("6_4nxpu")
+item_count = 1
+item_0/text = "Get Full History"
+
+[node name="FEN" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+transparent_bg = true
+size = Vector2i(137, 100)
+transparent = true
+theme = ExtResource("6_4nxpu")
+item_count = 2
+item_0/text = "Start From FEN"
+item_1/text = "Get FEN"
+item_1/id = 1
+
+[node name="Test" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
+transparent_bg = true
+size = Vector2i(150, 100)
+transparent = true
+theme = ExtResource("6_4nxpu")
+item_count = 2
+item_0/text = "Run Engine Suite"
+item_1/text = "Evaluate Board"
+item_1/id = 1
+
+[node name="Captures" type="Control" parent="StaticGUI/Left/BG"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_d06rp")
+
+[node name="ColorRect" type="ColorRect" parent="StaticGUI/Left/BG/Captures"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -107.5
+offset_top = -80.0
+offset_right = 107.5
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.392157)
+
+[node name="WCapture" type="RichTextLabel" parent="StaticGUI/Left/BG/Captures/ColorRect"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 7.5
+offset_right = -7.5
+offset_bottom = 75.0
+grow_horizontal = 2
+bbcode_enabled = true
+text = "W Captures:
+"
+
+[node name="BCapture" type="RichTextLabel" parent="StaticGUI/Left/BG/Captures/ColorRect"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.5
+offset_top = -80.0
+offset_right = -7.5
+grow_horizontal = 2
+grow_vertical = 0
+bbcode_enabled = true
+text = "B Captures:
+"
+
+[node name="Mid" type="Control" parent="StaticGUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_tcmm4")
+
+[node name="BG" type="ColorRect" parent="StaticGUI/Mid"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -324.0
+offset_top = -324.0
+offset_right = 324.0
+offset_bottom = 324.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.156863)
+
+[node name="HexBoard" type="TileMapLayer" parent="StaticGUI/Mid"]
+use_parent_material = true
+position = Vector2(-33, 0)
+tile_map_data = PackedByteArray("AAD7//3/BAAAAAAAAQD7//7/BAAAAAAAAwD7////BAAAAAAAAgD7/wAABAAAAAAAAQD7/wEABAAAAAAAAwD7/wIABAAAAAAAAgD8//z/BAAAAAAAAwD8//3/BAAAAAAAAgD8//7/BAAAAAAAAQD8////BAAAAAAAAwD8/wAABAAAAAAAAgD8/wEABAAAAAAAAQD8/wIABAAAAAAAAwD9//z/BAAAAAAAAgD9//3/BAAAAAAAAQD9//7/BAAAAAAAAwD9////BAAAAAAAAgD9/wAABAAAAAAAAQD9/wEABAAAAAAAAwD9/wIABAAAAAAAAgD9/wMABAAAAAAAAQD+//v/BAAAAAAAAQD+//z/BAAAAAAAAwD+//3/BAAAAAAAAgD+//7/BAAAAAAAAQD+////BAAAAAAAAwD+/wAABAAAAAAAAgD+/wEABAAAAAAAAQD+/wIABAAAAAAAAwD+/wMABAAAAAAAAgD///v/BAAAAAAAAwD///z/BAAAAAAAAgD///3/BAAAAAAAAQD///7/BAAAAAAAAwD/////BAAAAAAAAgD//wAABAAAAAAAAQD//wEABAAAAAAAAwD//wIABAAAAAAAAgD//wMABAAAAAAAAQAAAPv/BAAAAAAAAQAAAPz/BAAAAAAAAwAAAP3/BAAAAAAAAgAAAP7/BAAAAAAAAQAAAP//BAAAAAAAAwAAAAAABAAAAAAAAgAAAAEABAAAAAAAAQAAAAIABAAAAAAAAwABAPz/BAAAAAAAAgABAP3/BAAAAAAAAQABAP7/BAAAAAAAAwABAP//BAAAAAAAAgABAAAABAAAAAAAAQABAAEABAAAAAAAAwABAAIABAAAAAAAAgABAAQABAAAAAAAAwACAPz/BAAAAAAAAwACAP3/BAAAAAAAAgACAP7/BAAAAAAAAQACAP//BAAAAAAAAwACAAAABAAAAAAAAgACAAEABAAAAAAAAQACAAIABAAAAAAAAwACAAMABAAAAAAAAgADAP3/BAAAAAAAAQADAP7/BAAAAAAAAwADAP//BAAAAAAAAgADAAAABAAAAAAAAQADAAEABAAAAAAAAwADAAIABAAAAAAAAgADAAMABAAAAAAAAQAEAP7/BAAAAAAAAQAEAP//BAAAAAAAAwAEAAAABAAAAAAAAgAEAAEABAAAAAAAAQAEAAIABAAAAAAAAwAAAPr/BAAAAAAAAgABAPv/BAAAAAAAAwACAPv/BAAAAAAAAQADAPz/BAAAAAAAAgAEAPz/BAAAAAAAAwAFAP3/BAAAAAAAAQAFAP7/BAAAAAAAAwAFAP//BAAAAAAAAgAFAAAABAAAAAAAAQAFAAEABAAAAAAAAwAFAAIABAAAAAAAAgAAAAQABAAAAAAAAQAAAAMABAAAAAAAAgABAAMABAAAAAAAAQAEAP3/BAAAAAAAAgD//wQABAAAAAAAAwA=")
+tile_set = SubResource("TileSet_7e04f")
+collision_enabled = false
+navigation_enabled = false
+
+[node name="TurnSig" type="Sprite2D" parent="StaticGUI/Mid"]
+position = Vector2(-270, -270)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("6_dt4tv")
+
+[node name="LetterLabels" type="Control" parent="StaticGUI/Mid"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("9_afgne")
+
+[node name="A1" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = -250.0
+offset_top = 168.0
+offset_right = -210.0
+offset_bottom = 191.0
+text = "A
+"
+
+[node name="A2" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = -202.0
+offset_top = 197.0
+offset_right = -162.0
+offset_bottom = 220.0
+text = "B
+"
+
+[node name="A3" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = -150.0
+offset_top = 225.0
+offset_right = -110.0
+offset_bottom = 248.0
+text = "C"
+
+[node name="A4" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = -103.0
+offset_top = 254.0
+offset_right = -63.0
+offset_bottom = 277.0
+text = "D"
+
+[node name="A5" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = -54.0
+offset_top = 283.0
+offset_right = -14.0
+offset_bottom = 306.0
+text = "E"
+
+[node name="A6" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = 35.0
+offset_top = 282.0
+offset_right = 75.0
+offset_bottom = 305.0
+text = "G 2"
+
+[node name="A7" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = 84.0
+offset_top = 253.0
+offset_right = 124.0
+offset_bottom = 276.0
+text = "H 3"
+
+[node name="A8" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = 137.0
+offset_top = 225.0
+offset_right = 177.0
+offset_bottom = 248.0
+text = "I 4"
+
+[node name="A9" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = 185.0
+offset_top = 197.0
+offset_right = 225.0
+offset_bottom = 220.0
+text = "J 5"
+
+[node name="A10" type="Label" parent="StaticGUI/Mid/LetterLabels"]
+layout_mode = 0
+offset_left = 232.0
+offset_top = 168.0
+offset_right = 272.0
+offset_bottom = 191.0
+text = "K 6"
+
+[node name="NumberLabels" type="Control" parent="StaticGUI/Mid"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("10_h4ubk")
+
+[node name="1" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = 108.0
+offset_right = -260.0
+offset_bottom = 131.0
+text = "1"
+
+[node name="2" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = 50.0
+offset_right = -260.0
+offset_bottom = 73.0
+text = "2
+"
+
+[node name="3" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -6.0
+offset_right = -260.0
+offset_bottom = 17.0
+text = "3"
+
+[node name="4" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -64.0
+offset_right = -260.0
+offset_bottom = -41.0
+text = "4"
+
+[node name="5" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -121.0
+offset_right = -260.0
+offset_bottom = -98.0
+text = "5"
+
+[node name="6" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -300.0
+offset_top = -177.0
+offset_right = -260.0
+offset_bottom = -154.0
+text = "6"
+
+[node name="7" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -253.0
+offset_top = -207.0
+offset_right = -213.0
+offset_bottom = -184.0
+text = "7"
+
+[node name="8" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -204.0
+offset_top = -235.0
+offset_right = -164.0
+offset_bottom = -212.0
+text = "8"
+
+[node name="9" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -154.0
+offset_top = -263.0
+offset_right = -114.0
+offset_bottom = -240.0
+text = "9"
+
+[node name="10" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -106.0
+offset_top = -292.0
+offset_right = -66.0
+offset_bottom = -269.0
+text = "10"
+
+[node name="11" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = -57.0
+offset_top = -321.0
+offset_right = -17.0
+offset_bottom = -298.0
+text = "11"
+
+[node name="11B" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = 66.0
+offset_top = -306.0
+offset_right = 106.0
+offset_bottom = -283.0
+text = "11"
+
+[node name="11C" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = 115.0
+offset_top = -277.0
+offset_right = 155.0
+offset_bottom = -254.0
+text = "11"
+
+[node name="11D" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = 163.0
+offset_top = -248.0
+offset_right = 203.0
+offset_bottom = -225.0
+text = "11"
+
+[node name="11E" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = 212.0
+offset_top = -220.0
+offset_right = 252.0
+offset_bottom = -197.0
+text = "11"
+
+[node name="11F" type="Label" parent="StaticGUI/Mid/NumberLabels"]
+layout_mode = 0
+offset_left = 260.0
+offset_top = -190.0
+offset_right = 300.0
+offset_bottom = -167.0
+text = "11"
+
+[node name="Right" type="Control" parent="StaticGUI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+grow_horizontal = 0
+script = ExtResource("11_il1km")
+
+[node name="BG" type="ColorRect" parent="StaticGUI/Right"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -230.0
+offset_bottom = 648.0
+grow_horizontal = 0
+color = Color(1, 1, 1, 0.0588235)
+
+[node name="Buttons" type="Control" parent="StaticGUI/Right/BG"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -115.0
+offset_right = 115.0
+offset_bottom = 322.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Undo" type="Button" parent="StaticGUI/Right/BG/Buttons"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -46.5
+offset_top = -11.0
+offset_right = 46.5
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("14_xjes1")
+text = "Undo
+"
+
+[node name="NewGameButton" type="Button" parent="StaticGUI/Right/BG/Buttons"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -46.5
+offset_top = 39.0
+offset_right = 46.5
+offset_bottom = 70.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Start a new game."
+theme = ExtResource("14_xjes1")
+text = "New Game"
+
+[node name="ResignButton" type="Button" parent="StaticGUI/Right/BG/Buttons"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -29.5
+offset_top = 89.0
+offset_right = 29.5
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Resign from the game."
+theme = ExtResource("14_xjes1")
+text = "Resign"
+
+[node name="Settings" type="Button" parent="StaticGUI/Right/BG/Buttons"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -46.5
+offset_top = -461.0
+offset_right = 46.5
+offset_bottom = -430.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("14_xjes1")
+shortcut = SubResource("Shortcut_lr20m")
+text = "Settings
+"
+language = "en_US"
+
+[node name="Mult" type="Button" parent="StaticGUI/Right/BG/Buttons"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -48.5
+offset_top = -200.0
+offset_right = 48.5
+offset_bottom = -169.0
+grow_horizontal = 2
+theme = ExtResource("14_xjes1")
+text = "Multiplayer"
+
+[node name="Border" type="ColorRect" parent="StaticGUI/Right/BG/Buttons/Mult"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -9.5
+offset_right = -9.0
+offset_bottom = 11.5
+grow_vertical = 2
+color = Color(0, 0, 0, 0.392157)
+
+[node name="MultOn" type="ColorRect" parent="StaticGUI/Right/BG/Buttons/Mult/Border"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -7.5
+offset_top = -7.5
+offset_right = 7.5
+offset_bottom = 7.5
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Options" type="Control" parent="StaticGUI/Right/BG"]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SideSelect" type="OptionButton" parent="StaticGUI/Right/BG/Options"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 49.5
+offset_top = 324.0
+offset_right = 140.5
+offset_bottom = 355.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("14_xjes1")
+alignment = 1
+selected = 1
+item_count = 2
+popup/item_0/text = "Black"
+popup/item_1/text = "White"
+popup/item_1/id = 1
+script = ExtResource("5_ref6b")
+
+[node name="Label" type="Label" parent="StaticGUI/Right/BG/Options/SideSelect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -40.5
+offset_right = 30.0
+offset_bottom = -17.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("14_xjes1")
+text = "Play As:"
+
+[node name="EnemySelect" type="OptionButton" parent="StaticGUI/Right/BG/Options"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 29.5
+offset_top = 254.0
+offset_right = 160.5
+offset_bottom = 285.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("14_xjes1")
+alignment = 1
+selected = 0
+item_count = 8
+popup/item_0/text = "Player"
+popup/item_1/text = "AI"
+popup/item_1/id = 1
+popup/item_1/disabled = true
+popup/item_1/separator = true
+popup/item_2/text = "AI-Random"
+popup/item_2/id = 1
+popup/item_3/text = "AI-NN"
+popup/item_3/id = 2
+popup/item_4/text = "AI-MinMax(1)"
+popup/item_4/id = 3
+popup/item_5/text = "AI-MinMax(2)"
+popup/item_5/id = 5
+popup/item_6/text = "AI-MinMax(3)"
+popup/item_6/id = 6
+popup/item_7/text = "AI-MinMax(4)"
+popup/item_7/id = 7
+script = ExtResource("5_ref6b")
+
+[node name="Label" type="Label" parent="StaticGUI/Right/BG/Options/EnemySelect"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -30.0
+offset_top = -40.5
+offset_right = 30.0
+offset_bottom = -17.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("14_xjes1")
+text = "Play Against:"
+
+[node name="DynamicGUI" type="Node" parent="."]
+editor_description = "GUI elements that are added and removed by code during execution of the program."
+
+[node name="PosGUI" type="Node" parent="DynamicGUI"]
+script = ExtResource("13_at1p6")
+
+[node name="To" type="Sprite2D" parent="DynamicGUI/PosGUI"]
+visible = false
+modulate = Color(1, 0, 0, 0.392157)
+position = Vector2(722, 409)
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("4_p44o5")
+
+[node name="From" type="Sprite2D" parent="DynamicGUI/PosGUI"]
+visible = false
+modulate = Color(0, 0, 1, 0.392157)
+position = Vector2(429, 409)
+scale = Vector2(1.1, 1.1)
+texture = ExtResource("4_p44o5")
+
+[node name="MoveGUI" type="Node" parent="DynamicGUI"]
+
+[node name="PiecesContainer" type="Node" parent="DynamicGUI"]
+
+[node name="Black" type="Node" parent="DynamicGUI/PiecesContainer"]
+
+[node name="Pawns" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Knights" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Rooks" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Bishops" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="Queens" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="King" type="Node" parent="DynamicGUI/PiecesContainer/Black"]
+
+[node name="White" type="Node" parent="DynamicGUI/PiecesContainer"]
+
+[node name="Pawns" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Knights" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Rooks" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Bishops" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="Queens" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="King" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="BGMusic" type="AudioStreamPlayer" parent="."]
+editor_description = "Background music source"
+bus = &"Music"
+script = ExtResource("10_5jr73")
+
+[node name="SoundSource" type="AudioStreamPlayer" parent="."]
+editor_description = "Main source emiter for any SFX sounds."
+bus = &"Sound"
+script = ExtResource("16_34fi1")
+placeStream = ExtResource("16_ey4ea")
+
+[node name="MultiplayerControl" parent="." instance=ExtResource("15_8pwlq")]
+visible = false
+z_index = 1
+layout_mode = 1
+
+[node name="Settings" parent="." instance=ExtResource("8_avrf3")]
+visible = false
+layout_mode = 1
+
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/History" to="." method="_on_history_id_pressed"]
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/FEN" to="." method="_on_fen_id_pressed"]
+[connection signal="id_pressed" from="StaticGUI/Left/BG/MenuBar/Test" to="." method="_on_test_id_pressed"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Undo" to="." method="_on_undo_pressed"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/NewGameButton" to="." method="_newGame_OnButtonPress"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/ResignButton" to="." method="_resign_OnButtonPress"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Settings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Mult" to="." method="_on_mult_pressed"]
+[connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
+[connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
+[connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
+[connection signal="multGUIClosed" from="MultiplayerControl" to="." method="_on_close_gui"]
+[connection signal="multiplayer_disabled" from="MultiplayerControl" to="." method="_on_multiplayer_disabled"]
+[connection signal="multiplayer_enabled" from="MultiplayerControl" to="." method="_on_multiplayer_enabled"]
+[connection signal="player_connected" from="MultiplayerControl" to="." method="_on_multiplayer_player_connected"]
+[connection signal="player_disconnected" from="MultiplayerControl" to="." method="_on_multiplayer_player_disconnected"]
+[connection signal="shutdownServerClient" from="MultiplayerControl" to="." method="_on_mult_gui_shutdown_server_client"]
+[connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]

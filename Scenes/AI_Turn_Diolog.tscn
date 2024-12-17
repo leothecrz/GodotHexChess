@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://dpk8skvfvafhc"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Dialog/AI_Turn_Dialog.gd" id="1_i4y7p"]
-[ext_resource type="Texture2D" uid="uid://jtn71wfqppv4" path="res://Images/Spinning.png" id="1_kyspi"]
+[ext_resource type="Texture2D" uid="uid://divboy5cbwrsk" path="res://Images/SpinSprite.png" id="2_c0kkf"]
 
 [node name="AITurnDiolog" type="Control"]
 layout_mode = 3
@@ -18,6 +18,21 @@ offset_left = 376.0
 offset_top = 100.0
 offset_right = 776.0
 offset_bottom = 300.0
+color = Color(0, 0, 0, 0.588235)
+
+[node name="ColorRect3" type="ColorRect" parent="ColorRect2"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -90.0
+offset_right = 190.0
+offset_bottom = 90.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.392157)
 
 [node name="RichTextLabel" type="RichTextLabel" parent="."]
@@ -34,8 +49,7 @@ offset_bottom = -44.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
-text = "[center][font_size=20]
-The AI is taking its turn. 
+text = "[center][font_size=20]The AI is taking its turn. 
 [/font_size][/center]"
 
 [node name="SpriteHolder" type="ColorRect" parent="."]
@@ -54,5 +68,5 @@ color = Color(1, 1, 1, 0)
 
 [node name="Sprite2D" type="Sprite2D" parent="SpriteHolder"]
 position = Vector2(30, 30)
-scale = Vector2(0.615, 0.615)
-texture = ExtResource("1_kyspi")
+scale = Vector2(0.45, 0.45)
+texture = ExtResource("2_c0kkf")

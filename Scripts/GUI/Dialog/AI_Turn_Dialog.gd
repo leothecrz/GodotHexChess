@@ -2,11 +2,12 @@ extends Control
 
 @onready var SpriteController = $SpriteHolder;
 
-const SPIN_SPEED = 200;
+@export var SPIN_SPEED = 200;
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	SpriteController.rotation_degrees = 0;
+	z_index = 1;
 	return;
 
 

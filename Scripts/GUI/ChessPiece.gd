@@ -7,8 +7,8 @@ class_name HexPiece;
 ####
 
 #### Signals
-signal pieceSelected(SIDE:int, TYPE:String, CORDS:Vector2i);
-signal pieceDeselected(SIDE:int, TYPE:String, CORDS:Vector2i, MOVE);
+signal pieceSelected(CORDS:Vector2i);
+signal pieceDeselected(SIDE:int, TYPE:String, CORDS:Vector2i);
 ####
 
 #### State
@@ -121,7 +121,7 @@ func pressedAndNotDragging(eventPos):
 	
 	if pieceHitbox.has_point(eventPosition):
 		status = STATES.CLICKED;
-		pieceSelected.emit(side, pieceType, pieceCords);
+		pieceSelected.emit(pieceCords);
 		collisionNode.monitoring = true;
 		offset = currentPiecePosition - eventPosition;
 		preDragPosition = global_position;
@@ -181,7 +181,7 @@ func _on_area_2d_area_entered(area:Area2D):
 	return;
 
 # Called when a move is submitted and active pieces need to be swapped.
-func _on_Control_GameSwitchedSides(newSide):
+func _on_Control_GameSwitchedSides(newSide : GDHexConst.SIDES):
 	locked = (newSide != side);
 	if (locked):
 		set_process(false);

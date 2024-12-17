@@ -1,7 +1,6 @@
 extends ColorRect
 
 signal OKButtonPressed(str:String, strict:bool, selfref:Node);
-signal CANCELButtonPressed();
 
 var checkStatus = false;
 
@@ -12,7 +11,7 @@ func _on_ok_pressed() -> void:
 
 
 func _on_cancel_pressed() -> void:
-	CANCELButtonPressed.emit();
+	queue_free();
 	return
 
 

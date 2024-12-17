@@ -5,28 +5,21 @@ extends Control;
 # Error Codes
 # 1 No Game Data Node
 
-#Const -- TODO :: Should Be Set By Engine Node
-const SQRT_THREE_DIV_TWO = sqrt(3) / 2;
-enum PIECES { ZERO, PAWN, KNIGHT, ROOK, BISHOP, QUEEN, KING };
-enum SIDES { BLACK, WHITE };
-enum MOVE_TYPES { MOVES, CAPTURE, ENPASSANT, PROMOTE}
-
 # Node Ref
 @onready var EngineNode:HexEngineSharp = $HCE;
-
+##
 @onready var BoardControler = $StaticGUI/Mid;
 @onready var LeftPanel = $StaticGUI/Left
 @onready var RightPanel = $StaticGUI/Right
-
+##
 @onready var TAndFrom = $DynamicGUI/PosGUI;
 @onready var MoveNode = $DynamicGUI/MoveGUI;
 @onready var ChessPiecesNode = $DynamicGUI/PiecesContainer;
-
+##
 @onready var BGMusicPlayer = $BGMusic;
 @onready var SoundSource = $SoundSource
 @onready var SettingsDialog = $Settings;
 @onready var MultiplayerControl = $MultiplayerControl;
-
 # Position State
 @onready var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
 @export var PIXEL_OFFSET : int = 35;
@@ -57,7 +50,7 @@ var thinkingDialogRef : Node = null;
 
 
 # Signals
-signal gameSwitchedSides(newSideTurn:int);
+signal gameSwitchedSides(newSideTurn : GDHexConst.SIDES);
 signal pieceSelectedLockOthers();
 signal pieceUnselectedUnlockOthers();
 
@@ -67,7 +60,7 @@ signal pieceUnselectedUnlockOthers();
 ## Convert Axial Cordinates To Viewport Cords
 func axialToPixel(axial : Vector2i) -> Vector2:
 	var x = float(axial.x) * AXIAL_X_SCALE;
-	var y = ( SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
+	var y = (GDHexConst.SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
 	return Vector2(x, y);
 ## Spawn a simple pop up that will display TEXT for TIME seconds
 func spawnNotice(txt : String, time : float = 1.8) -> void:
@@ -78,7 +71,7 @@ func spawnNotice(txt : String, time : float = 1.8) -> void:
 	return;
 ##
 func isWhite() -> bool:
-	return(selfSide == SIDES.WHITE);
+	return(selfSide == GDHexConst.SIDES.WHITE);
 ## Check if it is my turn
 func isItMyTurn() -> bool:
 	return EngineNode._getIsWhiteTurn() == isWhite();
@@ -125,7 +118,7 @@ func spawnActivePieces() -> void:
 # MOVE RESPONCE
 ## Destroy gui element of captured piece
 func updateScenceTree_OfCapture() -> void:	
-	var i:int = SIDES.WHITE if(EngineNode._getIsWhiteTurn()) else SIDES.BLACK;
+	var i:int = GDHexConst.SIDES.WHITE if (EngineNode._getIsWhiteTurn()) else GDHexConst.SIDES.BLACK;
 	var j:int =  EngineNode.CaptureType() - 1;
 	var index = EngineNode.CaptureIndex()
 	
@@ -138,10 +131,10 @@ func updateScenceTree_OfCapture() -> void:
 ## Despawn the pawn gui element, spawn 'pto' gui element for promoted type.
 func updateScenceTree_OfPromotionInterupt(cords:Vector2i, key:int, index:int, pTo) -> void:
 	var ref:Node;
-	var i:int = SIDES.WHITE if (EngineNode._getIsWhiteTurn()) else SIDES.BLACK;
-	for pawnIndex in range( activePieces[i][PIECES.PAWN].size() ):
-		if (activePieces[i][PIECES.PAWN][pawnIndex] == cords):
-			ref = ChessPiecesNode.get_child(i).get_child(PIECES.PAWN-1).get_child(pawnIndex);
+	var i:int = GDHexConst.SIDES.WHITE if (EngineNode._getIsWhiteTurn()) else GDHexConst.SIDES.BLACK;
+	for pawnIndex in range( activePieces[i][GDHexConst.PIECES.PAWN].size() ):
+		if (activePieces[i][GDHexConst.PIECES.PAWN][pawnIndex] == cords):
+			ref = ChessPiecesNode.get_child(i).get_child(GDHexConst.PIECES.PAWN-1).get_child(pawnIndex);
 			break;
 	
 	prepareChessPieceNode(ref.side, EngineNode.getPiecetype(pTo), ref.pieceCords);
@@ -159,10 +152,10 @@ func updateGUI_Elements() -> void:
 		LeftPanel.__swapLabelState();
 
 	if(EngineNode._getIsWhiteTurn()):
-		emit_signal("gameSwitchedSides", SIDES.WHITE);
+		gameSwitchedSides.emit(GDHexConst.SIDES.WHITE);
 		BoardControler.setSignalWhite();
 	else:
-		emit_signal("gameSwitchedSides", SIDES.BLACK);
+		gameSwitchedSides.emit(GDHexConst.SIDES.BLACK);
 		BoardControler.setSignalBlack();
 
 	if(EngineNode._getGameOverStatus()):
@@ -193,17 +186,14 @@ func syncToEngine() -> void:
 # Move Submit
 ## Interupt a promotion submission to get promotion type
 func interuptSubmitMove(cords:Vector2i, moveType:int, moveIndex:int) -> void:
-	var dialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
-	dialog.z_index = 1; #place on foreground
-	dialog.cords = cords;
-	dialog.key = moveType;
-	dialog.index = moveIndex;
+	var dialog : PromotionDialog = preload("res://Scenes/PromotionDialog.tscn").instantiate();
+	dialog.setupInitVars(cords,moveType,moveIndex,EngineNode._getIsWhiteTurn());
 	dialog.promotionAccepted.connect(updateScenceTree_OfPromotionInterupt); # signal connect
 	add_child(dialog);
 	return;
 ## Sumbit a move to the engine and update state
-func submitMove(cords:Vector2i, moveType, moveIndex:int, promoteTo:int=0, doInterupt=true) -> void:
-	if(moveType == MOVE_TYPES.PROMOTE and doInterupt):
+func submitMove(cords:Vector2i, moveType:GDHexConst.MOVE_TYPES, moveIndex:int, promoteTo:int=0, doInterupt=true) -> void:
+	if(moveType == GDHexConst.MOVE_TYPES.PROMOTE and doInterupt):
 		interuptSubmitMove(cords, moveType, moveIndex);
 		return
 	
@@ -227,7 +217,7 @@ func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
 	TAndFrom.__moveTo(to.x,to.y);
 	return;
 ## Setup and display a legal move on GUI
-func spawnAMove(moves:Array, color:Color, key, cords):
+func spawnAMove(moves:Array, color:Color, key:GDHexConst.MOVE_TYPES, cords:Vector2i):
 	for i in range(moves.size()):
 		var newMove : HexTile = preload("res://Scenes/HexTile.tscn").instantiate();
 		newMove.__setSetupVars(cords, key, i, moves[i], cordinateToOrigin(moves[i]), MOVE_SCALE);
@@ -235,13 +225,13 @@ func spawnAMove(moves:Array, color:Color, key, cords):
 		newMove.SpriteNode.set_modulate(color);
 	return;
 ## Spawn the moves from the given 'moves' dictionary for the piece 'cords'
-func spawnMoves(moves:Dictionary, cords) -> void:
-	for key in moves.keys():
+func spawnMoves(moves:Dictionary, cords:Vector2i) -> void:
+	for key:GDHexConst.MOVE_TYPES in moves.keys():
 		match key:
-			MOVE_TYPES.MOVES: 		spawnAMove(moves[key], Color("#EDAE49"), key, cords); #YELLOW
-			MOVE_TYPES.CAPTURE: 	spawnAMove(moves[key], Color("#990D35"), key, cords); #RED
-			MOVE_TYPES.PROMOTE: 	spawnAMove(moves[key], Color("#F4A259"), key, cords); #GOLD
-			MOVE_TYPES.ENPASSANT: 	spawnAMove(moves[key], Color("#31E981"), key, cords); #GREEN
+			GDHexConst.MOVE_TYPES.MOVES: 	 spawnAMove(moves[key], Color("#EDAE49"), key, cords); #YELLOW
+			GDHexConst.MOVE_TYPES.CAPTURE: 	 spawnAMove(moves[key], Color("#990D35"), key, cords); #RED
+			GDHexConst.MOVE_TYPES.PROMOTE: 	 spawnAMove(moves[key], Color("#F4A259"), key, cords); #GOLD
+			GDHexConst.MOVE_TYPES.ENPASSANT: spawnAMove(moves[key], Color("#31E981"), key, cords); #GREEN
 	return;
 
 
@@ -257,7 +247,7 @@ func syncMasterAIThreadToMain():
 		thinkingDialogRef.queue_free();
 	
 	var to : Vector2i = EngineNode._getEnemyTo();
-	var i : int = SIDES.BLACK if (EngineNode._getIsWhiteTurn()) else SIDES.WHITE;
+	var i : int = GDHexConst.SIDES.BLACK if (EngineNode._getIsWhiteTurn()) else GDHexConst.SIDES.WHITE;
 	var j : int = EngineNode._getEnemyChoiceType() - 1;
 	var k : int = EngineNode._getEnemyChoiceIndex();
 	var ref : Node = ChessPiecesNode.get_child(i);
@@ -293,7 +283,6 @@ func allowAITurn():
 	TAndFrom.__setVis(false);
 	
 	thinkingDialogRef = preload("res://Scenes/AI_Turn_Diolog.tscn").instantiate();
-	thinkingDialogRef.z_index = 1;
 	add_child(thinkingDialogRef);
 	
 	if ( OK != masterAIThread.start(passAIToNewThread) ):
@@ -311,15 +300,14 @@ func queueFreeMoves() -> void:
 	return;
 ## CLICK AND DRAG (MOUSE) API
 ## Submit a move to engine or Deselect 
-func  _chessPiece_OnPieceDESELECTED(cords : Vector2i, key, index : int) -> void:
-	var isNotPromoteMove : bool = (key != MOVE_TYPES.PROMOTE);
-	
+func  _chessPiece_OnPieceDESELECTED(cords : Vector2i, key : GDHexConst.MOVE_TYPES, index : int) -> void:
 	SoundSource.__playPlaceSFX();
 	queueFreeMoves();
 	
+	var isNotPromoteMove : bool = (key != GDHexConst.MOVE_TYPES.PROMOTE);
 	if (isNotPromoteMove): 
 		pieceUnselectedUnlockOthers.emit();
-	if (index == -1): # -1 is used when a piece is deselected and a move not choosen.
+	if (index == -1): # -1 is used when a piece is deselected and a move is not choosen.
 		return;
 	
 	submitMove(cords, key, index);
@@ -328,7 +316,7 @@ func  _chessPiece_OnPieceDESELECTED(cords : Vector2i, key, index : int) -> void:
 	return;
 ## Lock Other Pieces
 ## Sub :: Spawn Piece's Moves 
-func  _chessPiece_OnPieceSELECTED(_SIDE:int, _TYPE:int, CORDS:Vector2i) -> void:
+func  _chessPiece_OnPieceSELECTED(CORDS:Vector2i) -> void:
 	pieceSelectedLockOthers.emit();
 	var thisPiecesMoves = {};
 	for key in currentLegalMoves[CORDS].keys():
@@ -384,7 +372,7 @@ func FenOK(stir:String, strict:bool, ref:Node) -> void:
 
 # MENUBAR
 func _on_history_id_pressed(id: int) -> void:
-	if(!activePieces): spawnNotice("[center]Game NOT Running[/center]",  0.8); return;
+	if(not gameRunning): spawnNotice("[center]Game NOT Running[/center]",  0.8); return;
 	if(masterAIThread.is_started()): spawnNotice("[center]AI Running[/center]",  0.8); return;
 	match (id):
 		0:
@@ -395,27 +383,36 @@ func _on_history_id_pressed(id: int) -> void:
 func _on_fen_id_pressed(id: int) -> void:
 	match(id):
 		0:
-			if activePieces : return;
+			if (gameRunning):
+				spawnNotice("[center]Finish the current game to start another.[/center]")
+				return;
 			var fenDialog = preload("res://Scenes/GetFen.tscn").instantiate();
 			fenDialog.OKButtonPressed.connect(FenOK);
-			fenDialog.CANCELButtonPressed.connect(func (): fenDialog.queue_free());
 			add_child(fenDialog);
-			pass;
+			return;
 		1:
-			if not activePieces : return;
+			if (not gameRunning) : 
+				spawnNotice("[center]There is no game running.[/center]",  0.8)
+				return;
 			DisplayServer.clipboard_set(EngineNode._getBoardFenNow());
 			spawnNotice("[center]Fen copied to clipboard[/center]",1.0)
-			pass;
+			return;
 		_: return;
 func _on_test_id_pressed(id: int) -> void:
 	match ( id ):
 		0:
-			if(activePieces): spawnNotice("[center]Game Running[/center]",  0.8);  return;
+			if(gameRunning): 
+				spawnNotice("[center]Game is Running.[/center]",  0.8);  
+				return;
 			EngineNode._test(0);
 			return;
 		1:
-			if(!activePieces): spawnNotice("[center]Game NOT Running[/center]",  0.8); return;
-			if(masterAIThread.is_started()): spawnNotice("[center]AI Running[/center]",  0.8); return;
+			if(not gameRunning): 
+				spawnNotice("[center]Game NOT Running[/center]",  0.8); 
+				return;
+			if(masterAIThread.is_started()): 
+				spawnNotice("[center]AI Running[/center]",  0.8); 
+				return;
 			spawnNotice("[center] Board H(): %d [/center]" % EngineNode._intTest(1),  2);
 			return;
 			
@@ -530,7 +527,7 @@ func startGameFromFen(stateString : String = "") -> void:
 	
 	syncToEngine()
 	spawnActivePieces();
-	gameSwitchedSides.emit(SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK);
+	gameSwitchedSides.emit(GDHexConst.SIDES.WHITE if EngineNode._getIsWhiteTurn() else GDHexConst.SIDES.BLACK);
 	gameRunning = true;
 	
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
@@ -586,7 +583,7 @@ func undoCapture() -> void:
 	if( not EngineNode.uncaptureValid() ):
 		return;
 	##Undo Uncapture
-	var captureSideToUndo = SIDES.BLACK if EngineNode._getIsWhiteTurn() else SIDES.WHITE;
+	var captureSideToUndo = GDHexConst.SIDES.BLACK if EngineNode._getIsWhiteTurn() else GDHexConst.SIDES.WHITE;
 	var cType = EngineNode.CaptureType();
 	var cIndex = EngineNode.CaptureIndex();
 	var newPos = activePieces[captureSideToUndo][cType][cIndex];
@@ -627,7 +624,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 	##Undo Promotion
 	var pType = EngineNode.unpromoteType();
 	var pIndex = EngineNode.unpromoteIndex();
-	var newPos = activePieces[sideToUndo][PIECES.PAWN][pIndex];
+	var newPos = activePieces[sideToUndo][GDHexConst.PIECES.PAWN][pIndex];
 	
 	var ref = ChessPiecesNode.get_child(sideToUndo).get_child(pType-1);
 	var refChildCount = ref.get_child_count(false);
@@ -635,9 +632,9 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 	var From = ref.get_child(refChildCount-1).__getPieceCords();
 	ref.get_child(refChildCount-1).queue_free();
 
-	var newPieceScene = preloadChessPiece(sideToUndo, PIECES.PAWN, newPos);
+	var newPieceScene = preloadChessPiece(sideToUndo, GDHexConst.PIECES.PAWN, newPos);
 	connectPieceToSignals(newPieceScene);
-	ref = ChessPiecesNode.get_child(sideToUndo).get_child(PIECES.PAWN-1)
+	ref = ChessPiecesNode.get_child(sideToUndo).get_child(GDHexConst.PIECES.PAWN-1)
 	ref.add_child(newPieceScene);
 	ref.move_child(newPieceScene,pIndex);
 	
@@ -647,7 +644,7 @@ func undoPromoteOrDefault(uType:int, uIndex:int, sideToUndo:int) -> void:
 func syncUndo() -> void:
 	var uType:int = EngineNode.undoType();
 	var uIndex:int = EngineNode.undoIndex();
-	var sideToUndo:int = SIDES.WHITE if EngineNode._getIsWhiteTurn() else SIDES.BLACK;
+	var sideToUndo:int = GDHexConst.SIDES.WHITE if EngineNode._getIsWhiteTurn() else GDHexConst.SIDES.BLACK;
 	
 	activePieces = EngineNode._getActivePieces();
 	currentLegalMoves = EngineNode._getMoves();
@@ -771,7 +768,7 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 
 	var t=0;
 	var index = 0;
-	var side = SIDES.WHITE if (not isWhite()) else SIDES.BLACK;
+	var side = GDHexConst.SIDES.WHITE if (not isWhite()) else GDHexConst.SIDES.BLACK;
 	var escapeloop = false;
 	for pieceType in activePieces[side]:
 		if(escapeloop): break;
@@ -783,7 +780,7 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 	
 	var ref = ChessPiecesNode.get_child(side).get_child(t-1).get_child(index);
 	
-	if (moveType == MOVE_TYPES.PROMOTE):
+	if (moveType == GDHexConst.MOVE_TYPES.PROMOTE):
 		prepareChessPieceNode(side, promoteTo, toPos);
 		ref.get_parent().remove_child(ref);
 		ref.queue_free();

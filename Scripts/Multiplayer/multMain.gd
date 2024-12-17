@@ -63,10 +63,10 @@ func isValidADRS(Str:String) -> bool:
 	for part : String in parts:
 		if(not part.is_valid_int()):
 			return false;
-		var num = int(part);
+		var num : int = int(part);
 		if((num < 0) or (num > 255)):
 			return false;
-		if part != String(num):
+		if part != str(num):
 			return false;
 	return true;
 #TODO ::
