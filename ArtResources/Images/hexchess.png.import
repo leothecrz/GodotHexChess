@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://du7jwp7c3bosp"
-path="res://.godot/imported/hexchess.png-d3d2c7d5a5b17289ed478a403162d553.ctex"
+path="res://.godot/imported/hexchess.png-da5e178c087f7cb80a04ee2af88ad5e1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/hexchess.png"
-dest_files=["res://.godot/imported/hexchess.png-d3d2c7d5a5b17289ed478a403162d553.ctex"]
+source_file="res://ArtResources/Images/hexchess.png"
+dest_files=["res://.godot/imported/hexchess.png-da5e178c087f7cb80a04ee2af88ad5e1.ctex"]
 
 [params]
 

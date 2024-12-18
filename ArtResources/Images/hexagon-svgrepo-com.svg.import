@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b3v70gamlfti5"
-path="res://.godot/imported/1pxArt.png-24ca759beb3769578a23c4b8de6220a6.ctex"
+uid="uid://cipx21qse2nws"
+path="res://.godot/imported/hexagon-svgrepo-com.svg-b123dacdf00f28d05a3e652932cf1ebf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/1pxArt.png"
-dest_files=["res://.godot/imported/1pxArt.png-24ca759beb3769578a23c4b8de6220a6.ctex"]
+source_file="res://ArtResources/Images/hexagon-svgrepo-com.svg"
+dest_files=["res://.godot/imported/hexagon-svgrepo-com.svg-b123dacdf00f28d05a3e652932cf1ebf.ctex"]
 
 [params]
 
@@ -32,3 +32,6 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
+svg/scale=1.0
+editor/scale_with_editor_scale=false
+editor/convert_colors_with_editor_theme=false

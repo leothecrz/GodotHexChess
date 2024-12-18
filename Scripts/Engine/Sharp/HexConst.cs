@@ -34,8 +34,10 @@ public class HexConst
 		public static readonly int[] PAWN_PROMOTE 	= {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
 		public static readonly int[] KNIGHT_MULTIPLERS = {-1, 1, -1, 1};
 		
-		/// unsorted
 
+		//
+
+		
 		public static int QRToIndex (int q, int r)
 		{
 			int normalq = q + 5;
@@ -190,9 +192,9 @@ public class HexConst
 			return id;
 		}
 		// Strip the color bit information and find what piece is in use.
-		public static PIECES PieceTypeOf(int id)
+		public static PIECES MaskPieceTypeFrom(int id)
 		{
-			int res = (id & TYPE_MASK);
+			int res = id & TYPE_MASK;
 			return (PIECES) res;
 		}
 		public static bool IsCharInt(char activeChar)
@@ -301,7 +303,7 @@ public class HexConst
 		}
 		public static bool isPieceKing(int id)
 		{ 		
-			return PieceTypeOf(id) == PIECES.KING;
+			return MaskPieceTypeFrom(id) == PIECES.KING;
 		}
 
 
@@ -398,13 +400,16 @@ public class HexConst
 
 
 		// Check if an active piece appears in the capture moves of any piece.
-		public static bool IsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
+		public static bool IsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves, out Vector2I from)
 		{
+			from = Cords;
 			foreach( Vector2I piece in enemyMoves.Keys)
 			{
+				from = piece;
 				foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.CAPTURE] )
 					if(move == Cords)
 						return true;
+					
 				if(enemyMoves[piece].Count == 4) // is pawn moves
 					foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.PROMOTE])
 						if(move == Cords)

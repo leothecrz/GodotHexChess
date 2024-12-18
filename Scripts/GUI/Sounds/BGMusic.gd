@@ -1,6 +1,6 @@
 extends AudioStreamPlayer;
 
-const folder_path : String = "res://Music/";
+const folder_path : String = "res://ArtResources/Music/";
 var files : Array;
 
 ##PUBLIC

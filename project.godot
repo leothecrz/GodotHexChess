@@ -15,8 +15,12 @@ config/version="0.0.1"
 config/tags=PackedStringArray("hexchess")
 run/main_scene="res://Scenes/HexBoardGUI.tscn"
 config/features=PackedStringArray("4.3", "C#", "GL Compatibility")
-boot_splash/image="res://Images/HexChessLogo3.png"
-config/icon="res://Images/Logo3.png"
+boot_splash/image="res://ArtResources/Images/HexChessLogo3.png"
+config/icon="res://ArtResources/Images/Logo3.png"
+
+[audio]
+
+buses/default_bus_layout="res://GDResources/default_bus_layout.tres"
 
 [display]
 
@@ -25,7 +29,6 @@ window/stretch/mode="canvas_items"
 [dotnet]
 
 project/assembly_name="Hex Chess"
-project/solution_directory="./Solution"
 
 [input]
 

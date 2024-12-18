@@ -11,23 +11,45 @@ namespace HexChess
 
 public class BitboardState
 {
-
+	/// <summary> All bitboards for WHITE side. Use [piecetype] to get the type's bitboard. </summary>
 	public Bitboard128[] WHITE_BB {get; private set;}
+	/// <summary> All bitboards for BLACK side. Use [piecetype] to get the type's bitboard. </summary>
 	public Bitboard128[] BLACK_BB {get; private set;}
+	/// <summary> Combined State of WHITE_BB </summary>
 	public Bitboard128 BIT_WHITE {get; private set;}
+	/// <summary> Combined State of BLACK_BB </summary>
 	public Bitboard128 BIT_BLACK {get; private set;}
+	/// <summary> Combined State of WHITE_BB and BLACK_BB </summary>
 	public Bitboard128 BIT_ALL {get; private set;}
 
 
+	/// <summary> Constructor. Initiates the state bitboards with the using the default PIECES. </summary>
 	public BitboardState()
 	{
-		initiateStateBitboards();
+		InitiateStateBitboards();
 	}
 
-	//
-	public void initiateStateBitboards()
+	/// <summary> Combines all same color pieces into BIT_WHITE and BIT_BLACK. Combines those to create BIT_ALL. </summary>
+	public void GenerateCombinedStateBitboards()
 	{
-		int size = Enum.GetValues(typeof(PIECES)).Length - 1;
+		BIT_WHITE = Bitboard128.ORCombine(WHITE_BB);
+		BIT_BLACK = Bitboard128.ORCombine(BLACK_BB);
+		BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
+	}
+
+	/// <summary> Create a bitboard128 for every piece type. Also creates the combined bitboard states. </summary>
+	public void InitiateStateBitboards()
+	{
+		InitiateStateBitboardsCustom(Enum.GetValues(typeof(PIECES)).Length - 1);
+	}
+	/// <summary>
+	/// Given a custom piece type count:
+	/// Create a bitboard128 for every piece type. Also creates the combined bitboard states.
+	/// </summary>
+	/// <param name="piecesCount"> Piece Type Count. Will create a bitboard for each piece type </param>
+	public void InitiateStateBitboardsCustom(int piecesCount)
+	{
+		int size = piecesCount;
 		WHITE_BB = new Bitboard128[size];
 		BLACK_BB = new Bitboard128[size];
 		for(int i=0; i<size; i+=1)
@@ -35,68 +57,63 @@ public class BitboardState
 			WHITE_BB[i] = new Bitboard128(0,0);
 			BLACK_BB[i] = new Bitboard128(0,0);
 		}
-		generateCombinedStateBitboards();
+		GenerateCombinedStateBitboards();
 	}
-	//
-	public void clearCombinedStateBitboards()
+	
+	/// <summary> Clear the ALL, WHITE, and BLACK combined states. </summary>
+	public void ClearCombinedStateBitboards()
 	{
 		BIT_ALL = null;
 		BIT_BLACK = null;
 		BIT_WHITE = null;
 	}
-	//
-	public void clearStateBitboard()
+	/// <summary> Clear all of the bitboards in WHITE_BB[] and BLACK_BB[] </summary>
+	public void ClearStateBitboards()
 	{
 		for (int i=0 ; i < WHITE_BB.Length; i+=1)
 		{
 			WHITE_BB[i] = null;
 			BLACK_BB[i] = null;
 		}
-		
 	}
-	//
-	public void generateCombinedStateBitboards()
-	{
-		BIT_WHITE = Bitboard128.ORCombine(WHITE_BB);
-		BIT_BLACK = Bitboard128.ORCombine(BLACK_BB);
-		BIT_ALL = BIT_WHITE.OR(BIT_BLACK);
-	}
-
+	
 
 	// Bitboard Checks
 
-	// Checks BIT_ALL for the existence of a piece at index
+
+	/// <summary> Checks index of BIT_ALL if a piece is there. </summary>
+	/// <param name="index"> 0 less-than-or-equal index less-than-or-equal 127. Index To check </param>
+	/// <returns> True - if index is empty. False - if not empty. </returns>
 	public bool IsIndexEmpty(int index)
 	{
-		Bitboard128 temp = Bitboard128.OneBitAt(index);
-		Bitboard128 result = BIT_ALL.AND(temp);
-		bool status = result.Empty();
-		result = null;
-		temp = null;
-		return status;
+		return BIT_ALL.AND(Bitboard128.OneBitAt(index)).Empty();
 	}
-	// Assumes Piece Exists. Check on which side bitboard the piece exist on.
+	/// <summary> Assumes Piece Exists. Check on which SIDE bitboard the piece exist on. </summary>
+	/// <param name="index"> 0 less-than-or-equal index less-than-or-equal 127. Index To check </param>
+	/// <returns></returns>
 	public bool IsPieceWhite(int index)
 	{
-		Bitboard128 check = Bitboard128.OneBitAt(index);
-		Bitboard128 result = BIT_WHITE.AND(check);
-		bool status = result.Empty();
-		result = null;
-		check = null;
-		return !status;
+		return !BIT_WHITE.AND(Bitboard128.OneBitAt(index)).Empty();
 	}
-	// Assumes Piece Exists. Check on which type bitboard the piece exist on. Checks Opponent bitboard.
-	public PIECES PieceTypeOf(int index, bool isWhiteTrn)
+	/// <summary> Assumes Piece Exists. Check on which SIDE bitboard the piece exist on. </summary>
+	/// <param name="index"> 0 less-than-or-equal index less-than-or-equal 127. Index To check </param>
+	/// <returns></returns>
+	public bool IsPieceBlack(int index)
+	{
+		return !IsPieceWhite(index);
+	}
+	
+	/// <summary> Assumes Piece Exists. Check on which type bitboard the piece exist on. Checks Opponent bitboard. </summary>
+	/// <param name="index"> </param>
+	/// <param name="isWhiteTrn"> </param>
+	/// <returns></returns>
+	public PIECES GetPieceTypeFrom(int index, bool isWhiteTrn)
 	{
 		int i = 0;
 		Bitboard128 temp = Bitboard128.OneBitAt(index);
-		Bitboard128[] opponentBitBoards;
-		if(isWhiteTrn)
-			opponentBitBoards = BLACK_BB;
-		else
-			opponentBitBoards = WHITE_BB;
+		Bitboard128[] selfBitBoards = isWhiteTrn ? WHITE_BB : BLACK_BB;
 
-		foreach (Bitboard128 bb in opponentBitBoards)
+		foreach (Bitboard128 bb in selfBitBoards)
 		{
 			i += 1;
 			Bitboard128 result = temp.AND(bb);
@@ -163,7 +180,7 @@ public class BitboardState
 	{
 		int index = QRToIndex(q,r);
 		Bitboard128 insert = Bitboard128.OneBitAt(index);
-		int type = (int)HexConst.PieceTypeOf(piece);
+		int type = (int)HexConst.MaskPieceTypeFrom(piece);
 
 		if(updateWhite)
 		{
@@ -233,7 +250,7 @@ public class BitboardState
 	// Assumes Piece Exists. Clears index of selected side.
 	public void ClearIndexFrom(int index, bool isWhite)
 	{
-		ClearIndexOf(index, isWhite, PieceTypeOf(index, !isWhite));
+		ClearIndexOf(index, isWhite, GetPieceTypeFrom(index, isWhite));
 		return;
 	}
 	// Assumes Piece Exists. Clears index of selected side from selected type.

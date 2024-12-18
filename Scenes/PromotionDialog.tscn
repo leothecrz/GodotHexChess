@@ -1,8 +1,8 @@
 [gd_scene load_steps=10 format=3 uid="uid://dcswr2x8v2pmq"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Dialog/PromotionDialog.gd" id="1_6v1g2"]
-[ext_resource type="ButtonGroup" uid="uid://dnhog44arg4nm" path="res://ButtonGroups/PromotionDialog.tres" id="1_16i12"]
-[ext_resource type="Texture2D" uid="uid://dxhduylcn2rax" path="res://Images/schemeThree.png" id="4_xfyd6"]
+[ext_resource type="ButtonGroup" uid="uid://dnhog44arg4nm" path="res://GDResources/ButtonGroups/PromotionDialog.tres" id="1_16i12"]
+[ext_resource type="Texture2D" uid="uid://dxhduylcn2rax" path="res://ArtResources/Images/schemeThree.png" id="4_xfyd6"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_05e3k"]
 atlas = ExtResource("4_xfyd6")

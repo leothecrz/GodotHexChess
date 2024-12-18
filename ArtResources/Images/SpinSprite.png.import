@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cyl43g1feyr3l"
-path="res://.godot/imported/HexChessLogo3.png-6e9b48beaf1129aab8ae6ac38cc22998.ctex"
+uid="uid://divboy5cbwrsk"
+path="res://.godot/imported/SpinSprite.png-759eedf23f89db14c428e75e7dad7adc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/HexChessLogo3.png"
-dest_files=["res://.godot/imported/HexChessLogo3.png-6e9b48beaf1129aab8ae6ac38cc22998.ctex"]
+source_file="res://ArtResources/Images/SpinSprite.png"
+dest_files=["res://.godot/imported/SpinSprite.png-759eedf23f89db14c428e75e7dad7adc.ctex"]
 
 [params]
 

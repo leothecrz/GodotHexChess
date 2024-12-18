@@ -12,7 +12,7 @@ signal pieceDeselected(SIDE:int, TYPE:String, CORDS:Vector2i);
 ####
 
 #### State
-@onready var chessTexture : AtlasTexture = preload("res://Textures/chessPieceTwo.tres");
+@onready var chessTexture : AtlasTexture = preload("res://GDResources/Textures/chessPieceTwo.tres");
 
 var locked : bool = true;
 var anotherSelected : bool = false;

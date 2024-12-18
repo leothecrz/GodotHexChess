@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dbeomhtiuxwqb"]
 
 [ext_resource type="Script" path="res://Scripts/Multiplayer/multMain.gd" id="1_r47su"]
-[ext_resource type="Texture2D" uid="uid://c3cbwpc0b7bio" path="res://Images/defProfile.png" id="2_eo558"]
+[ext_resource type="Texture2D" uid="uid://c3cbwpc0b7bio" path="res://ArtResources/Images/defProfile.png" id="2_eo558"]
 [ext_resource type="Script" path="res://Scripts/GUI/Dialog/MultConnect.gd" id="3_htp6n"]
 [ext_resource type="Script" path="res://Scripts/GUI/Dialog/MultSearch.gd" id="3_txlj3"]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://oj3b5u6rnmqk"
-path="res://.godot/imported/TurnSignal.png-69c53af2b67229d07bc02d2441c8cbc0.ctex"
+uid="uid://jtn71wfqppv4"
+path="res://.godot/imported/Spinning.png-c2487809c7ae7b6c48889511b6d57e5b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/TurnSignal.png"
-dest_files=["res://.godot/imported/TurnSignal.png-69c53af2b67229d07bc02d2441c8cbc0.ctex"]
+source_file="res://ArtResources/Images/Spinning.png"
+dest_files=["res://.godot/imported/Spinning.png-c2487809c7ae7b6c48889511b6d57e5b.ctex"]
 
 [params]
 

@@ -96,13 +96,13 @@ public class HexMoveGenerator
 	// Pawn Moves
 	public bool EnPassantLegal()
 	{
-		Vector2I targetPos = new Vector2I(BoardRef.EnPassantCords.X, BoardRef.EnPassantCords.Y + ( BoardRef.isWhiteTurn ? 1 : -1));
+		Vector2I targetPos = new Vector2I(BoardRef.EnPassantCords.X, BoardRef.EnPassantCords.Y + ( BoardRef.IsWhiteTurn ? 1 : -1));
 		
 		foreach( Vector2I piece in lastInfluencedPieces[targetPos])
 		{
 			int index = QRToIndex(piece.X,piece.Y);
-			if(BBRef.IsPieceWhite(index) == BoardRef.isWhiteTurn) continue;
-			PIECES type = BBRef.PieceTypeOf(index, BoardRef.isWhiteTurn);
+			if(BBRef.IsPieceWhite(index) == BoardRef.IsWhiteTurn) continue;
+			PIECES type = BBRef.GetPieceTypeFrom(index, !BoardRef.IsWhiteTurn);
 			if(type == PIECES.ROOK || type == PIECES.QUEEN)
 			{
 				if ( piece.X == myKingCords.X ) return false;
@@ -135,16 +135,16 @@ public class HexMoveGenerator
 		}
 		else
 		{
-			if(BBRef.IsPieceWhite(index) != BoardRef.isWhiteTurn)
+			if(BBRef.IsPieceWhite(index) != BoardRef.IsWhiteTurn)
 			{
-				if ( BoardRef.isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
+				if ( BoardRef.IsWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
 					moves[pawn][MOVE_TYPES.PROMOTE].Add(move); // PROMOTE CAPTURE
 				else
 					moves[pawn][MOVE_TYPES.CAPTURE].Add(move);
 			}
 		}
 		
-		updateAttackBoard(qpos, rpos, 1,BoardRef.isWhiteTurn);
+		updateAttackBoard(qpos, rpos, 1,BoardRef.IsWhiteTurn);
 		return;
 	}
 	private void findFowardMovesForPawn(Vector2I pawn, int fowardR)
@@ -157,7 +157,7 @@ public class HexMoveGenerator
 			int index = QRToIndex(pawn.X,fowardR);
 			if(BBRef.IsIndexEmpty(index))
 			{
-				if ( BoardRef.isWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
+				if ( BoardRef.IsWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
 					moves[pawn][MOVE_TYPES.PROMOTE].Add(move);
 				else
 				{
@@ -167,9 +167,9 @@ public class HexMoveGenerator
 			}
 		}
 		//Double Move From Start
-		if( boolCanGoFoward && ( BoardRef.isWhiteTurn ? isWhitePawnStart(pawn) : isBlackPawnStart(pawn) ) )
+		if( boolCanGoFoward && ( BoardRef.IsWhiteTurn ? isWhitePawnStart(pawn) : isBlackPawnStart(pawn) ) )
 		{
-			int doubleF = BoardRef.isWhiteTurn ? pawn.Y - 2 : pawn.Y + 2;
+			int doubleF = BoardRef.IsWhiteTurn ? pawn.Y - 2 : pawn.Y + 2;
 			int index = QRToIndex(pawn.X, doubleF);
 			if (BBRef.IsIndexEmpty(index))
 				moves[pawn][MOVE_TYPES.ENPASSANT].Add(new Vector2I(pawn.X, doubleF));
@@ -178,9 +178,9 @@ public class HexMoveGenerator
 	}
 	private void findMovesForPawn(Vector2I pawn)
 	{
-		int fowardR = BoardRef.isWhiteTurn ? pawn.Y - 1 : pawn.Y + 1;
-		int leftCaptureR = BoardRef.isWhiteTurn ? pawn.Y : pawn.Y + 1;
-		int rightCaptureR = BoardRef.isWhiteTurn? pawn.Y-1 : pawn.Y;
+		int fowardR = BoardRef.IsWhiteTurn ? pawn.Y - 1 : pawn.Y + 1;
+		int leftCaptureR = BoardRef.IsWhiteTurn ? pawn.Y : pawn.Y + 1;
+		int rightCaptureR = BoardRef.IsWhiteTurn? pawn.Y-1 : pawn.Y;
 
 		moves[pawn] = DeepCopyMoveTemplate(PAWN_MOVE_TEMPLATE);
 
@@ -201,7 +201,7 @@ public class HexMoveGenerator
 				moves[pawn][moveType] = intersectOfTwoList(newLegalmoves, moves[pawn][moveType]);
 		}
 		// TODO:: Not Efficient FIX LATER
-		if( BoardRef.isCheck )
+		if( BoardRef.IsCheck )
 			foreach( MOVE_TYPES moveType in moves[pawn].Keys)
 				moves[pawn][moveType] = intersectOfTwoList(GameInCheckMoves, moves[pawn][moveType]);
 	}
@@ -233,10 +233,10 @@ public class HexMoveGenerator
 				if (Bitboard128.IsLegalHexCords(checkingQ,checkingR))
 				{
 					int index = QRToIndex(checkingQ,checkingR);
-					updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
+					updateAttackBoard(checkingQ, checkingR, 1, BoardRef.IsWhiteTurn);
 					if (BBRef.IsIndexEmpty(index)) 
 						moves[knight][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ,checkingR));
-					else if(BBRef.IsPieceWhite(index) != BoardRef.isWhiteTurn)
+					else if(BBRef.IsPieceWhite(index) != BoardRef.IsWhiteTurn)
 						moves[knight][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ,checkingR));
 				}
 			}
@@ -251,7 +251,7 @@ public class HexMoveGenerator
 				moves[knight][moveType] = intersectOfTwoList(newLegalmoves, moves[knight][moveType]);
 		}
 		// Not Efficient FIX LATER
-		if( BoardRef.isCheck )
+		if( BoardRef.IsCheck )
 			foreach(MOVE_TYPES moveType in moves[knight].Keys)
 				moves[knight][moveType] = intersectOfTwoList(GameInCheckMoves, moves[knight][moveType]);
 
@@ -277,7 +277,7 @@ public class HexMoveGenerator
 			while (Bitboard128.IsLegalHexCords(checkingQ,checkingR))
 			{
 				var index = QRToIndex(checkingQ,checkingR);
-				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
+				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.IsWhiteTurn);
 				if( BBRef.IsIndexEmpty(index) )
 					moves[rook][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
 				else
@@ -286,16 +286,16 @@ public class HexMoveGenerator
 					if(influencedPieces.ContainsKey(pos)) influencedPieces[pos].Add(rook);
 					else influencedPieces[pos] = new List<Vector2I> {rook};
 					
-					if( BBRef.IsPieceWhite(index) != BoardRef.isWhiteTurn ) //Enemy
+					if( BBRef.IsPieceWhite(index) != BoardRef.IsWhiteTurn ) //Enemy
 					{ 
 						moves[rook][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
 						//King Escape Fix
-						if( BBRef.PieceTypeOf(index, BoardRef.isWhiteTurn) == PIECES.KING )
+						if( BBRef.GetPieceTypeFrom(index, !BoardRef.IsWhiteTurn) == PIECES.KING )
 						{
 							checkingQ += activeVector.X;
 							checkingR += activeVector.Y;
 							if(Bitboard128.IsLegalHexCords(checkingQ, checkingR))
-								updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
+								updateAttackBoard(checkingQ, checkingR, 1, BoardRef.IsWhiteTurn);
 						}
 					}
 					break;
@@ -314,7 +314,7 @@ public class HexMoveGenerator
 		}
 
 		/// Not Efficient TODO: FIX LATER
-		if( BoardRef.isCheck )
+		if( BoardRef.IsCheck )
 			foreach( MOVE_TYPES moveType in moves[rook].Keys)
 				moves[rook][moveType] = intersectOfTwoList(GameInCheckMoves, moves[rook][moveType]);
 
@@ -340,7 +340,7 @@ public class HexMoveGenerator
 			while ( Bitboard128.IsLegalHexCords(checkingQ,checkingR) )
 			{
 				var index = QRToIndex(checkingQ,checkingR);
-				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
+				updateAttackBoard(checkingQ, checkingR, 1, BoardRef.IsWhiteTurn);
 				if( BBRef.IsIndexEmpty(index) )
 					moves[bishop][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
 				else
@@ -351,16 +351,16 @@ public class HexMoveGenerator
 					else
 						influencedPieces[pos] = new List<Vector2I> {bishop};
 					
-					if( BBRef.IsPieceWhite(index) != BoardRef.isWhiteTurn ) // Enemy
+					if( BBRef.IsPieceWhite(index) != BoardRef.IsWhiteTurn ) // Enemy
 					{
 						moves[bishop][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
 						//King Escape Fix
-						if(BBRef.PieceTypeOf(index, BoardRef.isWhiteTurn) == PIECES.KING)
+						if(BBRef.GetPieceTypeFrom(index, !BoardRef.IsWhiteTurn) == PIECES.KING)
 						{
 							checkingQ += activeVector.X;
 							checkingR += activeVector.Y;
 							if( Bitboard128.IsLegalHexCords(checkingQ,checkingR) )
-								updateAttackBoard(checkingQ, checkingR, 1 , BoardRef.isWhiteTurn);
+								updateAttackBoard(checkingQ, checkingR, 1 , BoardRef.IsWhiteTurn);
 						}
 					}
 					break;
@@ -379,7 +379,7 @@ public class HexMoveGenerator
 		}
 
 		// Not Efficient FIX LATER
-		if( BoardRef.isCheck )
+		if( BoardRef.IsCheck )
 			foreach(MOVE_TYPES moveType in moves[bishop].Keys)
 				moves[bishop][moveType] = intersectOfTwoList(GameInCheckMoves, moves[bishop][moveType]);
 		
@@ -428,8 +428,8 @@ public class HexMoveGenerator
 			if(!Bitboard128.IsLegalHexCords(checkingQ,checkingR))
 				continue;
 
-			updateAttackBoard(checkingQ, checkingR, 1, BoardRef.isWhiteTurn);
-			if(BoardRef.isWhiteTurn)
+			updateAttackBoard(checkingQ, checkingR, 1, BoardRef.IsWhiteTurn);
+			if(BoardRef.IsWhiteTurn)
 			{
 				if(BlackAttackBoard[checkingQ][checkingR] > 0)
 					continue;
@@ -446,13 +446,13 @@ public class HexMoveGenerator
 			{
 				moves[king][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
 			}
-			else if( BBRef.IsPieceWhite(index) != BoardRef.isWhiteTurn )
+			else if( BBRef.IsPieceWhite(index) != BoardRef.IsWhiteTurn )
 				moves[king][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
 			
 		}
 
 		// Not Efficient FIX LATER
-		if( BoardRef.isCheck )
+		if( BoardRef.IsCheck )
 		{
 			moves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoList(GameInCheckMoves, moves[king][MOVE_TYPES.CAPTURE]);
 			foreach( MOVE_TYPES moveType in moves[king].Keys)
@@ -514,14 +514,14 @@ public class HexMoveGenerator
 	private void removePawnAttacks(Vector2I cords)
 	{
 		//FIX
-		var leftCaptureR = BoardRef.isWhiteTurn ?  cords.Y : cords.Y + 1;
-		var rightCaptureR = BoardRef.isWhiteTurn ? cords.Y-1 : cords.Y;
+		var leftCaptureR = BoardRef.IsWhiteTurn ?  cords.Y : cords.Y + 1;
+		var rightCaptureR = BoardRef.IsWhiteTurn ? cords.Y-1 : cords.Y;
 		//Left Capture
 		if( Bitboard128.IsLegalHexCords(cords.X-1, leftCaptureR) )
-			updateAttackBoard(cords.X-1, leftCaptureR, -1, BoardRef.isWhiteTurn);
+			updateAttackBoard(cords.X-1, leftCaptureR, -1, BoardRef.IsWhiteTurn);
 		//Right Capture
 		if( Bitboard128.IsLegalHexCords(cords.X+1, rightCaptureR) )
-			updateAttackBoard(cords.X+1, rightCaptureR, -1, BoardRef.isWhiteTurn);
+			updateAttackBoard(cords.X+1, rightCaptureR, -1, BoardRef.IsWhiteTurn);
 		return;
 	}
 	public void rmvSelfAtks(Vector2I cords, PIECES id) 
@@ -534,13 +534,13 @@ public class HexMoveGenerator
 				
 		foreach( MOVE_TYPES moveType in moves[cords].Keys)
 			foreach( Vector2I move in moves[cords][moveType])
-				updateAttackBoard(move.X, move.Y, -1, BoardRef.isWhiteTurn);
+				updateAttackBoard(move.X, move.Y, -1, BoardRef.IsWhiteTurn);
 		
 		return;
 	}
 	public void removeCapturedFromATBoard(PIECES pieceType, Vector2I cords)
 	{
-		BoardRef.isWhiteTurn = !BoardRef.isWhiteTurn;
+		BoardRef.IsWhiteTurn = !BoardRef.IsWhiteTurn;
 		
 		var movedPiece = new Dictionary<PIECES, List<Vector2I>> { {pieceType, new List<Vector2I> {new Vector2I(cords.X, cords.Y)}} };
 		
@@ -549,7 +549,7 @@ public class HexMoveGenerator
 		rmvSelfAtks(cords, pieceType);
 		moves = savedMoves;
 		
-		BoardRef.isWhiteTurn = !BoardRef.isWhiteTurn;
+		BoardRef.IsWhiteTurn = !BoardRef.IsWhiteTurn;
 		return;
 	}
 
@@ -602,8 +602,8 @@ public class HexMoveGenerator
 			foreach( Vector2I item in influencedPieces[lastCords] )
 			{
 				var index = QRToIndex(item.X,item.Y);
-				if (BBRef.IsPieceWhite(index) != BoardRef.isWhiteTurn) continue;
-				var inPieceType = BBRef.PieceTypeOf(index, !BoardRef.isWhiteTurn);
+				if (BBRef.IsPieceWhite(index) != BoardRef.IsWhiteTurn) continue;
+				var inPieceType = BBRef.GetPieceTypeFrom(index, BoardRef.IsWhiteTurn);
 				if ( internalDictionary.ContainsKey(inPieceType) )
 					internalDictionary[inPieceType].Add(item);
 				else
@@ -648,7 +648,7 @@ public class HexMoveGenerator
 						}
 						else //Unfriendly Piece Found	
 						{
-							PIECES val = BBRef.PieceTypeOf(index, isWhiteTrn);
+							PIECES val = BBRef.GetPieceTypeFrom(index, !isWhiteTrn);
 							if ( (val == PIECES.QUEEN) || (val == piece) )
 							{
 								if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
@@ -752,7 +752,7 @@ public class HexMoveGenerator
 	{
 		BoardRef.GameInCheckFrom = new Vector2I(cords.X, cords.Y);
 		if (clear) GameInCheckMoves = new List<Vector2I> {};
-		BoardRef.isCheck = true;
+		BoardRef.IsCheck = true;
 		
 		switch( pieceType )
 		{
@@ -786,7 +786,7 @@ public class HexMoveGenerator
 	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> generateNextLegalMoves(Dictionary<PIECES, List<Vector2I>>[] AP)
 	{
 		int selfside = -1;
-		if(BoardRef.isWhiteTurn)
+		if(BoardRef.IsWhiteTurn)
 		{
 			selfside = (int) SIDES.WHITE;
 			ZeroBoard(WhiteAttackBoard);

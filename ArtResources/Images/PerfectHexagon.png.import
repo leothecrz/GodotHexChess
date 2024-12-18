@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://divboy5cbwrsk"
-path="res://.godot/imported/SpinSprite.png-e872eea135853c8bcd8ac663023893bd.ctex"
+uid="uid://b7ynqeqd2uut2"
+path="res://.godot/imported/PerfectHexagon.png-96f7b6391ce26d65ce1a882f150ca6d9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/SpinSprite.png"
-dest_files=["res://.godot/imported/SpinSprite.png-e872eea135853c8bcd8ac663023893bd.ctex"]
+source_file="res://ArtResources/Images/PerfectHexagon.png"
+dest_files=["res://.godot/imported/PerfectHexagon.png-96f7b6391ce26d65ce1a882f150ca6d9.ctex"]
 
 [params]
 

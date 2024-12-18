@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bp45dhrkjj4r5"
-path="res://.godot/imported/PerfectHexagonW.png-23e74b3a13daa657b25b043d7247d44b.ctex"
+uid="uid://oj3b5u6rnmqk"
+path="res://.godot/imported/TurnSignal.png-c92685d0fa8d047e66053ce7de4789c8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/PerfectHexagonW.png"
-dest_files=["res://.godot/imported/PerfectHexagonW.png-23e74b3a13daa657b25b043d7247d44b.ctex"]
+source_file="res://ArtResources/Images/TurnSignal.png"
+dest_files=["res://.godot/imported/TurnSignal.png-c92685d0fa8d047e66053ce7de4789c8.ctex"]
 
 [params]
 

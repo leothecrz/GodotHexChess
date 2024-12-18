@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://88v5jwhhko4j"
-path="res://.godot/imported/Chess Colors.png-205f7e4ce1ef2f65fab78b02f73afc51.ctex"
+uid="uid://cyl43g1feyr3l"
+path="res://.godot/imported/HexChessLogo3.png-0271cfd39c52477a1fbf46fbb7bbb6be.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/Chess Colors.png"
-dest_files=["res://.godot/imported/Chess Colors.png-205f7e4ce1ef2f65fab78b02f73afc51.ctex"]
+source_file="res://ArtResources/Images/HexChessLogo3.png"
+dest_files=["res://.godot/imported/HexChessLogo3.png-0271cfd39c52477a1fbf46fbb7bbb6be.ctex"]
 
 [params]
 

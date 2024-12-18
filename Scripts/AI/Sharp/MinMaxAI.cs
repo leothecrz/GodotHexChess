@@ -95,10 +95,12 @@ public partial class MinMaxAI : AIBase
 		long standingValue = multiplier * Hueristic(hexEngine);
 		if(standingValue >= beta) return beta;
 		if(alpha < standingValue) alpha = standingValue;
-		GD.Print("PreQuiescenece: ", standingValue);
+		//GD.Print($"PreQuiescenece:{standingValue} - alpha:{alpha} - beta:{beta}");
 		int index;
 		long value = long.MinValue;
 		var legalmoves = DeepCopyLegalMoves(hexEngine._getmoves());
+
+		//List<long> postQ = new();
 
 		foreach( Vector2I piece in legalmoves.Keys )
 		{
@@ -111,8 +113,8 @@ public partial class MinMaxAI : AIBase
 				var InPi = hexEngine._duplicateIP();
 				
 				hexEngine._makeMove(piece, MOVE_TYPES.CAPTURE, index, PIECES.QUEEN);
-				var newVal = multiplier * Hueristic(hexEngine);
-				GD.Print("PostQuiescenece: ", newVal);
+				var newVal = -QuiescenceSearch(hexEngine, -multiplier, -beta, -alpha);
+				//postQ.Add(newVal);
 				value = Math.Max(newVal, value);
 				alpha = Math.Max(alpha, value);
 				
@@ -124,6 +126,11 @@ public partial class MinMaxAI : AIBase
 			}
 		}
 		ESCAPELOOP:
+
+		// var outString = "";
+		// foreach(var s in postQ)
+		// 	outString += $" {s} ";
+		// GD.Print("PostQuiescenece: ", outString);
 
 		return alpha;
 	}
@@ -150,7 +157,7 @@ public partial class MinMaxAI : AIBase
 		if( depth == 0 || hexEngine._getGameOverStatus())
 		{
 			statesEvaluated += 1;
-			return QuiescenceSearch(hexEngine, -multiplier, alpha, beta);
+			return QuiescenceSearch(hexEngine, -multiplier, -beta, -alpha);
 			//return multiplier * Hueristic(hexEngine);
 		}
 			

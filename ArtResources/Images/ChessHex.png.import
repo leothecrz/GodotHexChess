@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b7ynqeqd2uut2"
-path="res://.godot/imported/PerfectHexagon.png-e61ebfc55f6e25e47c50cfddbca6b7f7.ctex"
+uid="uid://b3yal3xxtf7t1"
+path="res://.godot/imported/ChessHex.png-7155374aca43170905ee694f5ebc28fe.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/PerfectHexagon.png"
-dest_files=["res://.godot/imported/PerfectHexagon.png-e61ebfc55f6e25e47c50cfddbca6b7f7.ctex"]
+source_file="res://ArtResources/Images/ChessHex.png"
+dest_files=["res://.godot/imported/ChessHex.png-7155374aca43170905ee694f5ebc28fe.ctex"]
 
 [params]
 

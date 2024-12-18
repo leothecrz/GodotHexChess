@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jtn71wfqppv4"
-path="res://.godot/imported/Spinning.png-972e865b996da1419c82d283061b504a.ctex"
+uid="uid://b3v70gamlfti5"
+path="res://.godot/imported/1pxArt.png-e4263841cd4b9f91f123c483867c632b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/Spinning.png"
-dest_files=["res://.godot/imported/Spinning.png-972e865b996da1419c82d283061b504a.ctex"]
+source_file="res://ArtResources/Images/1pxArt.png"
+dest_files=["res://.godot/imported/1pxArt.png-e4263841cd4b9f91f123c483867c632b.ctex"]
 
 [params]
 
