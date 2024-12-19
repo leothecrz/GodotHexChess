@@ -194,7 +194,7 @@ public partial class HexEngineSharp : Node
 				{
 					if(r1 <= r2)
 					{
-						BitBoards.addS_PieceToBitBoards(q,r1,activeChar);
+						BitBoards.AddFromCharTo(activeChar,q,r1);
 						r1 +=1 ;
 					}
 					else
@@ -404,7 +404,7 @@ public partial class HexEngineSharp : Node
 			case MOVE_TYPES.MOVES: break;
 		}
 
-		BitBoards.add_IPieceToBitBoardsOf(moveTo.X,moveTo.Y,(int)pieceType,HexState.IsWhiteTurn);
+		BitBoards.AddFromIntTo(pieceType, moveTo.X, moveTo.Y, HexState.IsWhiteTurn);
 		
 		// Update Piece List
 		for(int i = 0; i < activePieces[selfColor][pieceType].Count; i += 1)
@@ -448,7 +448,7 @@ public partial class HexEngineSharp : Node
 		{
 			if(hist.CaptureTopSneak)
 				to.Y += HexState.IsWhiteTurn ? 1 :-1;
-			BitBoards.AddPieceOf(QRToIndex(to.X, to.Y), !HexState.IsWhiteTurn, (PIECES) hist.cPiece);
+			BitBoards.AddFromIntTo((PIECES)hist.cPiece, to.X, to.Y, !HexState.IsWhiteTurn);
 			activePieces[(int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE)][(PIECES)hist.cPiece].Insert( hist.cIndex, new Vector2I(to.X,to.Y) );
 				
 			HexState.UncaptureValid = true;
@@ -562,7 +562,7 @@ public partial class HexEngineSharp : Node
 
 		HexState.GameInCheckFrom = new Vector2I(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
 
-		activePieces = BitBoards.bbfindPieces();
+		activePieces = BitBoards.ExtractPieceList();
 		
 		HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 		Vector2I mykingCords = activePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
@@ -682,8 +682,7 @@ public partial class HexEngineSharp : Node
 
 		
 		BitBoards.ClearIndexOf(QRToIndex(UndoNewTo.X,UndoNewTo.Y), HexState.IsWhiteTurn, pieceType); 
-		BitBoards.AddPieceOf(QRToIndex(UndoNewFrom.X,UndoNewFrom.Y), HexState.IsWhiteTurn, pieceType);
-		
+		BitBoards.AddFromIntTo(pieceType, UndoNewFrom.X, UndoNewFrom.Y, HexState.IsWhiteTurn);
 
 		foreach( Vector2I pieceCords in activePieces[selfColor][pieceType] )
 		{

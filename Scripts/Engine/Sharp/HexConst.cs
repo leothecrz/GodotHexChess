@@ -36,7 +36,17 @@ public class HexConst
 		
 
 		//
-
+		public static Dictionary<PIECES, List<Vector2I>> InitPiecesDict()
+		{
+			return new(){ 
+				{PIECES.PAWN, new()},
+				{PIECES.KNIGHT, new()},
+				{PIECES.ROOK, new ()},
+				{PIECES.BISHOP, new()},
+				{PIECES.QUEEN, new()},
+				{PIECES.KING, new()} 
+			};
+		}
 		
 		public static int QRToIndex (int q, int r)
 		{
