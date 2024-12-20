@@ -170,12 +170,12 @@ func updateGUI_Elements() -> void:
 	else:
 		RightPanel.__setResignOn();
 	
-	LeftPanel.__updateHist(EngineNode._getHistTop());
+	LeftPanel.__updateHist(EngineNode.GetTop5Hist());
 	return;
 ## Handle post move gui updates
 func syncToEngine() -> void:
-	activePieces = EngineNode._getActivePieces();
-	currentLegalMoves = EngineNode._getMoves();
+	activePieces = EngineNode.GDGetActivePieces();
+	currentLegalMoves = EngineNode.GDGetMoves();
 	if(EngineNode.CaptureValid()):
 		updateScenceTree_OfCapture();
 	updateGUI_Elements();
@@ -200,6 +200,7 @@ func submitMove(cords:Vector2i, moveType:GDHexConst.MOVE_TYPES, moveIndex:int, p
 	if(multiplayerConnected):
 		receiveMove.rpc(cords, moveType, moveIndex, promoteTo);
 	EngineNode._makeMove(cords, moveType, moveIndex, promoteTo);
+	
 	
 	repositionToFrom(cords, currentLegalMoves[cords][moveType][moveIndex]);
 	syncToEngine();
@@ -404,7 +405,7 @@ func _on_test_id_pressed(id: int) -> void:
 			if(gameRunning): 
 				spawnNotice("[center]Game is Running.[/center]",  0.8);  
 				return;
-			EngineNode._test(0);
+			EngineNode.Test(0);
 			return;
 		1:
 			if(not gameRunning): 
@@ -413,7 +414,7 @@ func _on_test_id_pressed(id: int) -> void:
 			if(masterAIThread.is_started()): 
 				spawnNotice("[center]AI Running[/center]",  0.8); 
 				return;
-			spawnNotice("[center] Board H(): %d [/center]" % EngineNode._intTest(1),  2);
+			spawnNotice("[center] Board H(): %d [/center]" % EngineNode.TestReturnInt(1),  2);
 			return;
 			
 		_:
@@ -646,8 +647,8 @@ func syncUndo() -> void:
 	var uIndex:int = EngineNode.undoIndex();
 	var sideToUndo:int = GDHexConst.SIDES.WHITE if EngineNode._getIsWhiteTurn() else GDHexConst.SIDES.BLACK;
 	
-	activePieces = EngineNode._getActivePieces();
-	currentLegalMoves = EngineNode._getMoves();
+	activePieces = EngineNode.GDGetActivePieces();
+	currentLegalMoves = EngineNode.GDGetMoves();
 	
 	undoPromoteOrDefault(uType, uIndex, sideToUndo);
 	undoCapture();

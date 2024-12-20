@@ -686,17 +686,10 @@ public class HexMoveGenerator
 	{
 		var deltaQ = kingCords.X - moveToCords.X;
 		var deltaR = kingCords.Y - moveToCords.Y;
-		var direction = new Vector2I(0,0);
-
-		if(deltaQ > 0)
-			direction.X = 1;
-		else if (deltaQ < 0)
-			direction.X = -1;
-		
-		if(deltaR > 0)
-			direction.Y = 1;
-		else if (deltaR < 0)
-			direction.Y = -1;
+		var direction = new Vector2I(
+			(deltaQ > 0) ? 1 : ( (deltaQ < 0) ? -1 : 0 ),
+			(deltaR > 0) ? 1 : ( (deltaR < 0) ? -1 : 0 )
+			);
 
 		while( true )
 		{
@@ -735,7 +728,8 @@ public class HexMoveGenerator
 					direction = new Vector2I(-2,1);
 			else if (deltaR < 0)
 				direction = new Vector2I(-1,-1);
-			
+		
+		
 		while( true )
 		{
 			GameInCheckMoves.Add(moveToCords);

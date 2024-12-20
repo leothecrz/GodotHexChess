@@ -41,7 +41,9 @@ namespace HexChess
 	public bool UncaptureValid {get; set;} = false;
 	public bool UnpromoteValid {get; set;}   = false;
 	
-
+	/// <summary>
+	/// Board state
+	/// </summary>
     public BoardState()
     {
 		BlackCaptures = new List<PIECES>();
@@ -51,25 +53,33 @@ namespace HexChess
 		GameInCheckFrom = new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
 		UndoTo 			= new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
     }
-
+	/// <summary>
+	/// increment the turn number
+	/// </summary>
     public void IncrementTurnNumber()
 	{
 		TurnNumber += 1;
 		return;
 	}
-
+	/// <summary>
+	/// decrement the turn number
+	/// </summary>
 	public void DecrementTurnNumber()
 	{
 		TurnNumber -= 1;
 		return;
 	}
-
+	/// <summary>
+	/// Flip the iswhiteturn boolean
+	/// </summary>
 	public void SwapPlayerTurn()
 	{
 		IsWhiteTurn = !IsWhiteTurn;
 		return;
 	}
-
+	/// <summary>
+	/// Reset the InCheck, CaptureValid, and EnPassantValid flags.
+	/// </summary>
 	public void ResetTurnFlags()
 	{
 		IsCheck = false;
@@ -77,12 +87,23 @@ namespace HexChess
 		EnPassantCordsValid = false;
 		return;
 	}
-
+	/// <summary>
+	/// Swap the player turn and increment the turn number.
+	/// </summary>
 	public void NextTurn()
 	{
 		SwapPlayerTurn();
 		IncrementTurnNumber();
 	}
-
+	/// <summary>
+	/// Swap the player turn and decrement the turn number. Reset the undo flags. 
+	/// </summary>
+	public void LastTurn()
+	{
+		UncaptureValid = false;
+		UnpromoteValid = false;
+		DecrementTurnNumber();
+		SwapPlayerTurn();
+	}
 }
 }

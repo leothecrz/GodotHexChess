@@ -63,9 +63,9 @@ public class BitboardState
 	/// <summary> Clear the ALL, WHITE, and BLACK combined states. </summary>
 	public void ClearCombinedStateBitboards()
 	{
-		BIT_ALL = null;
 		BIT_BLACK = null;
 		BIT_WHITE = null;
+		BIT_ALL = null;
 	}
 	/// <summary> Clear all of the bitboards in WHITE_BB[] and BLACK_BB[] </summary>
 	public void ClearStateBitboards()

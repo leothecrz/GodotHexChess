@@ -20,16 +20,12 @@ namespace HexChess
 		public bool EnemyPromoted {get; set;} =  false;
 
 		// ENemy Info
-		public PIECES EnemyChoiceType {get; set;}
-		public int EnemyChoiceIndex {get; set;}
+		public PIECES EnemyChoiceType {get; set;} = PIECES.ZERO;
+		public int EnemyChoiceIndex {get; set;} = -1;
 		public int EnemyDifficulty {get; set;} = 0;
-		public Vector2I EnemyTo {get; set;}
+		public Vector2I EnemyTo {get; set;} = Vector2I.Zero;
 
-
-		public EnemyState()
-		{
-			
-		}
+		public EnemyState(){}
 
     }
 }

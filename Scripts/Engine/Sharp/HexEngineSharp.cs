@@ -38,6 +38,7 @@ public partial class HexEngineSharp : Node
 		mGen = new HexMoveGenerator(ref HexState,ref BitBoards);
 		activePieces = null;
 		legalMoves = null;
+		historyStack = null;
 		bypassMoveLock = false;
 	}
 
@@ -253,10 +254,11 @@ public partial class HexEngineSharp : Node
 
 		mGen.prepBlockingFrom(mykingCords);
 		mGen.findLegalMovesFor(mGen.setupActiveForSingle(pieceType, cords, lastCords));
-		if(IsUnderAttack(enemykingCords, mGen.moves, out Vector2I from))
+		if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from))
 		{
-			mateStatus = UNDO_FLAGS.CHECK;		
-			mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(from.X,from.Y), HexState.IsWhiteTurn), from, enemykingCords, true);
+			mateStatus = UNDO_FLAGS.CHECK;
+			mGen.GameInCheckMoves = new();		
+			mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn), from[0], enemykingCords, true);
 		}
 		mGen.addInflunceFrom(cords);
 
@@ -270,8 +272,10 @@ public partial class HexEngineSharp : Node
 				foreach(var piece in side[type])
 					pieceCount+=1;
 		if(pieceCount <= 2)
+		{
 			HexState.IsOver = true;
-
+			mateStatus = UNDO_FLAGS.GAME_OVER;
+		}
 		// Check For Mate and Stale Mate	
 		var moveCount = CountMoves(legalMoves);
 		if( moveCount <= 0)
@@ -350,11 +354,10 @@ public partial class HexEngineSharp : Node
 		int selfColor = (int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK );
 		Vector2I moveTo = legalMoves[cords][moveType][moveIndex];
 		
-
 		var index = QRToIndex(cords.X,cords.Y);
 		BitBoards.ClearIndexFrom(index, HexState.IsWhiteTurn);
 
-		HistEntry histEntry = new HistEntry(pieceVal, cords, moveTo);
+		HistEntry histEntry = new(pieceVal, cords, moveTo);
 
 		switch(moveType)
 		{
@@ -362,8 +365,8 @@ public partial class HexEngineSharp : Node
 				if(moveTo.X != cords.X)
 				{
 					histEntry.FlipCapture();
-					histEntry.cPiece = ((int)HexState.CaptureType);
-					histEntry.cIndex = (HexState.CaptureIndex);
+					histEntry.CapPiece = HexState.CaptureType;
+					histEntry.CapIndex = HexState.CaptureIndex;
 					handleMoveCapture(moveTo, pieceType);
 				}
 				int i = 0;
@@ -380,8 +383,8 @@ public partial class HexEngineSharp : Node
 				activePieces[selfColor][pieceType].Add(moveTo);
 				
 				histEntry.FlipPromote();
-				histEntry.pPiece = (int)pieceType;
-				histEntry.pIndex = i;
+				histEntry.ProPiece = pieceType;
+				histEntry.ProIndex = i;
 				break;
 				
 
@@ -397,8 +400,8 @@ public partial class HexEngineSharp : Node
 				histEntry.FlipCapture();
 				if( handleMoveCapture(moveTo, pieceType))
 					histEntry.FlipTopSneak();
-				histEntry.cIndex = (HexState.CaptureIndex);
-				histEntry.cPiece = ((int)HexState.CaptureType);
+				histEntry.CapIndex = HexState.CaptureIndex;
+				histEntry.CapPiece = HexState.CaptureType;
 				break;
 
 			case MOVE_TYPES.MOVES: break;
@@ -433,29 +436,35 @@ public partial class HexEngineSharp : Node
 		
 		if(hist.Promote)
 		{
-			//BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.isWhiteTurn, PIECES.PAWN);
-			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.IsWhiteTurn, (PIECES) hist.pPiece);
+			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.IsWhiteTurn, hist.ProPiece);
 			
-			int size = activePieces[selfSide][(PIECES) hist.pPiece].Count;
-			activePieces[selfSide][(PIECES) hist.pPiece].RemoveAt(size-1);
-			activePieces[selfSide][PIECES.PAWN].Insert( hist.pIndex, new Vector2I(from.X,from.Y) );
+			int size = activePieces[selfSide][hist.ProPiece].Count;
+			activePieces[selfSide][hist.ProPiece].RemoveAt(size-1);
+			activePieces[selfSide][PIECES.PAWN].Insert( hist.ProIndex, new Vector2I(from.X,from.Y) );
 			
 			HexState.UnpromoteValid = true;
-			HexState.UnpromoteIndex = hist.pIndex;
-			HexState.UnpromoteType = (PIECES) hist.pPiece;
+			HexState.UnpromoteIndex = hist.ProIndex;
+			HexState.UnpromoteType = hist.ProPiece;
 		}
 		if(hist.Capture)
 		{
 			if(hist.CaptureTopSneak)
 				to.Y += HexState.IsWhiteTurn ? 1 :-1;
-			BitBoards.AddFromIntTo((PIECES)hist.cPiece, to.X, to.Y, !HexState.IsWhiteTurn);
-			activePieces[(int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE)][(PIECES)hist.cPiece].Insert( hist.cIndex, new Vector2I(to.X,to.Y) );
-				
-			HexState.UncaptureValid = true;
-			HexState.CaptureIndex = hist.cIndex;
-			HexState.CaptureType = (PIECES) hist.cPiece;
+			BitBoards.AddFromIntTo(hist.CapPiece, to.X, to.Y, !HexState.IsWhiteTurn);
+			activePieces[(int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE)][hist.CapPiece].Insert( hist.CapIndex, new Vector2I(to.X,to.Y) );
 			
 			mGen.addInflunceFrom(to);
+
+			HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
+			Vector2I mykingCords = activePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
+			mGen.prepBlockingFrom(mykingCords);
+			mGen.findLegalMovesFor(mGen.setupActiveForSingle(hist.CapPiece, to, from));
+			HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
+
+			HexState.UncaptureValid = true;
+			HexState.CaptureIndex = hist.CapIndex;
+			HexState.CaptureType = hist.CapPiece;
+	
 		}
 		return;
 	}
@@ -482,8 +491,8 @@ public partial class HexEngineSharp : Node
 		if(history.EnPassant)
 		{
 			HexState.EnPassantCordsValid = true;
-			var from = history.from;
-			var to = history.to;
+			var from = history.From;
+			var to = history.To;
 			var side = ((from - to).Y) < 0 ? SIDES.BLACK : SIDES.WHITE;
 			HexState.EnPassantTarget = to;
 			HexState.EnPassantCords = new Vector2I(to.X, to.Y - (side == SIDES.BLACK ? 1 : -1));
@@ -569,10 +578,10 @@ public partial class HexEngineSharp : Node
 		Vector2I enemykingCords = activePieces[(int)(HexState.IsWhiteTurn ?  SIDES.BLACK : SIDES.WHITE)][PIECES.KING][KING_INDEX];
 		mGen.prepBlockingFrom(mykingCords);
 		mGen.findLegalMovesFor(activePieces[(int)(HexState.IsWhiteTurn ?  SIDES.WHITE : SIDES.BLACK)]);
-		if(IsUnderAttack(enemykingCords, mGen.moves, out Vector2I from))
+		if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from))
 		{
-			var type = BitBoards.GetPieceTypeFrom(QRToIndex(from.X,from.Y), HexState.IsWhiteTurn);
-			mGen.fillInCheckMoves(type, from, enemykingCords, true);
+			var type = BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn);
+			mGen.fillInCheckMoves(type, from[0], enemykingCords, true);
 		}
 		HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 
@@ -664,51 +673,36 @@ public partial class HexEngineSharp : Node
 		if(historyStack.Count < 1)
 			return false;
 
-		HexState.UncaptureValid = false;
-		HexState.UnpromoteValid = false;
-		HexState.DecrementTurnNumber();
-		HexState.SwapPlayerTurn();
-		
-		var activeMove = historyStack.Pop();
-		var pieceVal = activeMove.piece;
-		var UndoNewFrom = activeMove.from;
-		var UndoNewTo = activeMove.to;
-		
-		var pieceType = MaskPieceTypeFrom(pieceVal);
-		var selfColor = (int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK);
-		int index = 0;
+		HistEntry activeMove = historyStack.Pop();
+		HexState.LastTurn();
+
+		//UndoVars & APs
+		HexState.UndoType = MaskPieceTypeFrom(activeMove.Piece);
+		var pieceList = activePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][HexState.UndoType];
+		for(int i=0; i < pieceList.Count; i+=1 )
+		{
+			if(pieceList[i] != activeMove.To)
+				continue;
+			pieceList[i] = activeMove.From;
+			HexState.UndoIndex = i;
+			break;
+		}
 
 		// Default Undo
+		BitBoards.ClearIndexOf(QRToIndex(activeMove.To.X, activeMove.To.Y), HexState.IsWhiteTurn, HexState.UndoType); 
+		BitBoards.AddFromIntTo(HexState.UndoType, activeMove.From.X, activeMove.From.Y, HexState.IsWhiteTurn);
+		undoSubCleanFlags(activeMove.From, activeMove.To, activeMove);
 
-		
-		BitBoards.ClearIndexOf(QRToIndex(UndoNewTo.X,UndoNewTo.Y), HexState.IsWhiteTurn, pieceType); 
-		BitBoards.AddFromIntTo(pieceType, UndoNewFrom.X, UndoNewFrom.Y, HexState.IsWhiteTurn);
-
-		foreach( Vector2I pieceCords in activePieces[selfColor][pieceType] )
-		{
-			if(pieceCords == UndoNewTo)
-			{
-				activePieces[selfColor][pieceType][index] = UndoNewFrom;
-				//#if (index < activePieces[selfColor][pieceType].size() ): 
-				//# After a promotion pawn does not exist to move back
-				break;
-			}
-			index += 1;
-		}
-		
-		HexState.UndoType = pieceType;
-		HexState.UndoIndex = index;
-
-		undoSubCleanFlags(UndoNewFrom, UndoNewTo, activeMove);
-		undoSubFixState();
-		
-		mGen.addInflunceFrom(UndoNewFrom);
-		
 		BitBoards.ClearCombinedStateBitboards();
 		BitBoards.GenerateCombinedStateBitboards();
+
+		// Undo Onto
+		undoSubFixState();
 		
-		if(genMoves) 
-			legalMoves = mGen.generateNextLegalMoves(activePieces);
+		mGen.addInflunceFrom(activeMove.From);
+
+		legalMoves = genMoves ? mGen.generateNextLegalMoves(activePieces) : legalMoves;
+
 		return true;
 	}
 	//START DEFAULT GAME PUBLIC CALL
@@ -837,12 +831,12 @@ public partial class HexEngineSharp : Node
 	// vectors
 	public Vector2I _getEnemyTo() { return Enemy.EnemyTo; }
 	// dictionaries
-	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> _getmoves() { return legalMoves; }
-	public Dictionary<PIECES, List<Vector2I>>[] _getAP() { return activePieces; }
+	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> GetMoves() { return legalMoves; }
+	public Dictionary<PIECES, List<Vector2I>>[] GetAPs() { return activePieces; }
 	
 
 	/// STRICT GDSCRIPT INTERACTIONS
-	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> _getActivePieces()
+	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> GDGetActivePieces()
 	{
 		var gdReturn = new Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>>();
 		foreach(var side in activePieces)
@@ -861,7 +855,7 @@ public partial class HexEngineSharp : Node
 		}
 		return gdReturn;
 	}
-	public Godot.Collections.Dictionary<Vector2I,Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>> _getMoves()
+	public Godot.Collections.Dictionary<Vector2I,Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>> GDGetMoves()
 	{
 		var gdReturn = new Godot.Collections.Dictionary<Vector2I,Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>>();
 		foreach(var key in legalMoves.Keys)
@@ -880,7 +874,7 @@ public partial class HexEngineSharp : Node
 		}
 		return gdReturn;
 	} 
-	public Godot.Collections.Array<String> _getHistTop()
+	public Godot.Collections.Array<String> GetTop5Hist()
 		{	
 			Godot.Collections.Array<String> Histtop = new Godot.Collections.Array<string>();
 			Stack<HistEntry> topStore = new Stack<HistEntry>();
@@ -901,11 +895,13 @@ public partial class HexEngineSharp : Node
 		}
 
 
-	/// Testing
-	public void _test(int type)
+	/// <summary>
+	/// Run a test on the engine
+	/// </summary>
+	/// <param name="type"> Which Test </param>
+	public void Test(int type)
 	{
-		
-		HexTester Tester = new HexTester(this);
+		HexTester Tester = new(this);
 		switch (type)
 		{
 			case 0:
@@ -915,18 +911,19 @@ public partial class HexEngineSharp : Node
 				GD.Print(Hueristic(this));
 			break;
 		}
-
-		
 	}
-	public long _intTest(int type)
+	/// <summary>
+	/// Run a test on the engine
+	/// </summary>
+	/// <param name="type"> Which Test </param>
+	public long TestReturnInt(int type)
 	{
-		HexTester Tester = new HexTester(this);
-		switch (type)
+		HexTester Tester = new(this);
+		return type switch
 		{
-			case 1:
-				return (Hueristic(this));
-		}
-		return 0;
+			1 => (Hueristic(this)),
+			_ => 0,
+		};
 	}	
 
 

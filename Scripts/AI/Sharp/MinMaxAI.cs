@@ -22,6 +22,7 @@ public partial class MinMaxAI : AIBase
 	long whiteTurnHashValue;
 	long blackTurnHashValue;
 	long counter = 0;
+	long QCounter = 0;
 	long statesEvaluated = 0;
 	long positionsFound = 0;	
 
@@ -67,7 +68,7 @@ public partial class MinMaxAI : AIBase
 	private long getPositionHash(HexEngineSharp reference, bool isWTurn )
 	{
 		long hash = isWTurn ? whiteTurnHashValue : blackTurnHashValue;
-		foreach(var side in reference._getAP())
+		foreach(var side in reference.GetAPs())
 		{
 			foreach(PIECES type in side.Keys)
 			{
@@ -90,15 +91,31 @@ public partial class MinMaxAI : AIBase
 	}
 
 
-	private static long QuiescenceSearch(HexEngineSharp hexEngine, int multiplier, long alpha, long beta)
+	private long QuiescenceSearch(HexEngineSharp hexEngine, int multiplier, long alpha, long beta)
 	{
+		QCounter += 1;
+
+		long positionHash = getPositionHash(hexEngine, multiplier < 0);
+		bool hasEntry = transpositionTable.TryGetValue(positionHash, out TableEntry entry);
+		if(hasEntry && entry.depth >= 0)
+		{
+			positionsFound += 1;
+			switch(entry.type)
+			{
+				case TableEntry.ENTRY_TYPE.EXACT: return entry.value;
+				case TableEntry.ENTRY_TYPE.LOWER: alpha = Math.Max(alpha, entry.value); break;
+				case TableEntry.ENTRY_TYPE.UPPER: beta = Math.Min(beta, entry.value); break;
+			}
+			if(alpha >= beta) return entry.value;
+		}
+		
 		long standingValue = multiplier * Hueristic(hexEngine);
 		if(standingValue >= beta) return beta;
 		if(alpha < standingValue) alpha = standingValue;
 		//GD.Print($"PreQuiescenece:{standingValue} - alpha:{alpha} - beta:{beta}");
 		int index;
 		long value = long.MinValue;
-		var legalmoves = DeepCopyLegalMoves(hexEngine._getmoves());
+		var legalmoves = DeepCopyLegalMoves(hexEngine.GetMoves());
 
 		//List<long> postQ = new();
 
@@ -163,7 +180,7 @@ public partial class MinMaxAI : AIBase
 			
 		int index = 0;
 		long value = long.MinValue;
-		var legalmoves = DeepCopyLegalMoves(hexEngine._getmoves());
+		var legalmoves = DeepCopyLegalMoves(hexEngine.GetMoves());
 		
 		//Insert Move Ordering Here
 		foreach( Vector2I piece in legalmoves.Keys )
@@ -214,11 +231,12 @@ public partial class MinMaxAI : AIBase
 		var start = Time.GetTicksUsec();
 		var isMaxPlayer = side == (int) SIDES.BLACK;
 		long BestValue = long.MinValue;
-		var legalmoves = DeepCopyLegalMoves( hexEngine._getmoves() );
+		var legalmoves = DeepCopyLegalMoves( hexEngine.GetMoves() );
 
 		hexEngine.DisableAIMoveLock();
 		CORDS = new Vector2I(-6,-6);
 		counter = 0;
+		QCounter = 0;
 		positionsFound = 0;
 		statesEvaluated = 0;
 		
@@ -255,6 +273,7 @@ public partial class MinMaxAI : AIBase
 
 		GD.Print($"Move Gen For Depth {maxDepth}+1 took {Time.GetTicksUsec() - start} microseconds");
 		GD.Print("MinMax Calls: ", counter);
+		GD.Print("Quiescence  Calls: ", QCounter);
 		GD.Print("Evals Made: ", statesEvaluated);
 		GD.Print("Positions Found: ", positionsFound);
 		GD.Print("Best Value: ", BestValue);

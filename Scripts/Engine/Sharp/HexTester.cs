@@ -36,7 +36,7 @@ public class HexTester
 		{
 			return;
 		}
-		var legalmoves = DeepCopyLegalMoves(referenceSharp._getmoves());
+		var legalmoves = DeepCopyLegalMoves(referenceSharp.GetMoves());
 		foreach( Vector2I piece in legalmoves.Keys)
 		{
 			foreach(MOVE_TYPES movetype in legalmoves[piece].Keys)

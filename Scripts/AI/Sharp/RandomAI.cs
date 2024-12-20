@@ -22,7 +22,7 @@ public partial class RandomAI : AIBase
 	public override void _makeChoice(HexEngineSharp HexEngine)
 	{
 		List<MOVE_TYPES> allowed = new List<MOVE_TYPES>();
-		List<Vector2I> keys = new List<Vector2I>(HexEngine._getmoves().Keys);
+		List<Vector2I> keys = new List<Vector2I>(HexEngine.GetMoves().Keys);
 		Dictionary<MOVE_TYPES, List<Vector2I>> moves = null;
 		bool selectedType = false;
 
@@ -30,7 +30,7 @@ public partial class RandomAI : AIBase
 		{
 			CORDS = keys[rng.Next(0, keys.Count)];
 			
-			moves = HexEngine._getmoves()[CORDS];
+			moves = HexEngine.GetMoves()[CORDS];
 			foreach(MOVE_TYPES innerKey in moves.Keys)
 				if(moves[innerKey].Count > 0)
 					allowed.Add(innerKey);

@@ -35,7 +35,10 @@ public class HexConst
 		public static readonly int[] KNIGHT_MULTIPLERS = {-1, 1, -1, 1};
 		
 
-		//
+		/// <summary>
+		/// Create an active pieces dictionary. For every piece type a list of vector2i is held for the position on each piece. 
+		/// </summary>
+		/// <returns> Active Pieces Dictionary </returns>
 		public static Dictionary<PIECES, List<Vector2I>> InitPiecesDict()
 		{
 			return new(){ 
@@ -410,22 +413,28 @@ public class HexConst
 
 
 		// Check if an active piece appears in the capture moves of any piece.
-		public static bool IsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves, out Vector2I from)
+		public static bool IsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves, out List<Vector2I> fromList)
 		{
-			from = Cords;
+			fromList = new();
+			var isunder = false;
 			foreach( Vector2I piece in enemyMoves.Keys)
 			{
-				from = piece;
 				foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.CAPTURE] )
 					if(move == Cords)
-						return true;
-					
+					{
+						fromList.Add(piece);
+						isunder = true;
+					}
+						
 				if(enemyMoves[piece].Count == 4) // is pawn moves
 					foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.PROMOTE])
 						if(move == Cords)
-							return true;
+						{
+							fromList.Add(piece);
+							isunder = true;
+						}
 			}
-			return false;
+			return isunder;
 		}
 		// Check what piece contains in their capture moves the cords piece.
 		public static Vector2I UnderAttackFrom(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
@@ -580,34 +589,34 @@ public class HexConst
 				else H -= CHECK_VAL;
 			}
 			//Simple Material and their Position
-			foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.BLACK].Keys)
-				foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.BLACK][piecetype])
+			foreach(PIECES piecetype in hexEngine.GetAPs()[(int)SIDES.BLACK].Keys)
+				foreach(Vector2I piece in hexEngine.GetAPs()[(int)SIDES.BLACK][piecetype])
 				{
 					H += PIECE_VALUES[(int)piecetype];
 					H += PIECE_BOARDS[(int)piecetype][QRToIndex(piece.X * -1,piece.Y * -1)];
 				}
-			foreach(PIECES piecetype in hexEngine._getActivePieces()[(int)SIDES.WHITE].Keys)
-				foreach(Vector2I piece in hexEngine._getActivePieces()[(int)SIDES.WHITE][piecetype])
+			foreach(PIECES piecetype in hexEngine.GetAPs()[(int)SIDES.WHITE].Keys)
+				foreach(Vector2I piece in hexEngine.GetAPs()[(int)SIDES.WHITE][piecetype])
 				{
 					H -= PIECE_VALUES[(int)piecetype];
 					H -= PIECE_BOARDS[(int)piecetype][QRToIndex(piece.X,piece.Y)];
 				}
 			//Material Bonuses & Penalties
-			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.BISHOP].Count == 3)
+			if(hexEngine.GetAPs()[(int)SIDES.BLACK][PIECES.BISHOP].Count == 3)
 				H += PIECE_VALUES[(int)PIECES.BISHOP];
-			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.BISHOP].Count == 3)
+			if(hexEngine.GetAPs()[(int)SIDES.WHITE][PIECES.BISHOP].Count == 3)
 				H -= PIECE_VALUES[(int)PIECES.BISHOP];
-			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.ROOK].Count == 2)
+			if(hexEngine.GetAPs()[(int)SIDES.BLACK][PIECES.ROOK].Count == 2)
 				H -= PIECE_VALUES[(int)PIECES.ROOK] / 3;
-			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.ROOK].Count == 2)
+			if(hexEngine.GetAPs()[(int)SIDES.WHITE][PIECES.ROOK].Count == 2)
 				H +=  PIECE_VALUES[(int)PIECES.ROOK] / 3;
-			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.KNIGHT].Count == 2)
+			if(hexEngine.GetAPs()[(int)SIDES.BLACK][PIECES.KNIGHT].Count == 2)
 				H -= PIECE_VALUES[(int)PIECES.KNIGHT] / 3;
-			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.KNIGHT].Count == 2)
+			if(hexEngine.GetAPs()[(int)SIDES.WHITE][PIECES.KNIGHT].Count == 2)
 				H +=  PIECE_VALUES[(int)PIECES.KNIGHT] / 3;
-			if(hexEngine._getActivePieces()[(int)SIDES.BLACK][PIECES.PAWN].Count == 0)
+			if(hexEngine.GetAPs()[(int)SIDES.BLACK][PIECES.PAWN].Count == 0)
 				H -= NOPAWNPEN_VAL;
-			if(hexEngine._getActivePieces()[(int)SIDES.WHITE][PIECES.PAWN].Count == 0)
+			if(hexEngine.GetAPs()[(int)SIDES.WHITE][PIECES.PAWN].Count == 0)
 				H +=  NOPAWNPEN_VAL;
 			return H;
 		}

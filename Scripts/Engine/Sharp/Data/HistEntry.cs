@@ -9,8 +9,8 @@ namespace HexChess
 {
 	class HistEntry
 	{
-		public Vector2I from {get; private set;}
-		public Vector2I to {get; private set;}
+		public Vector2I From {get; private set;}
+		public Vector2I To {get; private set;}
 
 		public bool EnPassant {get; private set;}
 		public bool Check {get; private set;}
@@ -19,17 +19,17 @@ namespace HexChess
 		public bool Capture {get; private set;}
 		public bool CaptureTopSneak {get; private set;}
 
-		public int piece {get; private set;}
-		public int pPiece {get; set;}
-		public int pIndex {get; set;}
-		public int cPiece {get; set;}
-		public int cIndex {get; set;}
+		public int Piece {get; private set;}
+		public PIECES ProPiece {get; set;}
+		public int ProIndex {get; set;}
+		public PIECES CapPiece {get; set;}
+		public int CapIndex {get; set;}
 
 		public HistEntry(int PIECE, Vector2I FROM, Vector2I TO)
 		{
-			piece = PIECE;
-			from = new Vector2I(FROM.X,FROM.Y);
-			to = new Vector2I(TO.X,TO.Y);
+			Piece = PIECE;
+			From = new Vector2I(FROM.X,FROM.Y);
+			To = new Vector2I(TO.X,TO.Y);
 			
 			Promote = false;
 			EnPassant = false;
@@ -69,9 +69,12 @@ namespace HexChess
 			CaptureTopSneak = !CaptureTopSneak;
 			return CaptureTopSneak;
 		}
+
+		/// <summary> Returns a simplified string that represents the bitboard. </summary>
+		/// <returns> A simplified string.  </returns>
 		public string SimpleString()
 		{	
-			PIECES tempPiece = (piece > 0b1000) ? (PIECES)(piece - 0b1000) : (PIECES)(piece);
+			PIECES tempPiece = (Piece > 0b1000) ? (PIECES)(Piece - 0b1000) : (PIECES)(Piece);
 
 			char dispSym = tempPiece switch {
 				PIECES.PAWN => 'p',
@@ -82,18 +85,18 @@ namespace HexChess
 				PIECES.KING => 'k',
 				_ => 'e'};
 			
-			if (piece > 0b1000) dispSym -= ' ';
-			return $"{dispSym} - {EncodeFEN(from.X,from.Y),3:t}:{EncodeFEN(to.X,to.Y),3:t}";
+			if (Piece > 0b1000) dispSym -= ' ';
+			return $"{dispSym} - {EncodeFEN(From.X,From.Y),3:t}:{EncodeFEN(To.X,To.Y),3:t}";
 		} 
 
 		public string FullString()
 		{
-			return $"P:{piece}, from:({from.X},{from.Y}), to:({to.X},{to.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{pPiece} index:{pIndex} -- cap:{Capture} top:{CaptureTopSneak} type:{cPiece} index:{cIndex}";
+			return $"P:{Piece}, from:({From.X},{From.Y}), to:({To.X},{To.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{ProPiece} index:{ProIndex} -- cap:{Capture} top:{CaptureTopSneak} type:{CapPiece} index:{CapIndex}";
 		}
 
 		public override string ToString()
 		{
-			return $"P:{piece}, from:({from.X},{from.Y}), to:({to.X},{to.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{pPiece} -- cap:{Capture} top:{CaptureTopSneak} type:{cPiece}";
+			return $"P:{Piece}, from:({From.X},{From.Y}), to:({To.X},{To.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{ProPiece} -- cap:{Capture} top:{CaptureTopSneak} type:{CapPiece}";
 		}
 	}
 }
