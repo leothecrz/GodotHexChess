@@ -1,6 +1,8 @@
 extends Control
 
-
+signal placePiece(type : GDHexConst.PIECES, isW : bool, pos : Vector2i);
+signal clearPiece(pos : Vector2i);
+signal clearBoard();
 
 @onready var tiles = $BoardPos;
 var selected : GDHexConst.PIECES = GDHexConst.PIECES.PAWN;
@@ -9,9 +11,6 @@ var selectedSideW : bool = false;
 var wKingPlaced = false;
 var bKingPlaced = false;
 
-signal placePiece(type : GDHexConst.PIECES, isW : bool, pos : Vector2i);
-signal clearPiece(pos : Vector2i);
-signal clearBoard();
 
 func resetForBuilding():
 	wKingPlaced = false;

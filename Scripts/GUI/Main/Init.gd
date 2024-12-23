@@ -765,11 +765,13 @@ func _on_settings_pressed() -> void:
 #FEN BUILDING
 func _on_fen_builder_clear_board() -> void:
 	clearChessPieceNode();
+	EngineNode.FenBuildCleanBB();
 	return;
 func _on_fen_builder_place_piece(type: GDHexConst.PIECES, isW: bool, pos: Vector2i) -> void:
 	var side : int = GDHexConst.SIDES.WHITE if isW else GDHexConst.SIDES.BLACK;
 	var newPiece : Node = preloadChessPiece(side, type, pos);
 	ChessPiecesNode.get_child(side).get_child(type-1).add_child(newPiece);
+	EngineNode.FenBuildAddToBB(type, isW, pos);
 	return;
 func _on_fen_builder_clear_piece(pos: Vector2i) -> void:
 	##Inefficient but works
@@ -781,6 +783,7 @@ func _on_fen_builder_clear_piece(pos: Vector2i) -> void:
 				print("\n",index.__getPieceSide())
 				print(index.__getPieceType())
 				print(index.__getPieceCords(),"\n")
+				EngineNode.FenBuildRemoveFromBB(index.__getPieceCords(),index.__getPieceType(), index.__getPieceSide() == GDHexConst.SIDES.WHITE);
 				type.remove_child(index);
 				index.queue_free();
 	return;
