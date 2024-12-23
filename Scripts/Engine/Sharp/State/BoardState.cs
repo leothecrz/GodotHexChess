@@ -17,19 +17,20 @@ namespace HexChess
 	public int CaptureIndex {get; set;} = -1;
 	public bool CaptureValid {get; set;} = false;
 
-    //EnPassant
-    public Vector2I EnPassantCords {get; set;}
+	//EnPassant
+	public Vector2I EnPassantCords {get; set;}
 	public Vector2I EnPassantTarget {get; set;}
 	public bool EnPassantCordsValid {get; set;} = false;
-    
-    // Check & Over
+ 
+	// Check & Over
 	public Vector2I GameInCheckFrom {get; set;}
-    public bool IsOver {get; set;} = false;
-    public bool IsCheck {get; set;} = false;
+	public bool IsOver {get; set;} = false;
+	public bool IsCheck {get; set;} = false;
+	public bool CheckByMany {get; set;} = false;
 
-    //Turns
-    public bool IsWhiteTurn {get; set;} = false;
-    public int TurnNumber {get; set;} = 0;
+	//Turns
+	public bool IsWhiteTurn {get; set;} = false;
+	public int TurnNumber {get; set;} = 0;
 
 
 	// UndoFlags and Data
@@ -83,6 +84,7 @@ namespace HexChess
 	public void ResetTurnFlags()
 	{
 		IsCheck = false;
+		CheckByMany = false;
 		CaptureValid = false;
 		EnPassantCordsValid = false;
 		return;

@@ -11,6 +11,7 @@ extends Control;
 @onready var BoardControler = $StaticGUI/Mid;
 @onready var LeftPanel = $StaticGUI/Left
 @onready var RightPanel = $StaticGUI/Right
+@onready var FenPanel = $StaticGUI/Right2
 ##
 @onready var TAndFrom = $DynamicGUI/PosGUI;
 @onready var MoveNode = $DynamicGUI/MoveGUI;
@@ -22,11 +23,7 @@ extends Control;
 @onready var MultiplayerControl = $MultiplayerControl;
 # Position State
 @onready var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
-@export var PIXEL_OFFSET : int = 35;
-@export var AXIAL_X_SCALE : float = 1.4;
-@export var AXIAL_Y_SCALE : float = 0.9395;
-@export var PIECE_SCALE : float = 0.18;
-@export var MOVE_SCALE : float = 0.015;
+
 
 # AI - THREAD
 var masterAIThread : Thread = Thread.new();
@@ -35,6 +32,7 @@ var threadActive : bool = false;
 var isRotatedWhiteDown : bool = true;
 #Game
 var gameRunning : bool = false;
+var fenBuilding : bool = false;
 var minimumUndoSizeReq : int = 1;
 var selfSide : int = 1;
 # Temp
@@ -58,10 +56,7 @@ signal pieceUnselectedUnlockOthers();
 
 # Utility
 ## Convert Axial Cordinates To Viewport Cords
-func axialToPixel(axial : Vector2i) -> Vector2:
-	var x = float(axial.x) * AXIAL_X_SCALE;
-	var y = (GDHexConst.SQRT_THREE_DIV_TWO * ( float(axial.y * 2) + float(axial.x) ) ) * AXIAL_Y_SCALE;
-	return Vector2(x, y);
+
 ## Spawn a simple pop up that will display TEXT for TIME seconds
 func spawnNotice(txt : String, time : float = 1.8) -> void:
 	var notice : SimpleNotice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
@@ -76,11 +71,16 @@ func isWhite() -> bool:
 func isItMyTurn() -> bool:
 	return EngineNode._getIsWhiteTurn() == isWhite();
 ##
-func cordinateToOrigin(cords : Vector2i) -> Vector2:
-	return VIEWPORT_CENTER_POSITION + (PIXEL_OFFSET * axialToPixel(cords * (1 if isRotatedWhiteDown else -1)));
+func isBoardBusy() -> bool:
+	return gameRunning or fenBuilding;
 ##
-func getTimeUtil() -> float:
-	return Time.get_ticks_usec()/10000000.0;
+func cordinateToOrigin(cords : Vector2i) -> Vector2:
+	return VIEWPORT_CENTER_POSITION + (GDHexConst.PIXEL_OFFSET * GDHexConst.axialToPixel(cords * (1 if isRotatedWhiteDown else -1)));
+
+func swapRightPanel() -> void:
+	RightPanel.visible = !RightPanel.visible;
+	FenPanel.__swapModes();
+	return;
 
 
 # DISPLAY PIECES
@@ -97,7 +97,7 @@ func connectPieceToSignals(newPieceScene:Node) -> void:
 ## Setup A Chess Piece Scene
 func preloadChessPiece(side:int, pieceType:int, piece:Vector2i) -> Node:
 	var newPieceScene : HexPiece = preload("res://Scenes/chess_piece.tscn").instantiate();
-	newPieceScene.__setSetupVars(side, pieceType, piece, cordinateToOrigin(piece), PIECE_SCALE);
+	newPieceScene.__setSetupVars(side, pieceType, piece, cordinateToOrigin(piece), GDHexConst.PIECE_SCALE);
 	return newPieceScene;
 ## Give piece data to a new scene. Connect scene to piece controller. Add to container.
 func prepareChessPieceNode(side:int, pieceType:int, piece:Vector2i) -> void:
@@ -221,7 +221,7 @@ func repositionToFrom(fpos : Vector2i, tpos : Vector2i) -> void:
 func spawnAMove(moves:Array, color:Color, key:GDHexConst.MOVE_TYPES, cords:Vector2i):
 	for i in range(moves.size()):
 		var newMove : HexTile = preload("res://Scenes/HexTile.tscn").instantiate();
-		newMove.__setSetupVars(cords, key, i, moves[i], cordinateToOrigin(moves[i]), MOVE_SCALE);
+		newMove.__setSetupVars(cords, key, i, moves[i], cordinateToOrigin(moves[i]), GDHexConst.MOVE_SCALE);
 		MoveNode.add_child(newMove);
 		newMove.SpriteNode.set_modulate(color);
 	return;
@@ -384,8 +384,8 @@ func _on_history_id_pressed(id: int) -> void:
 func _on_fen_id_pressed(id: int) -> void:
 	match(id):
 		0:
-			if (gameRunning):
-				spawnNotice("[center]Finish the current game to start another.[/center]")
+			if (isBoardBusy()):
+				spawnNotice("[center]Clean up board. Exit builder or game.[/center]")
 				return;
 			var fenDialog = preload("res://Scenes/GetFen.tscn").instantiate();
 			fenDialog.OKButtonPressed.connect(FenOK);
@@ -398,6 +398,21 @@ func _on_fen_id_pressed(id: int) -> void:
 			DisplayServer.clipboard_set(EngineNode._getBoardFenNow());
 			spawnNotice("[center]Fen copied to clipboard[/center]",1.0)
 			return;
+		2:
+			if(gameRunning):
+				spawnNotice("[center]Finish the current game to use board.[/center]")
+				return;
+			
+			if(fenBuilding):
+				print("Board Cleared")
+				clearChessPieceNode();
+			
+			fenBuilding = !fenBuilding;
+			LeftPanel.__checkFenBuild();
+			swapRightPanel();
+			
+			
+			
 		_: return;
 func _on_test_id_pressed(id: int) -> void:
 	match ( id ):
@@ -516,7 +531,7 @@ func setSide(isW:bool):
 @rpc("authority", "call_remote", "reliable")
 func startGameFromFen(stateString : String = "") -> void:
 	if(stateString == ""):
-		if not EngineNode._initDefault():
+		if not EngineNode.InitiateDefault():
 			spawnNotice("[center]DEFAULT START FAILED[/center]", 1.0);
 			return;
 	else:
@@ -534,30 +549,32 @@ func startGameFromFen(stateString : String = "") -> void:
 	if( EngineNode._getIsEnemyAI() and EngineNode._getEnemyIsWhite() ): allowAITurn();
 	return;
 ##
+
+func clearChessPieceNode() -> void:
+	for colorNodes in ChessPiecesNode.get_children():
+		for pieceNodes in colorNodes.get_children():
+			for piece in pieceNodes.get_children():
+				piece.queue_free();
+	return;
 @rpc("any_peer", "call_remote", "reliable")
-func resignCleanUp():
+func resignCleanUp() -> void:
 	
 	EngineNode._resign();
 	activePieces.clear();
 	currentLegalMoves.clear();
 	
-	LeftPanel.__resetCaptures();
 	BoardControler.setSignalWhite();
 	TAndFrom.__setVis(false);
 	gameRunning = false;
 	
-	for colorNodes in ChessPiecesNode.get_children():
-		for pieceNodes in colorNodes.get_children():
-			for piece in pieceNodes.get_children():
-				piece.queue_free();
+	clearChessPieceNode();
 	
-	LeftPanel.__updateHist([]);
-	if(LeftPanel.__getLabelState()):
-		LeftPanel.__swapLabelState();
+	LeftPanel.__resignCleanUp();
+		
 	return;
 ## TODO :: FIX FORCED NEW GAME
 @rpc("authority", "call_remote", "reliable")
-func forceNewGame():
+func forceNewGame() -> void:
 	resignCleanUp();
 	startGameFromFen();
 	if(multiplayerConnected):
@@ -568,7 +585,7 @@ func forceNewGame():
 	return;
 ##
 @rpc("any_peer", "call_remote", "reliable")
-func multResign():
+func multResign() -> void:
 	resignCleanUp()
 	if(multiplayer.get_remote_sender_id() == 0):
 		multResign.rpc();
@@ -745,6 +762,31 @@ func _on_settings_pressed() -> void:
 
 
 
+#FEN BUILDING
+func _on_fen_builder_clear_board() -> void:
+	clearChessPieceNode();
+	return;
+func _on_fen_builder_place_piece(type: GDHexConst.PIECES, isW: bool, pos: Vector2i) -> void:
+	var side : int = GDHexConst.SIDES.WHITE if isW else GDHexConst.SIDES.BLACK;
+	var newPiece : Node = preloadChessPiece(side, type, pos);
+	ChessPiecesNode.get_child(side).get_child(type-1).add_child(newPiece);
+	return;
+func _on_fen_builder_clear_piece(pos: Vector2i) -> void:
+	##Inefficient but works
+	for side : Node in ChessPiecesNode.get_children():
+		for type : Node in side.get_children():
+			for index : HexPiece in type.get_children():
+				if(index.__getPieceCords() != pos):
+					continue;
+				print("\n",index.__getPieceSide())
+				print(index.__getPieceType())
+				print(index.__getPieceCords(),"\n")
+				type.remove_child(index);
+				index.queue_free();
+	return;
+
+
+
 ##
 func hostShutdown(_reason : int) -> void:
 	spawnNotice("[center]Host Shutdown[/center]")
@@ -762,7 +804,7 @@ func clientShutdown(reason:int) -> void:
 ##
 @rpc("any_peer", "call_remote", "reliable")
 func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
-	print(getTimeUtil()," - ", multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
+	print(GDHexConst.getTimeUtil()," - ", multiplayer.get_unique_id(), " - Received Move: ", cords, " ", moveType, " ", moveIndex, " ", promoteTo);
 	
 	var toPos = currentLegalMoves[cords][moveType][moveIndex];
 	repositionToFrom(cords, toPos);
@@ -796,13 +838,13 @@ func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
 @rpc("any_peer", "call_remote", "reliable")
 func syncCheckMultiplayer(sendSync:bool):
 	if(sendSync):
-		print(getTimeUtil()," - ",multiplayer.get_remote_sender_id()," sent a sync request to ", multiplayer.get_unique_id());
+		print(GDHexConst.getTimeUtil()," - ",multiplayer.get_remote_sender_id()," sent a sync request to ", multiplayer.get_unique_id());
 		syncCheckMultiplayer.rpc(false);
 	else:
-		print(getTimeUtil()," - ", multiplayer.get_unique_id()," is in sync with ", multiplayer.get_remote_sender_id());
+		print(GDHexConst.getTimeUtil()," - ", multiplayer.get_unique_id()," is in sync with ", multiplayer.get_remote_sender_id());
 
 	if(isItMyTurn()):
-		print(getTimeUtil()," - ","My Turn: ", multiplayer.get_unique_id())
+		print(GDHexConst.getTimeUtil()," - ","My Turn: ", multiplayer.get_unique_id())
 		pieceUnselectedUnlockOthers.emit();
 		return;
 	pieceSelectedLockOthers.emit();

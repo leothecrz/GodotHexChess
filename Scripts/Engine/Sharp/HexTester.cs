@@ -78,7 +78,7 @@ public class HexTester
 			return 0;
 		counter = 0;
 		totalTime = 0;
-		referenceSharp._initDefault();
+		referenceSharp.InitiateDefault();
 		trymove(depth);
 		referenceSharp._resign();
 		return counter;

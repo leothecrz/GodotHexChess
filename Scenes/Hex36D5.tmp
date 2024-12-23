@@ -59,7 +59,6 @@ events = [SubResource("InputEventKey_2fedx")]
 
 [sub_resource type="TileSet" id="TileSet_go4cm"]
 tile_shape = 3
-tile_layout = 4
 tile_offset_axis = 1
 tile_size = Vector2i(65, 57)
 
@@ -71,7 +70,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("14_xjes1")
 script = ExtResource("1_pgjcn")
 
 [node name="HCE" type="Node" parent="."]
@@ -758,9 +756,8 @@ anchor_right = 1.0
 grow_horizontal = 0
 script = ExtResource("16_yijft")
 
-[node name="BoardPos" type="TileMapLayer" parent="StaticGUI/Right2"]
-position = Vector2(-568, 282)
-rotation = 1.0472
+[node name="TileMapLayer" type="TileMapLayer" parent="StaticGUI/Right2"]
+position = Vector2(-560, 324)
 tile_set = SubResource("TileSet_go4cm")
 collision_enabled = false
 navigation_enabled = false
@@ -925,54 +922,6 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "Black"
 
-[node name="Erase" type="Button" parent="StaticGUI/Right2/BG/Buttons"]
-custom_minimum_size = Vector2(50, 50)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -25.5
-offset_top = -25.0
-offset_right = 25.5
-offset_bottom = 25.0
-grow_horizontal = 2
-grow_vertical = 2
-toggle_mode = true
-button_group = ExtResource("17_e3lb4")
-text = "Erase"
-
-[node name="Get" type="Button" parent="StaticGUI/Right2/BG/Buttons"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -35.0
-offset_top = 76.0
-offset_right = 33.0
-offset_bottom = 107.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "Get Fen"
-
-[node name="Clear" type="Button" parent="StaticGUI/Right2/BG/Buttons"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -49.5
-offset_top = 26.0
-offset_right = 49.5
-offset_bottom = 57.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "Clear Board"
-
 [node name="DynamicGUI" type="Node" parent="."]
 editor_description = "GUI elements that are added and removed by code during execution of the program."
 
@@ -1055,9 +1004,6 @@ layout_mode = 1
 [connection signal="pressed" from="StaticGUI/Right/BG/Buttons/Mult" to="." method="_on_mult_pressed"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/SideSelect" to="." method="_selectSide_OnItemSelect"]
 [connection signal="item_selected" from="StaticGUI/Right/BG/Options/EnemySelect" to="." method="_on_enemy_select_item_selected"]
-[connection signal="clearBoard" from="StaticGUI/Right2" to="." method="_on_fen_builder_clear_board"]
-[connection signal="clearPiece" from="StaticGUI/Right2" to="." method="_on_fen_builder_clear_piece"]
-[connection signal="placePiece" from="StaticGUI/Right2" to="." method="_on_fen_builder_place_piece"]
 [connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/Pawn" to="StaticGUI/Right2" method="_on_pawn_pressed"]
 [connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/Knight" to="StaticGUI/Right2" method="_on_knight_pressed"]
 [connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/Bishop" to="StaticGUI/Right2" method="_on_bishop_pressed"]
@@ -1065,9 +1011,6 @@ layout_mode = 1
 [connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/Queen" to="StaticGUI/Right2" method="_on_queen_pressed"]
 [connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/King" to="StaticGUI/Right2" method="_on_king_pressed"]
 [connection signal="toggled" from="StaticGUI/Right2/BG/Buttons/SideSelect" to="StaticGUI/Right2" method="_on_side_select_toggled"]
-[connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/Erase" to="StaticGUI/Right2" method="_on_erase_pressed"]
-[connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/Get" to="StaticGUI/Right2" method="_on_get_pressed"]
-[connection signal="pressed" from="StaticGUI/Right2/BG/Buttons/Clear" to="StaticGUI/Right2" method="_on_clear_pressed"]
 [connection signal="finished" from="BGMusic" to="BGMusic" method="_on_finished"]
 [connection signal="multGUIClosed" from="MultiplayerControl" to="." method="_on_close_gui"]
 [connection signal="multiplayer_disabled" from="MultiplayerControl" to="." method="_on_multiplayer_disabled"]

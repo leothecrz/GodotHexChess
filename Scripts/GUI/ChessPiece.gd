@@ -47,7 +47,10 @@ func setHextile(newTile):
 	hexTile = newTile;
 	return;
 
-
+func __getPieceType():
+	return pieceType;
+func __getPieceSide():
+	return side;
 func __getPieceCords():
 	return pieceCords;
 # Move to cords

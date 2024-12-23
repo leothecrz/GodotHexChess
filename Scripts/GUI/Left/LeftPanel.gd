@@ -5,13 +5,29 @@ extends Control;
 @onready var HistoryNode = $BG/MoveHistory;
 @onready var CaptureNode = $BG/Captures;
 
+@onready var menu:PopupMenu = $BG/MenuBar/FEN;
+
 #Public
+
+func __resignCleanUp():
+	__resetCaptures();
+	__updateHist([]);
+	if(__getLabelState()):
+		__swapLabelState();
+	return;
+
 ##
 func __updateHist(stir:Array):
 	HistoryNode.setText(stir);
 ##
 func __swapLabelState() -> void:
 	inCheckLabel.visible = !inCheckLabel.visible;
+	return;
+
+func __checkFenBuild() -> void:
+	if menu.is_item_checkable(2):
+		menu.set_item_checked(2,not menu.is_item_checked(2));
+		return;
 	return;
 
 ##

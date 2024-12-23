@@ -81,6 +81,11 @@ public class BitboardState
 	// Bitboard Checks
 
 
+	public bool BoardEmpty()
+	{
+		return BIT_ALL.Empty();
+	}
+
 	/// <summary> Checks index of BIT_ALL if a piece is there. </summary>
 	/// <param name="index"> 0 less-than-or-equal index less-than-or-equal 127. Index To check </param>
 	/// <returns> True - if index is empty. False - if not empty. </returns>
