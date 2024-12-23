@@ -752,18 +752,20 @@ public partial class HexEngineSharp : Node
 		
 
 
+
 	public void FenBuildCleanBB()
 	{
+		HexState.IsWhiteTurn = true;
+		HexState.EnPassantCordsValid = false;
+		HexState.TurnNumber = 0;
 		BitBoards.InitiateStateBitboards();
 	}
-	public void FenBuildAddToBB(int type, bool isW, Vector2I pos)
-	{
-		BitBoards.AddFromIntTo((PIECES)type, pos.X, pos.Y, isW);
-	}
-	public void FenBuildRemoveFromBB(Vector2I pos, int type, bool isW)
-	{
-		BitBoards.ClearIndexOf(QRToIndex(pos.X,pos.Y), isW, (PIECES) type);
-	}
+	public void FenBuildAddToBB(int type, bool isW, Vector2I pos) { BitBoards.AddFromIntTo((PIECES)type, pos.X, pos.Y, isW); }
+	public void FenBuildRemoveFromBB(Vector2I pos, int type, bool isW) { BitBoards.ClearIndexOf(QRToIndex(pos.X,pos.Y), isW, (PIECES) type); }
+	public void FenBuildFinishBB() { BitBoards.GenerateCombinedStateBitboards(); }
+	public void FenBuilderSetSide(bool wstarts) { HexState.IsWhiteTurn = wstarts; }
+
+
 
 
 	/// Getter // bools

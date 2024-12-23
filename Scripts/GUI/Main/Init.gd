@@ -402,16 +402,16 @@ func _on_fen_id_pressed(id: int) -> void:
 			if(gameRunning):
 				spawnNotice("[center]Finish the current game to use board.[/center]")
 				return;
-			
 			if(fenBuilding):
 				print("Board Cleared")
 				clearChessPieceNode();
+			else:
+				EngineNode.FenBuildCleanBB();
 			
 			fenBuilding = !fenBuilding;
 			LeftPanel.__checkFenBuild();
 			swapRightPanel();
-			
-			
+			return;
 			
 		_: return;
 func _on_test_id_pressed(id: int) -> void:
@@ -431,7 +431,6 @@ func _on_test_id_pressed(id: int) -> void:
 				return;
 			spawnNotice("[center] Board H(): %d [/center]" % EngineNode.TestReturnInt(1),  2);
 			return;
-			
 		_:
 			return;
 
@@ -787,9 +786,19 @@ func _on_fen_builder_clear_piece(pos: Vector2i) -> void:
 				type.remove_child(index);
 				index.queue_free();
 	return;
+func _on_fen_builder_get_board_success(wstarts:bool) -> void:
+	EngineNode.FenBuildFinishBB();
+	EngineNode.FenBuilderSetSide(wstarts);
+	DisplayServer.clipboard_set(EngineNode._getBoardFenNow());
+	spawnNotice("[center]Fen copied to clipboard[/center]",1.0)
+	return;
+func _on_fen_builder_get_board_fail(reason:String) -> void:
+	spawnNotice("[center] Get failed : %s [/center]" % reason);
+	return;
 
 
 
+#MULTIPLAYER
 ##
 func hostShutdown(_reason : int) -> void:
 	spawnNotice("[center]Host Shutdown[/center]")
@@ -801,9 +810,6 @@ func clientShutdown(reason:int) -> void:
 	elif(reason == 1):
 		spawnNotice("[center]Disconected from server.[/center]");
 	return;
-
-#MULTIPLAYER
-##
 ##
 @rpc("any_peer", "call_remote", "reliable")
 func receiveMove(cords:Vector2i, moveType:int, moveIndex:int, promoteTo:int=0):
@@ -878,7 +884,6 @@ func _on_multiplayer_disabled() -> void:
 	isHost = false;
 	RightPanel.__multSignalOff();
 	return
-
 
 func _on_mult_gui_shutdown_server_client(reason : int) -> void:
 	if(gameRunning):

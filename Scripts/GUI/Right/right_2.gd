@@ -3,18 +3,24 @@ extends Control
 signal placePiece(type : GDHexConst.PIECES, isW : bool, pos : Vector2i);
 signal clearPiece(pos : Vector2i);
 signal clearBoard();
+signal getBoardSuccess(wstarts:bool);
+signal getBoardFail(reason:String);
 
 @onready var tiles = $BoardPos;
-var selected : GDHexConst.PIECES = GDHexConst.PIECES.PAWN;
+var selected : GDHexConst.PIECES = GDHexConst.PIECES.KING;
 var selectedSideW : bool = false;
 
 var wKingPlaced = false;
 var bKingPlaced = false;
-
+var wstarts = true;
+var pieceCount = 0;
+var tilesList : Dictionary = {};
 
 func resetForBuilding():
 	wKingPlaced = false;
 	bKingPlaced = false;
+	pieceCount = 0;
+	tilesList.clear();
 	return;
 
 func __swapModes() -> void:
@@ -30,33 +36,53 @@ func _ready() -> void:
 	visible = false;
 	return;
 
+
+
+func addPiece(tile):
+	if(selected == GDHexConst.PIECES.KING):
+		if(selectedSideW):
+			if(wKingPlaced) : return;
+			wKingPlaced = true;
+		else:
+			if(bKingPlaced) : return;
+			bKingPlaced = true;
+	if(tilesList.has(tile)):
+		print("Piece already there");
+		return;
+	tilesList[tile] = selected;
+	placePiece.emit(selected, selectedSideW, tile);
+	pieceCount +=1;
+	return;
+
+func removePiece(tile):
+	if(not tilesList.has(tile)):
+		print("No piece there");
+		return;
+	clearPiece.emit(tile);
+	pieceCount -=1;
+	tilesList.erase(tile);
+	return;
+
+func onButtonReleased(mouse_event : InputEventMouseButton):
+	var local : Vector2 = tiles.to_local(mouse_event.global_position);
+	var tile : Vector2i = tiles.local_to_map(local);
+	if(GDHexConst.getAxialDistance(Vector2.ZERO, tile) > 5):
+		return;
+	if(selected != GDHexConst.PIECES.ZERO):
+		addPiece(tile);
+		return;
+	removePiece(tile);
+	return;
+
 func _input(event: InputEvent) -> void:
 	if(not is_processing()):
 		return;
-	if not event is InputEventMouseButton:
+	if not (event is InputEventMouseButton):
 		return;
 	var mouse_event : InputEventMouseButton = event as InputEventMouseButton;
 	if(mouse_event.is_pressed()):
 		return;
-	var local = tiles.to_local(mouse_event.global_position);
-	var tile = tiles.local_to_map(local);
-	if(GDHexConst.getAxialDistance(Vector2.ZERO, tile) > 5):
-		return;
-	
-	print(tile);
-	print("In of board")
-	
-	if(selected != GDHexConst.PIECES.ZERO):
-		if(selected == GDHexConst.PIECES.KING):
-			if(selectedSideW):
-				if(wKingPlaced) : return;
-				wKingPlaced = true;
-			else:
-				if(bKingPlaced) : return;
-				bKingPlaced = true;
-		placePiece.emit(selected, selectedSideW, tile);
-	else:
-		clearPiece.emit(tile);
+	onButtonReleased(mouse_event);
 	return;
 	
 func _process(_delta: float) -> void:
@@ -91,10 +117,24 @@ func _on_side_select_toggled(toggled_on: bool) -> void:
 	return;
 
 func _on_get_pressed() -> void:
+	if(wKingPlaced and bKingPlaced):
+		getBoardSuccess.emit(wstarts);
+		return;
+	if(pieceCount == 2):
+		getBoardFail.emit("Stale mate start. Only kings left.");
+		return;
+	getBoardFail.emit("Missing Kings");
 	return;
 	
 func _on_clear_pressed() -> void:
 	clearBoard.emit();
 	wKingPlaced = false;
 	bKingPlaced = false;
+	pieceCount = 0;
+	tilesList.clear();
+	return;
+
+
+func _on_to_play_toggled(toggled_on: bool) -> void:
+	wstarts = not toggled_on;
 	return;
