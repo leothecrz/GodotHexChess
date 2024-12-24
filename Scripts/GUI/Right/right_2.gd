@@ -58,6 +58,11 @@ func removePiece(tile):
 	if(not tilesList.has(tile)):
 		print("No piece there");
 		return;
+	if(tilesList[tile] == GDHexConst.PIECES.KING):
+		if(selectedSideW):
+			wKingPlaced = false;
+		else:
+			bKingPlaced = false;
 	clearPiece.emit(tile);
 	pieceCount -=1;
 	tilesList.erase(tile);

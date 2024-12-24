@@ -144,10 +144,14 @@ public partial class MinMaxAI : AIBase
 		}
 		ESCAPELOOP:
 
-		// var outString = "";
-		// foreach(var s in postQ)
-		// 	outString += $" {s} ";
-		// GD.Print("PostQuiescenece: ", outString);
+		TableEntry.ENTRY_TYPE type;
+		if(value <= alpha)
+			type = TableEntry.ENTRY_TYPE.UPPER;
+		else if(value >= beta)
+			type = TableEntry.ENTRY_TYPE.LOWER;
+		else
+			type = TableEntry.ENTRY_TYPE.EXACT;
+		transpositionTable[positionHash] = new TableEntry(value, 0, type);
 
 		return alpha;
 	}

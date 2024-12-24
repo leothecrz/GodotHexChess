@@ -599,8 +599,15 @@ public partial class HexEngineSharp : Node
 			mGen.findLegalMovesFor(activePieces[(int)(HexState.IsWhiteTurn ?  SIDES.WHITE : SIDES.BLACK)]);
 			if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from))
 			{
-				var type = BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn);
-				mGen.fillInCheckMoves(type, from[0], enemykingCords, true);
+				if(from.Count > 1)
+				{
+					HexState.CheckByMany = true;
+					mGen.GameInCheckMoves = new();
+					foreach(Vector2I atk in from)
+						mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(atk.X,atk.Y), HexState.IsWhiteTurn), atk, enemykingCords, false);
+				}
+				else
+					mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn), from[0], enemykingCords, true);
 			}
 			HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 		}
