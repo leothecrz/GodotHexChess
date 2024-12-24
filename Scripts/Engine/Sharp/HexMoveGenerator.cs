@@ -1,7 +1,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography.X509Certificates;
 using Godot;
 
 using static HexChess.HexConst;
@@ -34,6 +37,8 @@ public class HexMoveGenerator
 	//REFS
 	private readonly BoardState BoardRef;
 	private readonly BitboardState BitState;
+
+
 
 	//Testing
 	public ulong startTime {get; private set;} = 0 ;
@@ -203,7 +208,7 @@ public class HexMoveGenerator
 		// TODO:: Not Efficient FIX LATER
 		if( BoardRef.IsCheck )
 			foreach( MOVE_TYPES moveType in moves[pawn].Keys)
-				moves[pawn][moveType] = intersectOfTwoList(GameInCheckMoves, moves[pawn][moveType]);
+				moves[pawn][moveType] = intersectOfTwoList( BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[pawn][moveType]);
 	}
 	private void findMovesForPawns(List<Vector2I> PawnArray)
 	{
@@ -253,7 +258,7 @@ public class HexMoveGenerator
 		// Not Efficient FIX LATER
 		if( BoardRef.IsCheck )
 			foreach(MOVE_TYPES moveType in moves[knight].Keys)
-				moves[knight][moveType] = intersectOfTwoList(GameInCheckMoves, moves[knight][moveType]);
+				moves[knight][moveType] = intersectOfTwoList(BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[knight][moveType]);
 
 		return;
 	}
@@ -316,7 +321,7 @@ public class HexMoveGenerator
 		/// Not Efficient TODO: FIX LATER
 		if( BoardRef.IsCheck )
 			foreach( MOVE_TYPES moveType in moves[rook].Keys)
-				moves[rook][moveType] = intersectOfTwoList(GameInCheckMoves, moves[rook][moveType]);
+				moves[rook][moveType] = intersectOfTwoList(BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[rook][moveType]);
 
 		return;
 	}
@@ -381,7 +386,7 @@ public class HexMoveGenerator
 		// Not Efficient FIX LATER
 		if( BoardRef.IsCheck )
 			foreach(MOVE_TYPES moveType in moves[bishop].Keys)
-				moves[bishop][moveType] = intersectOfTwoList(GameInCheckMoves, moves[bishop][moveType]);
+				moves[bishop][moveType] = intersectOfTwoList(BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[bishop][moveType]);
 		
 		return;
 	}
@@ -454,7 +459,8 @@ public class HexMoveGenerator
 		// Not Efficient FIX LATER
 		if( BoardRef.IsCheck )
 		{
-			moves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoList(GameInCheckMoves, moves[king][MOVE_TYPES.CAPTURE]);
+			// unsure if necessary // influenced pieces would not allow an illegal capture???
+			//moves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoList(GameInCheckMoves, moves[king][MOVE_TYPES.CAPTURE]);
 			foreach( MOVE_TYPES moveType in moves[king].Keys)
 			{
 				if(moveType == MOVE_TYPES.CAPTURE) continue;
@@ -472,6 +478,32 @@ public class HexMoveGenerator
 	}
 
 
+	private void findLegalCheckByManyMoves(Dictionary<PIECES, List<Vector2I>> pieces)
+	{
+		foreach ( PIECES pieceType in pieces.Keys )
+			{
+				List<Vector2I> singleTypePieces = pieces[pieceType];
+				
+				if(singleTypePieces.Count == 0)
+					continue;
+					
+				switch (pieceType)
+				{
+					case PIECES.PAWN: 
+						foreach ( Vector2I pawn in singleTypePieces)
+							moves[pawn] = DeepCopyMoveTemplate(PAWN_MOVE_TEMPLATE);
+						break;
+					case PIECES.KING: findMovesForKings(singleTypePieces); break;
+					default:
+						foreach ( Vector2I piece in singleTypePieces)
+							moves[piece] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+						break;  
+				}
+			}
+			stopTime = Time.GetTicksUsec();
+			updateRunningAverage();
+			return;
+	}
 
 	// Find the legal moves for a single player given an array of pieces
 	// Internal Use // Only Call If Prep was manually done.
@@ -502,10 +534,6 @@ public class HexMoveGenerator
 		
 		stopTime = Time.GetTicksUsec();
 		updateRunningAverage();
-
-		//GD.Print($"Running iteration: {count}, Time: {stopTime-startTime}");
-		//GD.Print("Running Move Gen Average ", runningAVG);
-
 		return;
 	}
 

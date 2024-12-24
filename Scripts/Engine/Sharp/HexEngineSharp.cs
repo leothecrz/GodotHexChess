@@ -277,9 +277,18 @@ public partial class HexEngineSharp : Node
 		mGen.findLegalMovesFor(mGen.setupActiveForSingle(pieceType, cords, lastCords));
 		if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from))
 		{
-			mateStatus = UNDO_FLAGS.CHECK;
-			mGen.GameInCheckMoves = new();		
-			mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn), from[0], enemykingCords, true);
+			mateStatus = UNDO_FLAGS.CHECK;	
+			if(from.Count > 1)
+			{
+				HexState.CheckByMany = true;
+				mGen.GameInCheckMoves = new();
+				foreach(Vector2I atk in from)
+					mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(atk.X,atk.Y), HexState.IsWhiteTurn), atk, enemykingCords, false);
+			}
+			else
+			{
+				mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn), from[0], enemykingCords, true);
+			}
 		}
 		mGen.addInflunceFrom(cords);
 

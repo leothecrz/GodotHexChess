@@ -139,6 +139,8 @@ public class HexConst
 		}
 		public static List<T> intersectOfTwoList<T>(List<T> ARR, List<T> ARR1)
 		{
+			if(ARR.Count == 0 || ARR1.Count == 0)
+				return new List<T>();
 			return ARR.Intersect(ARR1).ToList<T>();
 		}
 		// Find Items Unique Only To ARR. O(N^2)
@@ -469,6 +471,11 @@ public class HexConst
 			return copy;
 		}
 
+
+
+		// LOL
+
+		public static readonly List<Vector2I> EmptyVector2IList = new();
 
 
 		//Hueristic Functions

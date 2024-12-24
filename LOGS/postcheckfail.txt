@@ -1,0 +1,4 @@
+6/B2q3/8/6P2/9Q/2R1p4KB/k2p2P3/n2p2P2/1p6/p6/6 b - 30
+
+queen capture queen.
+king can capture rook protected by bishop.
