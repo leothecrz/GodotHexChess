@@ -39,7 +39,7 @@ public partial class HexEngineSharp : Node
 		activePieces = null;
 		legalMoves = null;
 		historyStack = null;
-		bypassMoveLock = false;
+		bypassMoveLock = true;
 	}
 
 	///Utility

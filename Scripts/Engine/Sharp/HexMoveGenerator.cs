@@ -23,7 +23,9 @@ public class HexMoveGenerator
 	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces {get; set;}
 	public Dictionary<Vector2I, List<Vector2I>> influencedPieces {get; set;}
 	public Dictionary<Vector2I, List<Vector2I>> blockingPieces {get; set;}
+	
 	public Dictionary<Vector2I, Vector2I>  pinningPieces {get; set;}
+	
 
 	//CHECK
 	public List<Vector2I> GameInCheckMoves {get; set;}
@@ -82,8 +84,25 @@ public class HexMoveGenerator
 		return;
 	}
 
-	private bool UNKNOWN()
+	private bool IsMyKingSafeFrom(Vector2I piece)
 	{
+		int index = QRToIndex(piece.X,piece.Y);
+		if(BitState.IsPieceWhite(index) == BoardRef.IsWhiteTurn) return true;
+		//List contains both friendly and non. must be filtered. returns zero.
+		PIECES type = BitState.GetPieceTypeFrom(index, !BoardRef.IsWhiteTurn);
+		if(type == PIECES.ROOK || type == PIECES.QUEEN)
+		{
+			if ( piece.X == myKingCords.X ) return false;
+			else if ( piece.Y == myKingCords.Y ) return false;
+			else if ( SAxialCordFrom(piece) == SAxialCordFrom(myKingCords) ) return false;
+		}
+		if(type == PIECES.BISHOP || type == PIECES.QUEEN)
+		{
+			var differenceS = SAxialCordFrom(piece) - SAxialCordFrom(myKingCords);
+			if(piece.X - myKingCords.X == piece.Y - myKingCords.Y) return false;
+			else if(piece.X - myKingCords.X == differenceS ) return false;
+			else if(piece.Y - myKingCords.Y == differenceS ) return false;
+		}
 		return true;
 	}
 
@@ -94,23 +113,8 @@ public class HexMoveGenerator
 		
 		foreach( Vector2I piece in lastInfluencedPieces[targetPos])
 		{
-			int index = QRToIndex(piece.X,piece.Y);
-			if(BitState.IsPieceWhite(index) == BoardRef.IsWhiteTurn) continue;
-			//List contains both friendly and non. must be filtered. returns zero.
-			PIECES type = BitState.GetPieceTypeFrom(index, !BoardRef.IsWhiteTurn);
-			if(type == PIECES.ROOK || type == PIECES.QUEEN)
-			{
-				if ( piece.X == myKingCords.X ) return false;
-				else if ( piece.Y == myKingCords.Y ) return false;
-				else if ( SAxialCordFrom(piece) == SAxialCordFrom(myKingCords) ) return false;
-			}
-			if(type == PIECES.BISHOP || type == PIECES.QUEEN)
-			{
-				var differenceS = SAxialCordFrom(piece) - SAxialCordFrom(myKingCords);
-				if(piece.X - myKingCords.X == piece.Y - myKingCords.Y) return false;
-				else if(piece.X - myKingCords.X == differenceS ) return false;
-				else if(piece.Y - myKingCords.Y == differenceS ) return false;
-			}
+			if(!IsMyKingSafeFrom(piece))
+				return false;
 		}
 		return true;
 	}
@@ -809,6 +813,8 @@ public class HexMoveGenerator
 
 		myKingCords = AP[selfside][PIECES.KING][KING_INDEX];
 
+
+
 		//Pinning Pieces of last turn still availble here
 
 		prepBlockingFrom(myKingCords);
@@ -816,7 +822,7 @@ public class HexMoveGenerator
 		lastInfluencedPieces = influencedPieces;
 		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};
 			
-		findLegalMovesFor(AP[selfside]);
+		findLegalMovesFor(AP[selfside]); 
 		
 		lastInfluencedPieces = null;
 		
