@@ -399,6 +399,9 @@ func _on_fen_id_pressed(id: int) -> void:
 			spawnNotice("[center]Fen copied to clipboard[/center]",1.0)
 			return;
 		2:
+			if(multiplayerConnected && not isHost):
+				spawnNotice("[center]Not available while connected.[/center]")
+				return;
 			if(gameRunning):
 				spawnNotice("[center]Finish the current game to use board.[/center]")
 				return;

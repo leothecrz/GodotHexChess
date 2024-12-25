@@ -128,6 +128,7 @@ public partial class MinMaxAI : AIBase
 				var BAB = hexEngine._duplicateBAB();
 				var BP = hexEngine._duplicateBP();
 				var InPi = hexEngine._duplicateIP();
+				var PP = hexEngine._duplicatePNP();
 				
 				hexEngine._makeMove(piece, MOVE_TYPES.CAPTURE, index, PIECES.QUEEN);
 				var newVal = -QuiescenceSearch(hexEngine, -multiplier, -beta, -alpha);
@@ -136,7 +137,7 @@ public partial class MinMaxAI : AIBase
 				alpha = Math.Max(alpha, value);
 				
 				hexEngine._undoLastMove(false);
-				hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+				hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
 				index += 1;
 				
 				if(alpha >= beta) goto ESCAPELOOP;
@@ -197,6 +198,7 @@ public partial class MinMaxAI : AIBase
 					var BAB = hexEngine._duplicateBAB();
 					var BP = hexEngine._duplicateBP();
 					var InPi = hexEngine._duplicateIP();
+					var PP = hexEngine._duplicatePNP();
 					
 					hexEngine._makeMove(piece,movetype,index,PIECES.QUEEN);
 					
@@ -204,7 +206,7 @@ public partial class MinMaxAI : AIBase
 					alpha = Math.Max(alpha, value);
 					
 					hexEngine._undoLastMove(false);
-					hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+					hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
 					index += 1;
 					
 					if(alpha >= beta) goto ESCAPELOOP;
@@ -256,6 +258,7 @@ public partial class MinMaxAI : AIBase
 						var WAB = hexEngine._duplicateWAB();
 						var BAB = hexEngine._duplicateBAB();
 						var BP = hexEngine._duplicateBP();
+						var PP = hexEngine._duplicatePNP();
 						var InPi = hexEngine._duplicateIP();
 						
 						hexEngine._makeMove(piece,movetype,index,PIECES.QUEEN);
@@ -269,7 +272,7 @@ public partial class MinMaxAI : AIBase
 						}
 
 						hexEngine._undoLastMove(false);
-						hexEngine._restoreState(WAB,BAB,BP,InPi,legalmoves);
+						hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
 					}
 				}
 			

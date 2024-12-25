@@ -1,10 +1,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Numerics;
-using System.Security.Cryptography.X509Certificates;
 using Godot;
 
 using static HexChess.HexConst;
@@ -27,6 +23,7 @@ public class HexMoveGenerator
 	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces {get; set;}
 	public Dictionary<Vector2I, List<Vector2I>> influencedPieces {get; set;}
 	public Dictionary<Vector2I, List<Vector2I>> blockingPieces {get; set;}
+	public Dictionary<Vector2I, Vector2I>  pinningPieces {get; set;}
 
 	//CHECK
 	public List<Vector2I> GameInCheckMoves {get; set;}
@@ -46,6 +43,8 @@ public class HexMoveGenerator
 	public double runningAVG {get; private set;} = 0;
 	public int count {get; private set;} = -1;
 
+
+
 	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref)
 	{
 		BoardRef = bref;
@@ -55,35 +54,21 @@ public class HexMoveGenerator
 		lastInfluencedPieces = new Dictionary<Vector2I, List<Vector2I>>(); 
 
 		blockingPieces = new Dictionary<Vector2I, List<Vector2I>> {};
+		pinningPieces = new Dictionary<Vector2I, Vector2I> {};
 
 		GameInCheckMoves = new List<Vector2I> {};
 
 		WhiteAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
 		BlackAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
 	}
+
 	//Utility
-	public void updateRunningAverage()
+	private void updateRunningAverage()
 	{
 		if(count <= 0)
 			return;
 		double time = stopTime - startTime;
 		runningAVG += ((time - runningAVG)/count);
-	}
-
-	//Static
-	public static Dictionary<int,Dictionary<int,int>> createAttackBoard(int radius)
-	{
-		var rDictionary = new Dictionary<int,Dictionary<int,int>>(2*radius);
-		for( int q=-radius; q <= radius; q +=1 )
-		{
-			int negQ = q * -1;
-			int minRow = Math.Max(-radius, (negQ-radius));
-			int maxRow = Math.Min(radius, (negQ+radius));
-			rDictionary.Add(q, new Dictionary<int, int>(maxRow-minRow));
-			for(int r = minRow; r<= maxRow; r += 1 )
-				rDictionary[q].Add(r, 0);
-		}
-		return rDictionary;
 	}
 
 
@@ -97,6 +82,10 @@ public class HexMoveGenerator
 		return;
 	}
 
+	private bool UNKNOWN()
+	{
+		return true;
+	}
 
 	// Pawn Moves
 	public bool EnPassantLegal()
@@ -107,6 +96,7 @@ public class HexMoveGenerator
 		{
 			int index = QRToIndex(piece.X,piece.Y);
 			if(BitState.IsPieceWhite(index) == BoardRef.IsWhiteTurn) continue;
+			//List contains both friendly and non. must be filtered. returns zero.
 			PIECES type = BitState.GetPieceTypeFrom(index, !BoardRef.IsWhiteTurn);
 			if(type == PIECES.ROOK || type == PIECES.QUEEN)
 			{
@@ -642,72 +632,68 @@ public class HexMoveGenerator
 	}
 
 
-	//Blocking
-	// Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
-	private void bbcheckForBlockingOnVector(PIECES piece, Dictionary<string,Vector2I> dirSet, Dictionary<Vector2I, List<Vector2I>> bp, Vector2I cords)
+	private void CheckForBlockOn(Vector2I activeVector, Vector2I cords, PIECES piece, bool isWhiteTrn)
+	{
+		List<Vector2I> LegalMoves = new(){};
+		Vector2I dirBlockingPiece = new(ILLEGAL_CORDS, 0);
+		
+		int checkingQ = cords.X + activeVector.X;
+		int checkingR = cords.Y + activeVector.Y;
+		
+		while ( Bitboard128.IsLegalHexCords(checkingQ,checkingR) )
 		{
-			var index = QRToIndex(cords.X,cords.Y);
-			var isWhiteTrn = BitState.IsPieceWhite(index);
-			
-			foreach( string direction in dirSet.Keys )
+			int index = QRToIndex(checkingQ,checkingR);
+			if( BitState.IsIndexEmpty(index) )
 			{
-				List<Vector2I> LegalMoves = new List<Vector2I> {};
-				
-				Vector2I dirBlockingPiece = new Vector2I(HEX_BOARD_RADIUS+1, HEX_BOARD_RADIUS+1);
-				Vector2I activeVector = dirSet[direction];
-				
-				int checkingQ = cords.X + activeVector.X;
-				int checkingR = cords.Y + activeVector.Y;
-				
-				while ( Bitboard128.IsLegalHexCords(checkingQ,checkingR) )
+				if(dirBlockingPiece.X != ILLEGAL_CORDS)
+					LegalMoves.Add(new Vector2I(checkingQ,checkingR)); // Track legal moves for the blocking pieces
+			}
+			else
+			{
+				if( BitState.IsPieceWhite(index) == isWhiteTrn ) // Friend Piece
 				{
-					index = QRToIndex(checkingQ,checkingR);
-					if( BitState.IsIndexEmpty(index) )
+					if(dirBlockingPiece.X != ILLEGAL_CORDS) break; // Two friendly pieces in a row. No Danger
+					else dirBlockingPiece = new Vector2I(checkingQ,checkingR); // First piece found
+				}
+				else //Unfriendly Piece Found	
+				{
+					PIECES val = BitState.GetPieceTypeFrom(index, !isWhiteTrn);
+					if ( (val == piece) || (val == PIECES.QUEEN) )
 					{
-						if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
-							LegalMoves.Add(new Vector2I(checkingQ,checkingR)); // Track legal moves for the blocking pieces
-					}
-					else
-					{
-						if( BitState.IsPieceWhite(index) == isWhiteTrn ) // Friend Piece
+						if(dirBlockingPiece.X != ILLEGAL_CORDS)
 						{
-							if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1) break; // Two friendly pieces in a row. No Danger
-							else dirBlockingPiece = new Vector2I(checkingQ,checkingR); // First piece found
-						}
-						else //Unfriendly Piece Found	
-						{
-							PIECES val = BitState.GetPieceTypeFrom(index, !isWhiteTrn);
-							if ( (val == PIECES.QUEEN) || (val == piece) )
-							{
-								if(dirBlockingPiece.X != HEX_BOARD_RADIUS+1 && dirBlockingPiece.Y != HEX_BOARD_RADIUS+1)
-								{
-									LegalMoves.Add(new Vector2I(checkingQ,checkingR));
-									bp[dirBlockingPiece] = LegalMoves; // store blocking piece moves
-								}
-							}
-							break;
+							LegalMoves.Add(new Vector2I(checkingQ,checkingR));
+							blockingPieces[dirBlockingPiece] = LegalMoves; // store blocking piece moves
+							pinningPieces[new Vector2I(checkingQ, checkingR)] = dirBlockingPiece;
 						}
 					}
-
-					checkingQ += activeVector.X;
-					checkingR += activeVector.Y;
+					break;
 				}
 			}
-			return;
+
+			checkingQ += activeVector.X;
+			checkingR += activeVector.Y;
 		}
-	// Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
-	private Dictionary<Vector2I, List<Vector2I>> bbcheckForBlockingPiecesFrom(Vector2I cords)
-	{
-		var blockingpieces = new Dictionary<Vector2I, List<Vector2I>>{};
-		bbcheckForBlockingOnVector(PIECES.ROOK, ROOK_VECTORS, blockingpieces, cords);
-		bbcheckForBlockingOnVector(PIECES.BISHOP, BISHOP_VECTORS, blockingpieces, cords);
-		return blockingpieces;
-	}
-	public void prepBlockingFrom(Vector2I cords)
-	{
-		blockingPieces = bbcheckForBlockingPiecesFrom(cords);
 	}
 
+	//Blocking
+	// Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
+	private void CheckBlockOnVectorList(Vector2I cords, PIECES piece, Dictionary<string,Vector2I> dirSet)
+	{
+		bool isW = BitState.IsPieceWhite(QRToIndex(cords.X,cords.Y));	
+		foreach( Vector2I direction in dirSet.Values )
+			CheckForBlockOn(direction, cords, piece, isW);
+		return;
+	}
+	
+	//
+	public void prepBlockingFrom(Vector2I cords)
+	{
+		blockingPieces = new Dictionary<Vector2I, List<Vector2I>>{};
+		pinningPieces = new Dictionary<Vector2I, Vector2I>{};
+		CheckBlockOnVectorList(cords, PIECES.ROOK, ROOK_VECTORS);
+		CheckBlockOnVectorList(cords, PIECES.BISHOP, BISHOP_VECTORS);
+	}
 
 	//
 	private void fillRookCheckMoves(Vector2I kingCords, Vector2I moveToCords)
@@ -772,9 +758,9 @@ public class HexMoveGenerator
 	// SUB Routine
 	public void fillInCheckMoves(PIECES pieceType, Vector2I cords, Vector2I kingCords, bool clear)
 	{
-		BoardRef.GameInCheckFrom = new Vector2I(cords.X, cords.Y);
+		BoardRef.GameInCheckFrom = new Vector2I(cords.X, cords.Y); //make external
 		if (clear) GameInCheckMoves = new List<Vector2I> {};
-		BoardRef.IsCheck = true;
+		BoardRef.IsCheck = true; // maker external
 		
 		switch( pieceType )
 		{
@@ -819,8 +805,13 @@ public class HexMoveGenerator
 			ZeroBoard(BlackAttackBoard);
 		}
 
+
+
 		myKingCords = AP[selfside][PIECES.KING][KING_INDEX];
-		blockingPieces = bbcheckForBlockingPiecesFrom(myKingCords);
+
+		//Pinning Pieces of last turn still availble here
+
+		prepBlockingFrom(myKingCords);
 		
 		lastInfluencedPieces = influencedPieces;
 		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};

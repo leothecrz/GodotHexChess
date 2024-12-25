@@ -53,6 +53,7 @@ public class HexTester
 					var WAB = referenceSharp._duplicateWAB();
 					var BAB = referenceSharp._duplicateBAB();
 					var BP = referenceSharp._duplicateBP();
+					var PP = referenceSharp._duplicatePNP();
 					var InPi = referenceSharp._duplicateIP();
 
 					var stamp = Time.GetTicksUsec();
@@ -61,7 +62,7 @@ public class HexTester
 
 					trymove(depth-1);
 					referenceSharp._undoLastMove(false);
-					referenceSharp._restoreState(WAB,BAB,BP,InPi,legalmoves);
+					referenceSharp._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
 					
 				}
 			}

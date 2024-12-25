@@ -20,7 +20,7 @@ public partial class HexEngineSharp : Node
 	private HexMoveGenerator mGen;
 
 	/// Internal
-	private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves; // MOVES
+	private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves; // MOVES // Might not be necessary
 	private Dictionary<PIECES, List<Vector2I>>[] activePieces; // PIECES
 	private Stack<HistEntry> historyStack; // HISTORY
 	private bool bypassMoveLock; //MOVE AUTH
@@ -497,6 +497,7 @@ public partial class HexEngineSharp : Node
 
 		if(history.Check)
 		{
+			// TODO :: NEEDS TO SWITCH TO FROMLIST
 			var kingCords = activePieces[(int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
 			var attacker = searchForMyAttackers(kingCords, HexState.IsWhiteTurn);
 			mGen.GameInCheckMoves = new List<Vector2I> {};
@@ -526,13 +527,15 @@ public partial class HexEngineSharp : Node
 		Dictionary<int, Dictionary<int,int>> WABoard,
 		Dictionary<int, Dictionary<int,int>> BABoard,
 		Dictionary<Vector2I, List<Vector2I>> BPieces,
-		Dictionary<Vector2I, List<Vector2I>> IPieces, 
+		Dictionary<Vector2I, List<Vector2I>> IPieces,
+		Dictionary<Vector2I, Vector2I>       PPieces, 
 		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves
 	)
 	{
 		mGen.WhiteAttackBoard = DeepCopyBoard(WABoard);
 		mGen.BlackAttackBoard = DeepCopyBoard(BABoard);
 		mGen.blockingPieces = DeepCopyPieces(BPieces);
+		mGen.pinningPieces = DeepCopyPinning(PPieces);
 		mGen.influencedPieces = DeepCopyPieces(IPieces);
 		legalMoves = DeepCopyLegalMoves(moves);
 		mGen.moves = legalMoves; 
@@ -542,7 +545,7 @@ public partial class HexEngineSharp : Node
 	public Dictionary<int, Dictionary<int,int>> _duplicateBAB() { return DeepCopyBoard(mGen.BlackAttackBoard); }	
 	public Dictionary<Vector2I, List<Vector2I>> _duplicateBP() { return DeepCopyPieces(mGen.blockingPieces); }
 	public Dictionary<Vector2I, List<Vector2I>>  _duplicateIP() { return DeepCopyPieces(mGen.influencedPieces); }
-
+	public Dictionary<Vector2I, Vector2I>  _duplicatePNP() { return DeepCopyPinning(mGen.pinningPieces); }
 
 	///Init
 	private void initiateEngineAI()

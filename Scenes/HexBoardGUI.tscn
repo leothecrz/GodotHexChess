@@ -955,6 +955,7 @@ button_group = ExtResource("17_e3lb4")
 text = "Erase"
 
 [node name="ToPlay" type="CheckButton" parent="StaticGUI/Right2/BG/Buttons"]
+layout_mode = 0
 offset_left = 92.0
 offset_top = 345.0
 offset_right = 136.0

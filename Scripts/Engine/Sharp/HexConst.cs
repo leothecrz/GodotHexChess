@@ -18,6 +18,7 @@ public class HexConst
 		//	Const
 		public const int KING_INDEX = 0;
 		public const int HEX_BOARD_RADIUS = 5;
+		public const int ILLEGAL_CORDS = 6;
 		public const int DECODE_FEN_OFFSET = 70;
 		public const int TYPE_MASK = 0b0111;
 		public const int SIDE_MASK = 0b1000;
@@ -30,9 +31,9 @@ public class HexConst
 		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> DEFAULT_MOVE_TEMPLATE = new Dictionary<MOVE_TYPES, List<Vector2I>> { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I>{}},  };
 		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> PAWN_MOVE_TEMPLATE = new Dictionary<MOVE_TYPES, List<Vector2I>> { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I> {}}, {MOVE_TYPES.ENPASSANT, new List<Vector2I> {}}, {MOVE_TYPES.PROMOTE, new List<Vector2I> {}} };
 		// Positions
-		public static readonly int[] PAWN_START 	= {-4, -3, -2, -1, 0, 1, 2, 3, 4};
-		public static readonly int[] PAWN_PROMOTE 	= {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
-		public static readonly int[] KNIGHT_MULTIPLERS = {-1, 1, -1, 1};
+		public static readonly int[] PAWN_START 		= {-4, -3, -2, -1, 0, 1, 2, 3, 4};
+		public static readonly int[] PAWN_PROMOTE 		= {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
+		public static readonly int[] KNIGHT_MULTIPLERS 	= {-1, 1, -1, 1};
 		
 
 		/// <summary>
@@ -50,7 +51,28 @@ public class HexConst
 				{PIECES.KING, new()} 
 			};
 		}
+
+		public static Dictionary<int,Dictionary<int,int>> createAttackBoard(int radius)
+	{
+		var rDictionary = new Dictionary<int,Dictionary<int,int>>(2*radius);
+		for( int q=-radius; q <= radius; q +=1 )
+		{
+			int negQ = q * -1;
+			int minRow = Math.Max(-radius, (negQ-radius));
+			int maxRow = Math.Min(radius, (negQ+radius));
+			rDictionary.Add(q, new Dictionary<int, int>(maxRow-minRow));
+			for(int r = minRow; r<= maxRow; r += 1 )
+				rDictionary[q].Add(r, 0);
+		}
+		return rDictionary;
+	}
 		
+
+
+		/// <summary> Given (q,r) find the mapped index for a r=5 hex board. (-5,5) = 0. (-5,0) = 5. (5,0) = 85 (5,-5) = 90. 91 Total positions. </summary>
+		/// <param name="q">The Cross Axis</param>
+		/// <param name="r">The Vertical Axis</param>
+		/// <returns>index of given (q,r)</returns>
 		public static int QRToIndex (int q, int r)
 		{
 			int normalq = q + 5;
@@ -198,15 +220,12 @@ public class HexConst
 				Console.WriteLine();
 			}
 		}
-		// Get int representation of piece.
-		public static int ToPieceInt(PIECES piece, bool isBlack)
-		{
-			int id = (int) piece;
-			if(!isBlack)
-				id += 8;
-			return id;
-		}
-		// Strip the color bit information and find what piece is in use.
+		
+		/// <summary>
+		/// Strip the color bit and get what piece it is.
+		/// </summary>
+		/// <param name="id"> int represenation of piece </param>
+		/// <returns>(PIECES) of given piece</returns>
 		public static PIECES MaskPieceTypeFrom(int id)
 		{
 			int res = id & TYPE_MASK;
@@ -216,6 +235,11 @@ public class HexConst
 		{
 			return ('0' <= activeChar) && (activeChar <= '9');
 		}
+		
+
+		// Copy Data
+
+
 		public static Dictionary<MOVE_TYPES, List<Vector2I>> DeepCopyMoveTemplate(Dictionary<MOVE_TYPES, List<Vector2I>> original)
 		{
 			var copy = new Dictionary<MOVE_TYPES, List<Vector2I>>();
@@ -256,13 +280,22 @@ public class HexConst
 			}
 			return innerDictionaryCopy;
 		}
-		public static void PrettyPrintLegalMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves)
+		public static Dictionary<Vector2I, Vector2I> DeepCopyPinning(Dictionary<Vector2I, Vector2I> original)
+		{
+			return new Dictionary<Vector2I, Vector2I>(original);
+		}
+		
+
+		// Strings
+
+
+		public static string PrettyPrintLegalMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves)
 		{
 			// Check if the dictionary is null or empty
 			if (legalMoves == null || legalMoves.Count == 0)
 			{
 				GD.Print("null");
-				return;
+				return "No Moves";
 			}
 
 			string outstring = "";
@@ -289,7 +322,7 @@ public class HexConst
 				// Close the outer dictionary print
 				outstring += " }, ";
 			}
-			GD.Print("{ ", outstring, "}");
+			return "{ " + outstring + " }";
 		}
 		public static string FormatVector2I(Vector2I vector)
 		{
@@ -322,7 +355,7 @@ public class HexConst
 		}
 
 
-		// POS
+		// Positions
 
 
 		public static bool isBlackPawnStart(Vector2I cords)
@@ -373,10 +406,15 @@ public class HexConst
 		}
 
 
-		// String Encoding
+		//Encoding
 
 
-		// Turn a vector (q,r) into a string representation of the position.
+		/// <summary>
+		/// Turn a vector (q,r) into a string representation of the position.
+		/// </summary>
+		/// <param name="q"></param>
+		/// <param name="r"></param>
+		/// <returns></returns>
 		public static string EncodeFEN(int q, int r)
 		{
 			int rStr = 6 - r;
@@ -384,7 +422,11 @@ public class HexConst
 			char qLetter = (char)(65 + qStr);
 			return $"{qLetter}{rStr}";
 		}
-		// Turn a string represenation of board postiion to a vector2i.
+		/// <summary>
+		/// Turn a string represenation of board postiion to a vector2i of (q,r).
+		/// </summary>
+		/// <param name="s"></param>
+		/// <returns></returns>
 		public static Vector2I DecodeFEN(string s)
 		{
 			int qStr = (int)s[0] - DECODE_FEN_OFFSET;
@@ -392,7 +434,12 @@ public class HexConst
 			rStr += 6-(2*rStr);
 			return new Vector2I(qStr, rStr);
 		}
-		//
+		/// <summary>
+		/// Given a PIECES value and a side get the char representation of the piece.
+		/// </summary>
+		/// <param name="p">Type</param>
+		/// <param name="isW">Is piece on side w</param>
+		/// <returns></returns>
 		public static char PieceToChar(PIECES p, bool isW)
 		{
 			char returnChar = ' ';
@@ -410,11 +457,30 @@ public class HexConst
 			return returnChar;
 		}
 
+		/// <summary>
+		/// Given a PIECES value and a side get the Integer representation of the piece.
+		/// </summary>
+		/// <param name="piece"></param>
+		/// <param name="isBlack"></param>
+		/// <returns></returns>
+		public static int ToPieceInt(PIECES piece, bool isBlack)
+		{
+			int id = (int) piece;
+			if(!isBlack) id += SIDE_MASK;
+			return id;
+		}
 
-		// Moves Search 
+
+		// Attack Search 
 
 
-		// Check if an active piece appears in the capture moves of any piece.
+		/// <summary>
+		/// Check if an active piece appears in the capture moves of any piece.
+		/// </summary>
+		/// <param name="Cords"></param>
+		/// <param name="enemyMoves"></param>
+		/// <param name="fromList"></param>
+		/// <returns></returns>
 		public static bool IsUnderAttack(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves, out List<Vector2I> fromList)
 		{
 			fromList = new();
@@ -438,18 +504,26 @@ public class HexConst
 			}
 			return isunder;
 		}
-		// Check what piece contains in their capture moves the cords piece.
+		/// <summary>
+		/// Check what, if any, piece contains in their capture moves the cords piece.
+		/// </summary>
+		/// <param name="Cords"></param>
+		/// <param name="enemyMoves"></param>
+		/// <returns></returns>
 		public static Vector2I UnderAttackFrom(Vector2I Cords, Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> enemyMoves)
 		{
 			foreach( Vector2I piece in enemyMoves.Keys)
 				foreach( Vector2I move in enemyMoves[piece][MOVE_TYPES.CAPTURE] )
 					if(move == Cords)
 						return piece;
-			return new Vector2I(-HEX_BOARD_RADIUS, -HEX_BOARD_RADIUS);
+			return new Vector2I(ILLEGAL_CORDS, ILLEGAL_CORDS);
 		}
 
 
-		///Deep Copy
+		//Deep Copy 
+		
+		
+	
 		public static Dictionary<int, Dictionary<int, int>> DeepCopyBoard(Dictionary<int, Dictionary<int, int>> original)
 		{
 			var copy = new Dictionary<int, Dictionary<int, int>>();
@@ -473,10 +547,12 @@ public class HexConst
 
 
 
-		// LOL
+		// Memory Optimization
+
 
 		public static readonly List<Vector2I> EmptyVector2IList = new();
 
+		
 
 		//Hueristic Functions
 
@@ -574,7 +650,11 @@ public class HexConst
 					          -50,-40,-30,-30,-40,-50, },
 			};
 
-		// Measure Board State
+		/// <summary>
+		/// Measure the Board State
+		/// </summary>
+		/// <param name="hexEngine"></param>
+		/// <returns></returns>
 		public static long Hueristic(HexEngineSharp hexEngine)
 		{
 			//ENDSTATE
@@ -627,5 +707,9 @@ public class HexConst
 				H +=  NOPAWNPEN_VAL;
 			return H;
 		}
+
+
+		//
+
 }
 }

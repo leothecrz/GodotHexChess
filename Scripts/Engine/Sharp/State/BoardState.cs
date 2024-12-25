@@ -1,5 +1,4 @@
 
-using System;
 using System.Collections.Generic;
 using Godot;
 
@@ -7,22 +6,32 @@ using static HexChess.HexConst;
 
 namespace HexChess
 {
-    public class BoardState
+public class BoardState
 {
 	// Captures
+	/// <summary> Tracks captures made by side B. </summary>
 	public List<PIECES> BlackCaptures {get; set;}
+	/// <summary> Tracks captures made by side W. </summary>
 	public List<PIECES> WhiteCaptures {get; set;}
-
+	/// <summary> Last turn's capture type. </summary>
 	public PIECES CaptureType {get; set;} = PIECES.ZERO;
+	/// <summary> Last turn's capture index. Position in active pieces. </summary>
 	public int CaptureIndex {get; set;} = -1;
+	/// <summary> Signals if last turn had a capture </summary>
 	public bool CaptureValid {get; set;} = false;
 
 	//EnPassant
+	/// <summary> Last turn's EnPassant Cordinates. </summary>
 	public Vector2I EnPassantCords {get; set;}
+	/// <summary> Last turn's Enpassant's Target Cordinates. </summary>
 	public Vector2I EnPassantTarget {get; set;}
+	/// <summary> Singlas if last turn had an Enpassant move. </summary>
 	public bool EnPassantCordsValid {get; set;} = false;
  
 	// Check & Over
+	/// <summary>
+	/// 
+	/// </summary>
 	public Vector2I GameInCheckFrom {get; set;}
 	public bool IsOver {get; set;} = false;
 	public bool IsCheck {get; set;} = false;

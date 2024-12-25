@@ -122,13 +122,14 @@ func _on_side_select_toggled(toggled_on: bool) -> void:
 	return;
 
 func _on_get_pressed() -> void:
-	if(wKingPlaced and bKingPlaced):
-		getBoardSuccess.emit(wstarts);
+	if(not (wKingPlaced and bKingPlaced)):
+		getBoardFail.emit("Missing Kings");
 		return;
 	if(pieceCount == 2):
 		getBoardFail.emit("Stale mate start. Only kings left.");
 		return;
-	getBoardFail.emit("Missing Kings");
+	
+	getBoardSuccess.emit(wstarts);	
 	return;
 	
 func _on_clear_pressed() -> void:
