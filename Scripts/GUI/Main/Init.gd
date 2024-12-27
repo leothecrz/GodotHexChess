@@ -474,7 +474,7 @@ func _on_enemy_select_item_selected(index:int) -> void:
 		#difficulty = index - 3;
 	EngineNode.UpdateEnemy(type, not isWhite());
 	minimumUndoSizeReq = 1;
-	if(type == 0):
+	if(type != 0):
 		minimumUndoSizeReq += 1;
 	return;
 

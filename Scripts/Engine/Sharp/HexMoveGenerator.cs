@@ -121,12 +121,12 @@ public class HexMoveGenerator
 	public bool EnPassantLegal()
 	{
 		Vector2I targetPos = new Vector2I(BoardRef.EnPassantCords.X, BoardRef.EnPassantCords.Y + ( BoardRef.IsWhiteTurn ? 1 : -1));
-		
-		foreach( Vector2I piece in lastInfluencedPieces[targetPos])
-		{
-			if(!IsMyKingSafeFromSliding(piece))
-				return false;
-		}
+		if(lastInfluencedPieces.ContainsKey(targetPos))
+			foreach( Vector2I piece in lastInfluencedPieces[targetPos])
+			{
+				if(!IsMyKingSafeFromSliding(piece))
+					return false;
+			}
 		return true;
 	}
 	private void findCaptureMovesForPawn(Vector2I pawn, int qpos, int rpos)
@@ -566,6 +566,7 @@ public class HexMoveGenerator
 	//
 	private void prepPinning()
 	{
+		lastPinningPieces = new(){};
 		foreach(var pin in pinningPieces)
 		{
 			if(IsMyKingSafeFromSliding(pin.Value))

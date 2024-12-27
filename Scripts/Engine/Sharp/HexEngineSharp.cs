@@ -417,6 +417,7 @@ public partial class HexEngineSharp : Node
 			HexState.IsOver = true;
 			histEntry.FlipOver();
 		}
+		
 		historyStack.Push(histEntry);
 
 		return;
