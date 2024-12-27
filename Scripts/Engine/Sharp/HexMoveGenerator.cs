@@ -16,17 +16,18 @@ public class HexMoveGenerator
 	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves {get; set;}
 
 	//ATK
-	public Dictionary<int, Dictionary<int,int>> WhiteAttackBoard {get; set;}
-	public Dictionary<int, Dictionary<int,int>> BlackAttackBoard {get; set;}
+	public Dictionary<int, Dictionary<int,int>> WhiteAttackBoard {get; set;} // replace with bitboards
+	public Dictionary<int, Dictionary<int,int>> BlackAttackBoard {get; set;} // replace with bitboards
 
 	//PIECES
 	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces {get; set;}
 	public Dictionary<Vector2I, List<Vector2I>> influencedPieces {get; set;}
+	
+	//BLOCKING
 	public Dictionary<Vector2I, List<Vector2I>> blockingPieces {get; set;}
-	
-	public Dictionary<Vector2I, Vector2I>  pinningPieces {get; set;}
 
-	
+	public Dictionary<Vector2I, List<Vector2I>>  lastPinningPieces {get; set;}	
+	public Dictionary<Vector2I, Vector2I>  pinningPieces {get; set;}
 
 	//CHECK
 	public List<Vector2I> GameInCheckMoves {get; set;}
@@ -34,10 +35,10 @@ public class HexMoveGenerator
 	//KING
 	private Vector2I myKingCords;
 
+
 	//REFS
 	private readonly BoardState BoardRef;
 	private readonly BitboardState BitState;
-
 
 
 	//Testing
@@ -47,25 +48,27 @@ public class HexMoveGenerator
 	public int count {get; private set;} = -1;
 
 
-
 	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref)
 	{
 		BoardRef = bref;
 		BitState = bbref;
 		
-		influencedPieces = new Dictionary<Vector2I, List<Vector2I>>();
-		lastInfluencedPieces = new Dictionary<Vector2I, List<Vector2I>>(); 
+		blockingPieces = new Dictionary<Vector2I, List<Vector2I>>(){};
 
-		blockingPieces = new Dictionary<Vector2I, List<Vector2I>> {};
-		pinningPieces = new Dictionary<Vector2I, Vector2I> {};
+		influencedPieces 		= new Dictionary<Vector2I, List<Vector2I>>(){};
+		lastInfluencedPieces 	= new Dictionary<Vector2I, List<Vector2I>>(){}; 
 
-		GameInCheckMoves = new List<Vector2I> {};
+		lastPinningPieces 	= new Dictionary<Vector2I, List<Vector2I>>(){};
+		pinningPieces 		= new Dictionary<Vector2I, Vector2I>(){};
+
+		GameInCheckMoves = new List<Vector2I>(){};
 
 		WhiteAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
 		BlackAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
 	}
 
-	//Utility
+
+	//Testing
 	private void SetStartRunningAverage()
 	{
 		startTime = Time.GetTicksUsec();
@@ -90,6 +93,7 @@ public class HexMoveGenerator
 		return;
 	}
 
+
 	private bool IsMyKingSafeFromSliding(Vector2I piece)
 	{
 		int index = QRToIndex(piece.X,piece.Y);
@@ -111,6 +115,7 @@ public class HexMoveGenerator
 		}
 		return true;
 	}
+
 
 	// Pawn Moves
 	public bool EnPassantLegal()
@@ -149,7 +154,7 @@ public class HexMoveGenerator
 			}
 		}
 		
-		updateAttackBoard(qpos, rpos, 1,BoardRef.IsWhiteTurn);
+		updateAttackBoard(qpos, rpos, 1, BoardRef.IsWhiteTurn);
 		return;
 	}
 	private void findFowardMovesForPawn(Vector2I pawn, int fowardR)
@@ -198,14 +203,6 @@ public class HexMoveGenerator
 		//Right Capture
 		findCaptureMovesForPawn(pawn, pawn.X+1, rightCaptureR);
 
-		//Remove to external
-		// TODO:: Not Efficient FIX LATER
-		if(  blockingPieces.ContainsKey(pawn) )
-		{
-			List<Vector2I> newLegalmoves = blockingPieces[pawn];
-			foreach( MOVE_TYPES moveType in moves[pawn].Keys)
-				moves[pawn][moveType] = intersectOfTwoList(newLegalmoves, moves[pawn][moveType]);
-		}
 	}
 	private void findMovesForPawns(List<Vector2I> PawnArray)
 	{
@@ -214,11 +211,6 @@ public class HexMoveGenerator
 		return;
 	}
 	
-	private Bitboard128 pawnMaskFrom(int index)
-	{
-		
-		return null;
-	}
 	
 	// Knight Moves
 	private void findMovesforKnight(Vector2I knight)
@@ -243,14 +235,6 @@ public class HexMoveGenerator
 				}
 			}
 			invertAt2Counter += 1;
-		}
-			
-		//Not Efficient FIX LATER
-		if(  blockingPieces.ContainsKey(knight) )
-		{
-			List<Vector2I> newLegalmoves = blockingPieces[knight];
-			foreach( MOVE_TYPES moveType in moves[knight].Keys)
-				moves[knight][moveType] = intersectOfTwoList(newLegalmoves, moves[knight][moveType]);
 		}
 		
 		return;
@@ -301,14 +285,6 @@ public class HexMoveGenerator
 				checkingQ += activeVector.X;
 				checkingR += activeVector.Y;
 			}
-		}
-
-		// Not Efficient TODO: FIX LATER
-		if(  blockingPieces.ContainsKey(rook) )
-		{
-			List<Vector2I> newLegalmoves = blockingPieces[rook];
-			foreach( MOVE_TYPES moveType in moves[rook].Keys)
-				moves[rook][moveType] = intersectOfTwoList(newLegalmoves, moves[rook][moveType]);
 		}
 
 		return;
@@ -363,14 +339,6 @@ public class HexMoveGenerator
 			}
 		}
 
-		// Not Efficient FIX LATER
-		if(  blockingPieces.ContainsKey(bishop) )
-		{
-			var newLegalmoves = blockingPieces[bishop];
-			foreach( MOVE_TYPES moveType in moves[bishop].Keys)
-				moves[bishop][moveType] = intersectOfTwoList(newLegalmoves, moves[bishop][moveType]);
-		}
-
 		return;
 	}
 	private void findMovesForBishops(List<Vector2I> BishopArray)
@@ -386,7 +354,7 @@ public class HexMoveGenerator
 	// Queen Moves
 	private void findMovesForQueens(List<Vector2I> QueenArray)
 	{
-		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> tempMoves = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> {};
+		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> tempMoves = new(){};
 		
 		findMovesForRooks(QueenArray);
 		foreach(Vector2I queen in QueenArray)
@@ -449,33 +417,7 @@ public class HexMoveGenerator
 	}
 
 
-	private void findLegalCheckByManyMoves(Dictionary<PIECES, List<Vector2I>> pieces)
-	{
-		foreach ( PIECES pieceType in pieces.Keys )
-			{
-				List<Vector2I> singleTypePieces = pieces[pieceType];
-				
-				if(singleTypePieces.Count == 0)
-					continue;
-					
-				switch (pieceType)
-				{
-					case PIECES.PAWN: 
-						foreach ( Vector2I pawn in singleTypePieces)
-							moves[pawn] = DeepCopyMoveTemplate(PAWN_MOVE_TEMPLATE);
-						break;
-					case PIECES.KING: findMovesForKings(singleTypePieces); break;
-					default:
-						foreach ( Vector2I piece in singleTypePieces)
-							moves[piece] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
-						break;  
-				}
-			}
-			stopTime = Time.GetTicksUsec();
-			updateRunningAverage();
-			return;
-	}
-
+	
 	// Find the legal moves for a single player given an array of pieces
 	// Internal Use // Only Call If Prep was manually done.
 	public void findLegalMovesFor(Dictionary<PIECES, List<Vector2I>> pieces)
@@ -621,6 +563,19 @@ public class HexMoveGenerator
 	}
 
 
+	//
+	private void prepPinning()
+	{
+		foreach(var pin in pinningPieces)
+		{
+			if(IsMyKingSafeFromSliding(pin.Value))
+				continue;
+			
+			lastPinningPieces[pin.Key] = blockingPieces[pin.Value];
+			lastPinningPieces[pin.Key].Add(pin.Value);
+		}
+	}
+	//Blocking
 	private void CheckForBlockOn(Vector2I activeVector, Vector2I cords, PIECES piece, bool isWhiteTrn)
 	{
 		List<Vector2I> LegalMoves = new(){};
@@ -664,8 +619,6 @@ public class HexMoveGenerator
 			checkingR += activeVector.Y;
 		}
 	}
-
-	//Blocking
 	// Check if the current cordinates are being protected by a friendly piece from the enemy sliding pieces.
 	private void CheckBlockOnVectorList(Vector2I cords, PIECES piece, Dictionary<string,Vector2I> dirSet)
 	{
@@ -674,15 +627,15 @@ public class HexMoveGenerator
 			CheckForBlockOn(direction, cords, piece, isW);
 		return;
 	}
-	
-	//
 	public void prepBlockingFrom(Vector2I cords)
 	{
-		blockingPieces = new Dictionary<Vector2I, List<Vector2I>>{};
-		pinningPieces = new Dictionary<Vector2I, Vector2I>{};
+		prepPinning();
+		blockingPieces = new Dictionary<Vector2I, List<Vector2I>>(){};
+		pinningPieces = new Dictionary<Vector2I, Vector2I>(){};
 		CheckBlockOnVectorList(cords, PIECES.ROOK, ROOK_VECTORS);
 		CheckBlockOnVectorList(cords, PIECES.BISHOP, BISHOP_VECTORS);
 	}
+
 
 	//
 	private void fillRookCheckMoves(Vector2I kingCords, Vector2I moveToCords)
@@ -744,7 +697,6 @@ public class HexMoveGenerator
 		}
 		return;
 	}
-	// SUB Routine
 	public void fillInCheckMoves(PIECES pieceType, Vector2I cords, Vector2I kingCords, bool clear)
 	{
 		BoardRef.GameInCheckFrom = new Vector2I(cords.X, cords.Y); //make external
@@ -777,8 +729,29 @@ public class HexMoveGenerator
 
 		return;
 	}
-	
 
+
+	private void filterPins()
+	{
+		foreach(var pin in lastPinningPieces)
+		{
+			if(!moves.ContainsKey(pin.Key))
+				continue;
+			foreach(var types in moves[pin.Key].Keys)
+				moves[pin.Key][types] = intersectOfTwoList(pin.Value,moves[pin.Key][types]);
+		}
+	}
+	private void filterBlocking()
+	{
+		foreach(var piece in blockingPieces)
+		{
+			if(!moves.ContainsKey(piece.Key))
+				continue;
+			
+			foreach( MOVE_TYPES moveType in moves[piece.Key].Keys)
+				moves[piece.Key][moveType] = intersectOfTwoList(piece.Value, moves[piece.Key][moveType]);
+		}
+	}
 	private void filterForInCheck(ref Dictionary<MOVE_TYPES, List<Vector2I>> kingMoves)
 	{
 		foreach(var valuePair in moves)
@@ -809,20 +782,17 @@ public class HexMoveGenerator
 			filterForInCheck(ref kingMoves);
 			moves[myKingCords] = kingMoves;
 		}
-
 		if( blockingPieces.Count > 0)
-		{
-			
-
-
-		}
-
+			filterBlocking();
+		if( lastPinningPieces.Count > 0)
+			filterPins();
 		
+		return;
 	}
 
 
 	//GEN
-	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> generateNextLegalMoves(Dictionary<PIECES, List<Vector2I>>[] AP)
+	public void generateNextLegalMoves(Dictionary<PIECES, List<Vector2I>>[] AP)
 	{
 		int selfside = -1;
 		if(BoardRef.IsWhiteTurn)
@@ -838,18 +808,17 @@ public class HexMoveGenerator
 
 		myKingCords = AP[selfside][PIECES.KING][KING_INDEX];
 
-		//Pinning Pieces of last turn still availble here
 		prepBlockingFrom(myKingCords);
-		
+
 		lastInfluencedPieces = influencedPieces;
-		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};
-			
+		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};		
+		
 		findLegalMovesFor(AP[selfside]); 
 		filterLegalMoves();
 
 		lastInfluencedPieces = null;
 		
-		return moves;
+		return;
 	}
 	
 
