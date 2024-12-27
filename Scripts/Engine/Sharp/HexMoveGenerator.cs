@@ -25,6 +25,7 @@ public class HexMoveGenerator
 	public Dictionary<Vector2I, List<Vector2I>> blockingPieces {get; set;}
 	
 	public Dictionary<Vector2I, Vector2I>  pinningPieces {get; set;}
+
 	
 
 	//CHECK
@@ -65,8 +66,13 @@ public class HexMoveGenerator
 	}
 
 	//Utility
+	private void SetStartRunningAverage()
+	{
+		startTime = Time.GetTicksUsec();
+	}
 	private void updateRunningAverage()
 	{
+		stopTime = Time.GetTicksUsec();
 		if(count <= 0)
 			return;
 		double time = stopTime - startTime;
@@ -84,7 +90,7 @@ public class HexMoveGenerator
 		return;
 	}
 
-	private bool IsMyKingSafeFrom(Vector2I piece)
+	private bool IsMyKingSafeFromSliding(Vector2I piece)
 	{
 		int index = QRToIndex(piece.X,piece.Y);
 		if(BitState.IsPieceWhite(index) == BoardRef.IsWhiteTurn) return true;
@@ -113,7 +119,7 @@ public class HexMoveGenerator
 		
 		foreach( Vector2I piece in lastInfluencedPieces[targetPos])
 		{
-			if(!IsMyKingSafeFrom(piece))
+			if(!IsMyKingSafeFromSliding(piece))
 				return false;
 		}
 		return true;
@@ -192,6 +198,7 @@ public class HexMoveGenerator
 		//Right Capture
 		findCaptureMovesForPawn(pawn, pawn.X+1, rightCaptureR);
 
+		//Remove to external
 		// TODO:: Not Efficient FIX LATER
 		if(  blockingPieces.ContainsKey(pawn) )
 		{
@@ -199,10 +206,6 @@ public class HexMoveGenerator
 			foreach( MOVE_TYPES moveType in moves[pawn].Keys)
 				moves[pawn][moveType] = intersectOfTwoList(newLegalmoves, moves[pawn][moveType]);
 		}
-		// TODO:: Not Efficient FIX LATER
-		if( BoardRef.IsCheck )
-			foreach( MOVE_TYPES moveType in moves[pawn].Keys)
-				moves[pawn][moveType] = intersectOfTwoList( BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[pawn][moveType]);
 	}
 	private void findMovesForPawns(List<Vector2I> PawnArray)
 	{
@@ -249,11 +252,7 @@ public class HexMoveGenerator
 			foreach( MOVE_TYPES moveType in moves[knight].Keys)
 				moves[knight][moveType] = intersectOfTwoList(newLegalmoves, moves[knight][moveType]);
 		}
-		// Not Efficient FIX LATER
-		if( BoardRef.IsCheck )
-			foreach(MOVE_TYPES moveType in moves[knight].Keys)
-				moves[knight][moveType] = intersectOfTwoList(BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[knight][moveType]);
-
+		
 		return;
 	}
 	private void findMovesForKnights(List<Vector2I> KnightArray)
@@ -311,11 +310,6 @@ public class HexMoveGenerator
 			foreach( MOVE_TYPES moveType in moves[rook].Keys)
 				moves[rook][moveType] = intersectOfTwoList(newLegalmoves, moves[rook][moveType]);
 		}
-
-		/// Not Efficient TODO: FIX LATER
-		if( BoardRef.IsCheck )
-			foreach( MOVE_TYPES moveType in moves[rook].Keys)
-				moves[rook][moveType] = intersectOfTwoList(BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[rook][moveType]);
 
 		return;
 	}
@@ -377,11 +371,6 @@ public class HexMoveGenerator
 				moves[bishop][moveType] = intersectOfTwoList(newLegalmoves, moves[bishop][moveType]);
 		}
 
-		// Not Efficient FIX LATER
-		if( BoardRef.IsCheck )
-			foreach(MOVE_TYPES moveType in moves[bishop].Keys)
-				moves[bishop][moveType] = intersectOfTwoList(BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves, moves[bishop][moveType]);
-		
 		return;
 	}
 	private void findMovesForBishops(List<Vector2I> BishopArray)
@@ -450,18 +439,6 @@ public class HexMoveGenerator
 			
 		}
 
-		// Not Efficient FIX LATER
-		if( BoardRef.IsCheck )
-		{
-			// unsure if necessary // influenced pieces would not allow an illegal capture???
-			//moves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoList(GameInCheckMoves, moves[king][MOVE_TYPES.CAPTURE]);
-			foreach( MOVE_TYPES moveType in moves[king].Keys)
-			{
-				if(moveType == MOVE_TYPES.CAPTURE) continue;
-				moves[king][moveType] = differenceOfTwoList(moves[king][moveType], GameInCheckMoves);
-			}
-		}
-
 		return;
 	}
 	private void findMovesForKings(List<Vector2I> KingArray)
@@ -503,10 +480,8 @@ public class HexMoveGenerator
 	// Internal Use // Only Call If Prep was manually done.
 	public void findLegalMovesFor(Dictionary<PIECES, List<Vector2I>> pieces)
 	{
+		SetStartRunningAverage();
 		moves = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>>();
-
-		count += 1;
-		startTime = Time.GetTicksUsec();
 
 		foreach ( PIECES pieceType in pieces.Keys )
 		{
@@ -526,7 +501,6 @@ public class HexMoveGenerator
 			}
 		}
 		
-		stopTime = Time.GetTicksUsec();
 		updateRunningAverage();
 		return;
 	}
@@ -577,6 +551,12 @@ public class HexMoveGenerator
 
 
 	//Influence
+
+
+	/// <summary>
+	/// Track any pieces along any BISHOP or ROOK vector from the given cords.
+	/// </summary>
+	/// <param name="cords"></param>
 	public void addInflunceFrom(Vector2I cords)
 	{
 		foreach( Vector2I v in ROOK_VECTORS.Values)
@@ -595,7 +575,6 @@ public class HexMoveGenerator
 				checking += v;
 			}
 		}
-			
 		foreach( Vector2I v in BISHOP_VECTORS.Values)
 		{
 			var checking = new Vector2I(cords.X,cords.Y) + v;
@@ -614,7 +593,13 @@ public class HexMoveGenerator
 		}
 		return;
 	}
-	//SUB Routine
+	/// <summary>
+	/// Create an AP list for the piece that was moved. Add influenced pieces to the AP list.
+	/// </summary>
+	/// <param name="type"></param>
+	/// <param name="cords"></param>
+	/// <param name="lastCords"></param>
+	/// <returns></returns>
 	public Dictionary<PIECES, List<Vector2I>> setupActiveForSingle(PIECES type, Vector2I cords, Vector2I lastCords)
 	{
 		var internalDictionary = new Dictionary<PIECES, List<Vector2I>> {{type, new List<Vector2I>{cords}}};
@@ -794,6 +779,48 @@ public class HexMoveGenerator
 	}
 	
 
+	private void filterForInCheck(ref Dictionary<MOVE_TYPES, List<Vector2I>> kingMoves)
+	{
+		foreach(var valuePair in moves)
+		{
+			foreach(var innerValuePair in valuePair.Value)
+			{
+				var moveList = BoardRef.CheckByMany ? EmptyVector2IList : GameInCheckMoves;
+				moves[valuePair.Key][innerValuePair.Key] = intersectOfTwoList(moveList , moves[valuePair.Key][innerValuePair.Key]);
+			}
+		}
+
+		// unsure if necessary // influenced pieces would not allow an illegal capture???
+		//moves[king][MOVE_TYPES.CAPTURE] = intersectOfTwoList(GameInCheckMoves, moves[king][MOVE_TYPES.CAPTURE]);
+		foreach( MOVE_TYPES moveType in kingMoves.Keys)
+		{
+			if(moveType == MOVE_TYPES.CAPTURE) continue;
+			kingMoves[moveType] = differenceOfTwoList(kingMoves[moveType], GameInCheckMoves);
+		}
+		
+	}
+	public void filterLegalMoves()
+	{	
+		if( BoardRef.IsCheck )
+		{
+			// King moves are handled differently than all the rest.
+			Dictionary<MOVE_TYPES, List<Vector2I>> kingMoves = moves[myKingCords];
+			moves.Remove(myKingCords);
+			filterForInCheck(ref kingMoves);
+			moves[myKingCords] = kingMoves;
+		}
+
+		if( blockingPieces.Count > 0)
+		{
+			
+
+
+		}
+
+		
+	}
+
+
 	//GEN
 	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> generateNextLegalMoves(Dictionary<PIECES, List<Vector2I>>[] AP)
 	{
@@ -809,25 +836,22 @@ public class HexMoveGenerator
 			ZeroBoard(BlackAttackBoard);
 		}
 
-
-
 		myKingCords = AP[selfside][PIECES.KING][KING_INDEX];
 
-
-
 		//Pinning Pieces of last turn still availble here
-
 		prepBlockingFrom(myKingCords);
 		
 		lastInfluencedPieces = influencedPieces;
 		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};
 			
 		findLegalMovesFor(AP[selfside]); 
-		
+		filterLegalMoves();
+
 		lastInfluencedPieces = null;
 		
 		return moves;
 	}
 	
+
 }
 }

@@ -107,7 +107,7 @@ public class BitboardState
 		return !IsPieceWhite(index);
 	}
 	
-	/// <summary> Assumes Piece Exists. Check on which type bitboard the piece exist on. </summary>
+	/// <summary> Check on which type bitboard the piece exist on. </summary>
 	/// <param name="index"> Index to check </param>
 	/// <param name="fromWhite"> If true checks WHITE_BB else BLACK_BB </param>
 	/// <returns></returns>
