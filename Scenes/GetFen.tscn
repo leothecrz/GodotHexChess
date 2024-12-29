@@ -18,13 +18,13 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -175.0
-offset_top = -100.0
-offset_right = 175.0
-offset_bottom = 100.0
+offset_left = -375.0
+offset_top = -125.0
+offset_right = 375.0
+offset_bottom = 125.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.273873, 0.273873, 0.273873, 1)
+color = Color(0, 0, 0, 0.705882)
 
 [node name="OK" type="Button" parent="ColorRect"]
 layout_mode = 1
@@ -61,6 +61,8 @@ offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "6/7/8/9/10/11/10/9/8/7/6 w - 1"
+placeholder_text = "6/7/8/9/10/11/10/9/8/7/6 w - 1"
+scroll_smooth = true
 draw_spaces = true
 
 [node name="VLabel" type="Label" parent="ColorRect"]

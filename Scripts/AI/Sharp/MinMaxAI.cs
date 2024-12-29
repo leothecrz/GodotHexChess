@@ -188,17 +188,19 @@ public partial class MinMaxAI : AIBase
 		var legalmoves = DeepCopyLegalMoves(hexEngine.GetMoves());
 		
 		//Insert Move Ordering Here
+
+		var WAB = hexEngine._duplicateWAB();
+		var BAB = hexEngine._duplicateBAB();	
+		var BP = hexEngine._duplicateBP();
+		var InPi = hexEngine._duplicateIP();
+		var PP = hexEngine._duplicatePNP();
+
 		foreach( Vector2I piece in legalmoves.Keys )
 			foreach( MOVE_TYPES movetype in legalmoves[piece].Keys )
 			{
 				index = 0;
 				foreach( Vector2I move in legalmoves[piece][movetype] )
 				{
-					var WAB = hexEngine._duplicateWAB();
-					var BAB = hexEngine._duplicateBAB();
-					var BP = hexEngine._duplicateBP();
-					var InPi = hexEngine._duplicateIP();
-					var PP = hexEngine._duplicatePNP();
 					
 					hexEngine._makeMove(piece,movetype,index,PIECES.QUEEN);
 					
@@ -206,7 +208,7 @@ public partial class MinMaxAI : AIBase
 					alpha = Math.Max(alpha, value);
 					
 					hexEngine._undoLastMove(false);
-					hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
+					hexEngine._restoreState(WAB,BAB,BP,InPi,new(),legalmoves);
 					index += 1;
 					
 					if(alpha >= beta) goto ESCAPELOOP;
@@ -246,6 +248,12 @@ public partial class MinMaxAI : AIBase
 		positionsFound = 0;
 		statesEvaluated = 0;
 		
+		var WAB = hexEngine._duplicateWAB();
+		var BAB = hexEngine._duplicateBAB();
+		var BP = hexEngine._duplicateBP();
+		var PP = hexEngine._duplicatePNP();
+		var InPi = hexEngine._duplicateIP();
+
 		//Insert Iterative Deepening Here
 		for(int depth=1; depth<maxDepth+1; depth +=1)
 			foreach( Vector2I piece in legalmoves.Keys )
@@ -255,11 +263,7 @@ public partial class MinMaxAI : AIBase
 					foreach(Vector2I move in legalmoves[piece][movetype])
 					{
 
-						var WAB = hexEngine._duplicateWAB();
-						var BAB = hexEngine._duplicateBAB();
-						var BP = hexEngine._duplicateBP();
-						var PP = hexEngine._duplicatePNP();
-						var InPi = hexEngine._duplicateIP();
+						
 						
 						hexEngine._makeMove(piece,movetype,index,PIECES.QUEEN);
 						long val = NegativeMaximum(hexEngine, depth, isMaxPlayer ? 1 : -1, long.MinValue, long.MaxValue);
@@ -272,7 +276,7 @@ public partial class MinMaxAI : AIBase
 						}
 
 						hexEngine._undoLastMove(false);
-						hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
+						hexEngine._restoreState(WAB,BAB,BP,InPi,new(),legalmoves);
 					}
 				}
 			

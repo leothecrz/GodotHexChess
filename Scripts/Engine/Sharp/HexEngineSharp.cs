@@ -264,7 +264,7 @@ public partial class HexEngineSharp : Node
 
 	// Move Do
 	
-	private bool handleMoveCapture(Vector2I moveTo, PIECES pieceType)
+	private bool handleMoveCapture(Vector2I _debug_cords, Vector2I moveTo, PIECES pieceType)
 	{
 		bool revertEnPassant = false;
 		int moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
@@ -285,8 +285,9 @@ public partial class HexEngineSharp : Node
 		}
 
 
+		mGen.pinningInfluenceCheck(moveTo, _debug_cords);
+
 		BitBoards.ClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!HexState.IsWhiteTurn,HexState.CaptureType);
-		
 		
 		foreach(Vector2I pieceCords in activePieces[opColor][HexState.CaptureType])
 		{
@@ -332,7 +333,7 @@ public partial class HexEngineSharp : Node
 					histEntry.FlipCapture();
 					histEntry.CapPiece = HexState.CaptureType;
 					histEntry.CapIndex = HexState.CaptureIndex;
-					handleMoveCapture(moveTo, pieceType);
+					handleMoveCapture(cords, moveTo, pieceType);
 				}
 				int i = 0;
 				foreach( Vector2I pieceCords in activePieces[selfColor][pieceType])
@@ -362,9 +363,9 @@ public partial class HexEngineSharp : Node
 				break;
 				
 			case MOVE_TYPES.CAPTURE:
-				histEntry.FlipCapture();
-				if( handleMoveCapture(moveTo, pieceType))
+				if( handleMoveCapture(cords, moveTo, pieceType))
 					histEntry.FlipTopSneak();
+				histEntry.FlipCapture();
 				histEntry.CapIndex = HexState.CaptureIndex;
 				histEntry.CapPiece = HexState.CaptureType;
 				break;

@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 using static HexChess.HexConst;
@@ -494,7 +495,21 @@ public class HexMoveGenerator
 
 	//Influence
 
-
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="pinner"></param>
+	/// <param name="acting"></param>
+	public void pinningInfluenceCheck(Vector2I pinner, Vector2I acting)
+	{
+		if(!pinningPieces.ContainsKey(pinner))
+			return;
+		var pinned = pinningPieces[pinner];
+		if(influencedPieces.ContainsKey(acting))
+			influencedPieces[acting].Add(pinned);
+		else
+			influencedPieces[acting] = new(){pinned};
+	}
 	/// <summary>
 	/// Track any pieces along any BISHOP or ROOK vector from the given cords.
 	/// </summary>
@@ -571,9 +586,8 @@ public class HexMoveGenerator
 		{
 			if(IsMyKingSafeFromSliding(pin.Value))
 				continue;
-			
 			lastPinningPieces[pin.Key] = blockingPieces[pin.Value];
-			lastPinningPieces[pin.Key].Add(pin.Value);
+			lastPinningPieces[pin.Key].Add(pin.Value); // pinned can be index by length - 1
 		}
 	}
 	//Blocking
