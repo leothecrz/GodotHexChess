@@ -17,13 +17,13 @@ namespace HexChess
 		public bool Over {get; private set;}
 		public bool Promote {get; private set;}
 		public bool Capture {get; private set;}
-		public bool CaptureTopSneak {get; private set;}
+		public bool CaptureTopSneak {get; private set;} // pawn enpasssant capture
 
 		public int Piece {get; private set;}
 		public PIECES ProPiece {get; set;}
-		public int ProIndex {get; set;}
+		public int ProIndex {get; set;} // index of promoted piece in Active Pieces list.
 		public PIECES CapPiece {get; set;}
-		public int CapIndex {get; set;}
+		public int CapIndex {get; set;} // index of captured piece in Active Pieces list.
 
 		public HistEntry(int PIECE, Vector2I FROM, Vector2I TO)
 		{
