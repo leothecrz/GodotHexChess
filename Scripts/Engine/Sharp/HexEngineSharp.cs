@@ -1,7 +1,6 @@
 using Godot;
 
 using System;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
@@ -13,17 +12,16 @@ using static HexChess.FENConst;
 [GlobalClass]
 public partial class HexEngineSharp : Node
 {
-	/// State Holders
+	// State Holders
 	private BoardState HexState;
 	private BitboardState BitBoards;
 	private EnemyState Enemy;
 	private HexMoveGenerator mGen;
 
-	/// Internal
-	//private Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves; // MOVES // Might not be necessary
+	// Internal
 	private Dictionary<PIECES, List<Vector2I>>[] activePieces; // PIECES
 	private Stack<HistEntry> historyStack; // HISTORY
-	private bool bypassMoveLock; //MOVE AUTH
+	private bool moveLock; //MOVE AUTH
 
 
 	/// <summary>
@@ -38,16 +36,18 @@ public partial class HexEngineSharp : Node
 		mGen = new HexMoveGenerator(ref HexState,ref BitBoards);
 		activePieces = null;
 		historyStack = null;
-		bypassMoveLock = true;
+		moveLock = true;
 	}
 
-	///Utility
+
+	//Utility 
+
+
 	private void GetKings(out Vector2I myking, out Vector2I theirKing)
 	{
 		 myking = activePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
 		 theirKing = activePieces[(int)(HexState.IsWhiteTurn ?  SIDES.BLACK : SIDES.WHITE)][PIECES.KING][KING_INDEX];
 	}
-
 	private int GetPieceCount()
 	{
 		var pieceCount = 0; 
@@ -57,9 +57,19 @@ public partial class HexEngineSharp : Node
 					pieceCount+=1;
 		return pieceCount;
 	}
+	private int GetAPIndexOf(int selfColor, PIECES pieceType, Vector2I cords)
+	{
+		for(int i=0; i<activePieces[selfColor][pieceType].Count; i+=1)
+		{
+			if(cords == activePieces[selfColor][pieceType][i])
+				return i;
+		}
+		return -1;
+	}
 
 
-	/// Board Search
+	// Board
+
 
 	private List<Vector2I> searchForPawnsAtk(Vector2I pos, bool isWTurn)
 	{
@@ -153,7 +163,278 @@ public partial class HexEngineSharp : Node
 	}
 
 
-	// Fill The Board by translating a fen string. DOES NOT FULLY VERIFY FEN STRING -- (W I P)
+	
+
+	// Move Do
+	private bool handleMoveCapture(Vector2I _debug_cords, Vector2I moveTo, PIECES pieceType)
+	{
+		bool revertEnPassant = false;
+		int moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
+		PIECES type = BitBoards.GetPieceTypeFrom(moveToIndex, !HexState.IsWhiteTurn);
+		int opColor = (int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE);
+		int i = 0;
+
+		HexState.CaptureType = type;
+		HexState.CaptureValid = true;
+
+		// ENPASSANT FIX
+		if(pieceType == PIECES.PAWN && BitBoards.IsIndexEmpty(moveToIndex))
+		{
+			moveTo.Y += HexState.IsWhiteTurn ?  1 : -1;
+			moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
+			HexState.CaptureType = BitBoards.GetPieceTypeFrom(moveToIndex, !HexState.IsWhiteTurn);
+			revertEnPassant = true;
+		}
+
+		mGen.pinningInfluenceCheck(moveTo, _debug_cords);
+
+		BitBoards.ClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!HexState.IsWhiteTurn,HexState.CaptureType);
+
+		HexState.CaptureIndex = GetAPIndexOf(opColor,HexState.CaptureType, moveTo);
+
+		activePieces[opColor][HexState.CaptureType].RemoveAt(i);
+		mGen.removeCapturedFromATBoard(HexState.CaptureType, moveTo);
+
+		// ENPASSANT FIX
+		if(revertEnPassant)
+			moveTo.Y += HexState.IsWhiteTurn ? -1 : 1;
+
+		//Add To Captures
+		if(HexState.IsWhiteTurn) HexState.WhiteCaptures.Add(HexState.CaptureType);
+		else HexState.BlackCaptures.Add(HexState.CaptureType);
+		
+		return revertEnPassant;
+	}
+	private void handleMove(Vector2I cords, MOVE_TYPES moveType, int moveIndex, PIECES promoteTo)
+	{
+		HexState.ResetTurnFlags();
+		//MOVE DATA
+		int index = QRToIndex(cords.X,cords.Y);
+		PIECES pieceType = BitBoards.GetPieceTypeFrom(index, HexState.IsWhiteTurn);
+		int pieceVal = ToPieceInt(pieceType, !HexState.IsWhiteTurn);
+		int previousPieceVal = pieceVal;
+		int selfColor = (int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK );	
+		Vector2I moveTo = mGen.moves[cords][moveType][moveIndex];
+		HistEntry histEntry = new(pieceVal, cords, moveTo);
+		
+		//CLEAR LAST POSITION
+		BitBoards.ClearIndexFrom(index, HexState.IsWhiteTurn);
+		
+		//MOVE SPECIFIC ACTIONS (CAPTURE AND/OR SPAWN)
+		switch(moveType)
+		{
+			case MOVE_TYPES.ENPASSANT:
+				var newECords = mGen.moves[cords][MOVE_TYPES.ENPASSANT][0];
+				HexState.EnPassantCords = new Vector2I(newECords.X, newECords.Y + (HexState.IsWhiteTurn ? 1 : -1));
+				HexState.EnPassantTarget = moveTo;
+				HexState.EnPassantCordsValid = true;
+				histEntry.FlipEnPassant();
+				break;
+
+			case MOVE_TYPES.CAPTURE:
+				if( handleMoveCapture(cords, moveTo, pieceType)) histEntry.FlipTopSneak();
+				histEntry.FlipCapture();
+				histEntry.CapPiece = HexState.CaptureType;
+				histEntry.CapIndex = HexState.CaptureIndex;
+				break;
+
+			case MOVE_TYPES.PROMOTE:
+				if(moveTo.X != cords.X)
+				{					
+					handleMoveCapture(cords, moveTo, pieceType);
+					histEntry.FlipCapture();
+					histEntry.CapPiece = HexState.CaptureType;
+					histEntry.CapIndex = HexState.CaptureIndex;
+				}
+				int i = GetAPIndexOf(selfColor, pieceType, cords);
+				activePieces[selfColor][pieceType].RemoveAt(i);
+				activePieces[selfColor][promoteTo].Add(moveTo);
+				pieceVal = ToPieceInt(promoteTo, !HexState.IsWhiteTurn); // ??
+				pieceType = promoteTo;
+				
+				histEntry.FlipPromote();
+				histEntry.ProIndex = i;
+				histEntry.ProPiece = promoteTo;
+				break;
+
+			case MOVE_TYPES.MOVES: break;
+			default : throw new Exception("UNKNOWN MOVE_TYPE");
+		}
+
+		//UPDATE NEW POSITION
+		BitBoards.AddFromIntTo(pieceType, moveTo.X, moveTo.Y, HexState.IsWhiteTurn);
+		BitBoards.ClearCombinedStateBitboards();
+		BitBoards.GenerateCombinedStateBitboards();
+		activePieces[selfColor][pieceType][GetAPIndexOf(selfColor,pieceType,cords)] = moveTo;
+
+		//CHECK MOVED PIECE EFFECTS
+		GetKings(out Vector2I mykingCords, out Vector2I enemykingCords );
+		mGen.rmvSelfAtks(cords, MaskPieceTypeFrom(previousPieceVal));
+		mGen.prepBlockingFrom(mykingCords);
+		mGen.findLegalMovesFor(mGen.setupActiveForSingle(pieceType, moveTo, cords));
+		mGen.filterLegalMoves();
+		if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from))
+		{
+			histEntry.FlipCheck();
+			if(from.Count > 1)
+			{
+				HexState.CheckByMany = true;
+				mGen.GameInCheckMoves = new();
+				foreach(Vector2I atk in from)
+					mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(atk.X,atk.Y), HexState.IsWhiteTurn), atk, enemykingCords, false);
+			}
+			else
+			{
+				mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn), from[0], enemykingCords, true);
+			}
+		}
+
+		//NEXT TURN
+		HexState.NextTurn();
+		mGen.addInflunceFrom(moveTo); //GETS STORED IN LAST_INFLUENCED_PIECES ON PURPOSE // TRACKS IF PAWN ENPASSANT CAPTURE IS LEGAL 
+		mGen.generateNextLegalMoves(activePieces);
+		if((GetPieceCount() <= 2) || (CountMoves(mGen.moves) <= 0)) // Kings are the only remaining pieces || Check For CheckMate or StaleMate
+		{
+			HexState.IsOver = true;
+			histEntry.FlipOver();
+		}		
+		historyStack.Push(histEntry);
+		return;
+	}
+
+
+	/// Move Undo
+	private void undoCleanFlags(HistEntry hist)
+	{
+		if(hist.EnPassant) HexState.EnPassantCordsValid = false;
+		if(hist.Over) HexState.IsOver = false;
+		if(hist.Check) HexState.IsCheck = false;
+		return;
+	}
+	// Moves should be generated by caller function afterwards
+	private void undoSubFixState(){
+		if(historyStack.Count <= 0)
+			return;
+		
+		var history = historyStack.Pop();
+		historyStack.Push(history);
+
+		if(history.Check)
+		{
+			// TODO :: NEEDS TO SWITCH TO FROMLIST
+			var kingCords = activePieces[(int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
+			var attacker = searchForMyAttackers(kingCords, HexState.IsWhiteTurn);
+			mGen.GameInCheckMoves = new List<Vector2I> {};
+			HexState.IsCheck = true;
+			foreach(Vector2I atk in attacker)
+			{
+				PIECES pieceType = BitBoards.GetPieceTypeFrom(QRToIndex(atk.X, atk.Y), !HexState.IsWhiteTurn);
+				mGen.fillInCheckMoves(pieceType, atk, kingCords, false);
+			}
+		}	
+		if(history.EnPassant)
+		{
+			HexState.EnPassantCordsValid = true;
+			var from = history.From;
+			var to = history.To;
+			var side = ((from - to).Y) < 0 ? SIDES.BLACK : SIDES.WHITE;
+			HexState.EnPassantTarget = to;
+			HexState.EnPassantCords = new Vector2I(to.X, to.Y - (side == SIDES.BLACK ? 1 : -1));
+		}
+		return;
+	}
+	
+	//
+	private void handleUnMove(bool genMoves)
+	{
+		HexState.LastTurn();
+		HistEntry activeMove = historyStack.Pop();
+		
+		//UndoVars & APs
+		int selfSide = (int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK);
+		HexState.UndoType = MaskPieceTypeFrom(activeMove.Piece);
+		int i = GetAPIndexOf(selfSide, HexState.UndoType, activeMove.To);
+		activePieces[selfSide][HexState.UndoType][i] = activeMove.From;
+		HexState.UndoIndex = i;
+
+		// Default Undo // remove and place in last position
+		BitBoards.ClearIndexOf(QRToIndex(activeMove.To.X, activeMove.To.Y), HexState.IsWhiteTurn, HexState.UndoType); 
+		BitBoards.AddFromIntTo(HexState.UndoType, activeMove.From.X, activeMove.From.Y, HexState.IsWhiteTurn);
+		
+		undoCleanFlags(activeMove);
+		
+		if(activeMove.Promote) // Then Unpromote
+		{
+			BitBoards.ClearIndexOf(QRToIndex(activeMove.To.X, activeMove.To.Y), HexState.IsWhiteTurn, activeMove.ProPiece);
+			
+			int size = activePieces[selfSide][activeMove.ProPiece].Count;
+			activePieces[selfSide][activeMove.ProPiece].RemoveAt(size-1);
+			activePieces[selfSide][PIECES.PAWN].Insert( activeMove.ProIndex, new Vector2I(activeMove.From.X,activeMove.From.Y) );
+			
+			HexState.UnpromoteValid = true;
+			HexState.UnpromoteIndex = activeMove.ProIndex;
+			HexState.UnpromoteType = activeMove.ProPiece;
+		}
+		if(activeMove.Capture) // Then Uncapture
+		{
+			var opside = (int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE);
+			if(activeMove.CaptureTopSneak)
+			{
+				var temp = activeMove.To;
+				temp.Y += HexState.IsWhiteTurn ? 1 :-1;
+				activeMove.To = temp;
+			}
+			BitBoards.AddFromIntTo(activeMove.CapPiece, activeMove.To.X, activeMove.To.Y, !HexState.IsWhiteTurn);
+			activePieces[opside][activeMove.CapPiece].Insert( activeMove.CapIndex, new Vector2I(activeMove.To.X,activeMove.To.Y) );
+			
+			mGen.addInflunceFrom(activeMove.To);
+
+
+
+			HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
+			
+			Vector2I mykingCords = activePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
+			mGen.prepBlockingFrom(mykingCords);
+			mGen.findLegalMovesFor(mGen.setupActiveForSingle(activeMove.CapPiece, activeMove.To, activeMove.From));
+			mGen.filterLegalMoves();
+
+			HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
+
+
+
+			HexState.UncaptureValid = true;
+			HexState.CaptureIndex = activeMove.CapIndex;
+			HexState.CaptureType = activeMove.CapPiece;
+	
+		}
+
+		BitBoards.ClearCombinedStateBitboards();
+		BitBoards.GenerateCombinedStateBitboards();
+
+		// Undo Onto
+		undoSubFixState();
+		
+		// Calculate new path and store in blocking
+		// if(mGen.pinningPieces.ContainsKey(activeMove.To))
+		// {
+		// 	mGen.pinningPieces[activeMove.From] = mGen.pinningPieces[activeMove.To];
+		// 	mGen.blockingPieces[mGen.pinningPieces[activeMove.To]].Add(activeMove.To);
+		// }
+
+		mGen.addInflunceFrom(activeMove.From);
+
+		if (genMoves)
+		  mGen.generateNextLegalMoves(activePieces);
+	}
+
+	//Init
+
+
+	/// <summary>
+	/// Fill The Board by translating a fen string. DOES NOT FULLY VERIFY FEN STRING -- (W I P)
+	/// </summary>
+	/// <param name="fenString"></param>
+	/// <returns></returns>
 	private bool fillBoardwithFEN(string fenString)
 	{
 		//Board Status
@@ -261,276 +542,6 @@ public partial class HexEngineSharp : Node
 		return true;
 	}
 
-
-	// Move Do
-	
-	private bool handleMoveCapture(Vector2I _debug_cords, Vector2I moveTo, PIECES pieceType)
-	{
-		bool revertEnPassant = false;
-		int moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
-		PIECES type = BitBoards.GetPieceTypeFrom(moveToIndex, !HexState.IsWhiteTurn);
-		int opColor = (int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE);
-		int i = 0;
-
-		HexState.CaptureType = type;
-		HexState.CaptureValid = true;
-
-		// ENPASSANT FIX
-		if(pieceType == PIECES.PAWN && BitBoards.IsIndexEmpty(moveToIndex))
-		{
-			moveTo.Y += HexState.IsWhiteTurn ?  1 : -1;
-			moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
-			HexState.CaptureType = BitBoards.GetPieceTypeFrom(moveToIndex, !HexState.IsWhiteTurn);
-			revertEnPassant = true;
-		}
-
-
-		mGen.pinningInfluenceCheck(moveTo, _debug_cords);
-
-		BitBoards.ClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!HexState.IsWhiteTurn,HexState.CaptureType);
-		
-		foreach(Vector2I pieceCords in activePieces[opColor][HexState.CaptureType])
-		{
-			if(moveTo == pieceCords)
-			{
-				HexState.CaptureIndex = i;
-				break;
-			}
-			i += 1;
-		}
-
-		activePieces[opColor][HexState.CaptureType].RemoveAt(i);
-		mGen.removeCapturedFromATBoard(HexState.CaptureType, moveTo);
-
-		// ENPASSANT FIX
-		if(revertEnPassant)
-			moveTo.Y += HexState.IsWhiteTurn ? -1 : 1;
-
-		//Add To Captures
-		if(HexState.IsWhiteTurn) HexState.WhiteCaptures.Add(HexState.CaptureType);
-		else HexState.BlackCaptures.Add(HexState.CaptureType);
-		return revertEnPassant;
-	}
-	private void handleMove(Vector2I cords, MOVE_TYPES moveType, int moveIndex, PIECES promoteTo)
-	{
-		int index = QRToIndex(cords.X,cords.Y);
-		PIECES pieceType = BitBoards.GetPieceTypeFrom(index, HexState.IsWhiteTurn);
-		
-		int pieceVal = ToPieceInt(pieceType, !HexState.IsWhiteTurn);
-		int previousPieceVal = pieceVal;
-		int selfColor = (int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK );
-		
-		Vector2I moveTo = mGen.moves[cords][moveType][moveIndex];
-		HistEntry histEntry = new(pieceVal, cords, moveTo);
-
-		BitBoards.ClearIndexFrom(index, HexState.IsWhiteTurn);
-
-		switch(moveType)
-		{
-			case MOVE_TYPES.PROMOTE:
-				if(moveTo.X != cords.X)
-				{
-					histEntry.FlipCapture();
-					histEntry.CapPiece = HexState.CaptureType;
-					histEntry.CapIndex = HexState.CaptureIndex;
-					handleMoveCapture(cords, moveTo, pieceType);
-				}
-				int i = 0;
-				foreach( Vector2I pieceCords in activePieces[selfColor][pieceType])
-				{
-					if(cords == pieceCords)
-						break;
-					i += 1;
-				}
-				
-				activePieces[selfColor][pieceType].RemoveAt(i);
-				pieceType = MaskPieceTypeFrom((int)promoteTo);
-				pieceVal = ToPieceInt(pieceType, !HexState.IsWhiteTurn);
-				activePieces[selfColor][pieceType].Add(moveTo);
-				
-				histEntry.FlipPromote();
-				histEntry.ProPiece = pieceType;
-				histEntry.ProIndex = i;
-				break;
-				
-
-			case MOVE_TYPES.ENPASSANT:
-				var newECords = mGen.moves[cords][MOVE_TYPES.ENPASSANT][0];
-				HexState.EnPassantCords = new Vector2I(newECords.X, newECords.Y + (HexState.IsWhiteTurn ? 1 : -1));
-				HexState.EnPassantTarget = moveTo;
-				HexState.EnPassantCordsValid = true;
-				histEntry.FlipEnPassant();
-				break;
-				
-			case MOVE_TYPES.CAPTURE:
-				if( handleMoveCapture(cords, moveTo, pieceType))
-					histEntry.FlipTopSneak();
-				histEntry.FlipCapture();
-				histEntry.CapIndex = HexState.CaptureIndex;
-				histEntry.CapPiece = HexState.CaptureType;
-				break;
-
-			case MOVE_TYPES.MOVES: break;
-		}
-
-		BitBoards.AddFromIntTo(pieceType, moveTo.X, moveTo.Y, HexState.IsWhiteTurn);
-		BitBoards.ClearCombinedStateBitboards();
-		BitBoards.GenerateCombinedStateBitboards();
-
-		// Update Piece List
-		for(int i = 0; i < activePieces[selfColor][pieceType].Count; i += 1)
-			if (activePieces[selfColor][pieceType][i] == cords)
-			{
-				activePieces[selfColor][pieceType][i] = moveTo;
-				break;
-			}
-
-		GetKings(out Vector2I mykingCords, out Vector2I enemykingCords );
-
-		mGen.rmvSelfAtks(cords, MaskPieceTypeFrom(previousPieceVal));
-		mGen.prepBlockingFrom(mykingCords);
-		mGen.findLegalMovesFor(mGen.setupActiveForSingle(pieceType, moveTo, cords));
-		mGen.filterLegalMoves();
-
-		if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from))
-		{
-			histEntry.FlipCheck();
-			if(from.Count > 1)
-			{
-				HexState.CheckByMany = true;
-				mGen.GameInCheckMoves = new();
-				foreach(Vector2I atk in from)
-					mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(atk.X,atk.Y), HexState.IsWhiteTurn), atk, enemykingCords, false);
-			}
-			else
-			{
-				mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(from[0].X,from[0].Y), HexState.IsWhiteTurn), from[0], enemykingCords, true);
-			}
-		}
-
-		HexState.NextTurn();
-		mGen.addInflunceFrom(moveTo);
-		mGen.generateNextLegalMoves(activePieces);
-
-		// Kings are the only remaining pieces || Check For CheckMate or StaleMate
-		if((GetPieceCount() <= 2) || (CountMoves(mGen.moves) <= 0)) 
-		{
-			HexState.IsOver = true;
-			histEntry.FlipOver();
-		}
-		
-		historyStack.Push(histEntry);
-
-		return;
-	}
-
-
-	/// Move Undo
-	private void undoSubCleanFlags(Vector2I from, Vector2I to, HistEntry hist)
-	{
-		var selfSide = (int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK );
-		
-		if(hist.EnPassant) HexState.EnPassantCordsValid = false;
-		if(hist.Over) HexState.IsOver = false;
-		if(hist.Check) HexState.IsCheck = false;
-		
-		if(hist.Promote)
-		{
-			BitBoards.ClearIndexOf(QRToIndex(to.X, to.Y), HexState.IsWhiteTurn, hist.ProPiece);
-			
-			int size = activePieces[selfSide][hist.ProPiece].Count;
-			activePieces[selfSide][hist.ProPiece].RemoveAt(size-1);
-			activePieces[selfSide][PIECES.PAWN].Insert( hist.ProIndex, new Vector2I(from.X,from.Y) );
-			
-			HexState.UnpromoteValid = true;
-			HexState.UnpromoteIndex = hist.ProIndex;
-			HexState.UnpromoteType = hist.ProPiece;
-		}
-		if(hist.Capture)
-		{
-			if(hist.CaptureTopSneak)
-				to.Y += HexState.IsWhiteTurn ? 1 :-1;
-			BitBoards.AddFromIntTo(hist.CapPiece, to.X, to.Y, !HexState.IsWhiteTurn);
-			activePieces[(int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE)][hist.CapPiece].Insert( hist.CapIndex, new Vector2I(to.X,to.Y) );
-			
-			mGen.addInflunceFrom(to);
-
-			HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
-			
-			Vector2I mykingCords = activePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
-			mGen.prepBlockingFrom(mykingCords);
-			mGen.findLegalMovesFor(mGen.setupActiveForSingle(hist.CapPiece, to, from));
-			mGen.filterLegalMoves();
-
-			HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
-
-			HexState.UncaptureValid = true;
-			HexState.CaptureIndex = hist.CapIndex;
-			HexState.CaptureType = hist.CapPiece;
-	
-		}
-		return;
-	}
-	// Moves should be generated by caller function afterwards
-	private void undoSubFixState(){
-		if(historyStack.Count <= 0)
-			return;
-		
-		var history = historyStack.Pop();
-		historyStack.Push(history);
-
-		if(history.Check)
-		{
-			// TODO :: NEEDS TO SWITCH TO FROMLIST
-			var kingCords = activePieces[(int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
-			var attacker = searchForMyAttackers(kingCords, HexState.IsWhiteTurn);
-			mGen.GameInCheckMoves = new List<Vector2I> {};
-			HexState.IsCheck = true;
-			foreach(Vector2I atk in attacker)
-			{
-				PIECES pieceType = BitBoards.GetPieceTypeFrom(QRToIndex(atk.X, atk.Y), !HexState.IsWhiteTurn);
-				mGen.fillInCheckMoves(pieceType, atk, kingCords, false);
-			}
-		}	
-		if(history.EnPassant)
-		{
-			HexState.EnPassantCordsValid = true;
-			var from = history.From;
-			var to = history.To;
-			var side = ((from - to).Y) < 0 ? SIDES.BLACK : SIDES.WHITE;
-			HexState.EnPassantTarget = to;
-			HexState.EnPassantCords = new Vector2I(to.X, to.Y - (side == SIDES.BLACK ? 1 : -1));
-		}
-		return;
-	}
-	
-	
-
-	public void _restoreState
-	(
-		Dictionary<int, Dictionary<int,int>> WABoard,
-		Dictionary<int, Dictionary<int,int>> BABoard,
-		Dictionary<Vector2I, List<Vector2I>> BPieces,
-		Dictionary<Vector2I, List<Vector2I>> IPieces,
-		Dictionary<Vector2I, Vector2I>       PPieces, 
-		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves
-	)
-	{
-		mGen.WhiteAttackBoard = DeepCopyBoard(WABoard);
-		mGen.BlackAttackBoard = DeepCopyBoard(BABoard);
-		mGen.blockingPieces = DeepCopyPieces(BPieces);
-		mGen.pinningPieces = DeepCopyPinning(PPieces);
-		mGen.influencedPieces = DeepCopyPieces(IPieces);
-		mGen.moves = DeepCopyLegalMoves(moves);
-		return;
-	}
-	public Dictionary<int, Dictionary<int,int>> _duplicateWAB() { return DeepCopyBoard(mGen.WhiteAttackBoard); }
-	public Dictionary<int, Dictionary<int,int>> _duplicateBAB() { return DeepCopyBoard(mGen.BlackAttackBoard); }	
-	public Dictionary<Vector2I, List<Vector2I>> _duplicateBP() { return DeepCopyPieces(mGen.blockingPieces); }
-	public Dictionary<Vector2I, List<Vector2I>>  _duplicateIP() { return DeepCopyPieces(mGen.influencedPieces); }
-	public Dictionary<Vector2I, Vector2I>  _duplicatePNP() { return DeepCopyPinning(mGen.pinningPieces); }
-
-	///Init
 	private void initiateEngineAI()
 	{
 		if(! Enemy.EnemyIsAI)
@@ -550,6 +561,13 @@ public partial class HexEngineSharp : Node
 		}
 		return;
 	}
+	
+	
+
+	// API
+
+
+	
 	/// <summary>
 	/// 
 	/// </summary>
@@ -568,7 +586,7 @@ public partial class HexEngineSharp : Node
 		HexState.BlackCaptures.Clear();
 		HexState.WhiteCaptures.Clear();
 		
-		bypassMoveLock = false;
+		moveLock = false;
 
 		HexState.IsOver = false;
 		HexState.IsCheck = false;
@@ -605,7 +623,9 @@ public partial class HexEngineSharp : Node
 
 		return true;		
 	}
+
 	/// <summary>
+	/// START DEFAULT GAME PUBLIC CALL. 
 	/// Calls initiateEngine() with the DEFAULT_FEN_STRING. Starts the default game.
 	/// </summary>
 	/// <returns>True is success in initiation. False if initiation failed</returns>
@@ -613,38 +633,48 @@ public partial class HexEngineSharp : Node
 
 
 
-
-	/// API
-	
-	//## MAKE MOVE PUBLIC CALL
-	//# TODO:: HANDLE IN PROPER INPUT FEEDBACK
-	public void _makeMove(Vector2I cords, MOVE_TYPES moveType, int moveIndex, PIECES promoteTo)
+	public void _restoreState
+	(
+		Dictionary<int, Dictionary<int,int>> WABoard,
+		Dictionary<int, Dictionary<int,int>> BABoard,
+		Dictionary<Vector2I, List<Vector2I>> BPieces,
+		Dictionary<Vector2I, List<Vector2I>> IPieces,
+		Dictionary<Vector2I, Vector2I>       PPieces, 
+		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves
+	)
 	{
-
-		if(HexState.IsOver)
-		{
-			GD.PushWarning("Game Is Over");
-			return;
-		}
-
-		if(!mGen.moves.ContainsKey(cords))
-		{
-			GD.PushWarning("Invalid Move Attempted");
-			return;
-		}
-
-		if(Enemy.EnemyIsAI)
-			if (bypassMoveLock && (Enemy.EnemyPlaysWhite == HexState.IsWhiteTurn))
-			{
-				GD.PushError($"It is not your turn. Is AI Turn: {Enemy.EnemyPlaysWhite == HexState.IsWhiteTurn}");
-				return;
-			}
-
-		HexState.ResetTurnFlags();
-		handleMove(cords, moveType, moveIndex, promoteTo);
+		mGen.WhiteAttackBoard = DeepCopyBoard(WABoard);
+		mGen.BlackAttackBoard = DeepCopyBoard(BABoard);
+		mGen.blockingPieces = DeepCopyPieces(BPieces);
+		mGen.pinningPieces = DeepCopyPinning(PPieces);
+		mGen.influencedPieces = DeepCopyPieces(IPieces);
+		mGen.moves = DeepCopyLegalMoves(moves);
 		return;
 	}
-	
+	public Dictionary<int, Dictionary<int,int>> _duplicateWAB() { return DeepCopyBoard(mGen.WhiteAttackBoard); }
+	public Dictionary<int, Dictionary<int,int>> _duplicateBAB() { return DeepCopyBoard(mGen.BlackAttackBoard); }	
+	public Dictionary<Vector2I, List<Vector2I>> _duplicateBP() { return DeepCopyPieces(mGen.blockingPieces); }
+	public Dictionary<Vector2I, List<Vector2I>>  _duplicateIP() { return DeepCopyPieces(mGen.influencedPieces); }
+	public Dictionary<Vector2I, Vector2I>  _duplicatePNP() { return DeepCopyPinning(mGen.pinningPieces); }
+
+
+
+	/// <summary>
+	/// RESIGN PUBLIC CALL
+	/// </summary>
+	public void _resign()
+	{
+		BitBoards.ClearCombinedStateBitboards();
+		BitBoards.ClearStateBitboards();
+		if(HexState.IsOver)
+			return;
+		HexState.IsOver = true;
+		return;
+	}	
+
+	/// <summary>
+	/// PASS TO AI PUBLIC CALL
+	/// </summary>
 	public void _passToAI()
 	{
 		if(HexState.IsOver)
@@ -666,69 +696,77 @@ public partial class HexEngineSharp : Node
 			Enemy.EnemyChoiceIndex += 1;
 		}
 		
-		HexState.ResetTurnFlags();
-		
 		handleMove(Enemy.EnemyAI._getCords(), (MOVE_TYPES) Enemy.EnemyAI._getMoveType(), Enemy.EnemyAI._getMoveIndex(), Enemy.EnemyPromotedTo);
 		return;
 	}
-	// RESIGN PUBLIC 
 	
-	public void _resign()
+	/// <summary>
+	/// MAKE MOVE PUBLIC CALL.
+	/// TODO:: HANDLE IN PROPER INPUT FEEDBACK.
+	/// </summary>
+	/// <param name="cords"></param>
+	/// <param name="moveType"></param>
+	/// <param name="moveIndex"></param>
+	/// <param name="promoteTo"></param>
+	public void _makeMove(Vector2I cords, MOVE_TYPES moveType, int moveIndex, PIECES promoteTo)
 	{
-		BitBoards.ClearCombinedStateBitboards();
-		BitBoards.ClearStateBitboards();
 		if(HexState.IsOver)
+		{
+			GD.PushWarning("Game Is Over");
 			return;
-		HexState.IsOver = true;
+		}
+		if(!mGen.moves.ContainsKey(cords))
+		{
+			GD.PushWarning("Invalid Move Attempted");
+			return;
+		}
+		if(Enemy.EnemyIsAI && moveLock && (Enemy.EnemyPlaysWhite == HexState.IsWhiteTurn))
+		{
+			GD.PushError($"It is not your turn. Is AI Turn: {Enemy.EnemyPlaysWhite == HexState.IsWhiteTurn}");
+			return;
+		}
+
+		handleMove(cords, moveType, moveIndex, promoteTo);
 		return;
 	}
-	// Undo Move PUBLIC CALL
 	
+
+	/// <summary>
+	/// Undo Move PUBLIC CALL
+	/// </summary>
+	/// <param name="genMoves"></param>
+	/// <returns></returns>
 	public bool _undoLastMove(bool genMoves = true)
 	{
 		if(historyStack.Count < 1)
 			return false;
 
-		HistEntry activeMove = historyStack.Pop();
-		HexState.LastTurn();
-
-		//UndoVars & APs
-		HexState.UndoType = MaskPieceTypeFrom(activeMove.Piece);
-		var pieceList = activePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][HexState.UndoType];
-		for(int i=0; i < pieceList.Count; i+=1 )
-		{
-			if(pieceList[i] != activeMove.To)
-				continue;
-			pieceList[i] = activeMove.From;
-			HexState.UndoIndex = i;
-			break;
-		}
-
-		// Default Undo
-		BitBoards.ClearIndexOf(QRToIndex(activeMove.To.X, activeMove.To.Y), HexState.IsWhiteTurn, HexState.UndoType); 
-		BitBoards.AddFromIntTo(HexState.UndoType, activeMove.From.X, activeMove.From.Y, HexState.IsWhiteTurn);
-		undoSubCleanFlags(activeMove.From, activeMove.To, activeMove);
-
-		BitBoards.ClearCombinedStateBitboards();
-		BitBoards.GenerateCombinedStateBitboards();
-
-		// Undo Onto
-		undoSubFixState();
-		
-		mGen.addInflunceFrom(activeMove.From);
-
-		if (genMoves)
-		  mGen.generateNextLegalMoves(activePieces);
+		handleUnMove(genMoves);
 
 		return true;
 	}
-	//START DEFAULT GAME PUBLIC CALL
+	
 
+	/// <summary>
+	/// NEEDS TO BE IMPLEMENTED.
+	/// ILLEGAL MOVE IDEAS:
+	/// 	1. Pawns can not be on a promoting tile.
+	/// 	2. Side to play can not have a move to capture opposing king.
+	/// 	3. 
+	/// </summary>
+	/// <param name="fen"></param>
+	/// <returns></returns>
 	public bool _FENCHECK(string fen)
 	{
 		return false;
 	}
 
+
+	/// <summary>
+	/// Update Enemy State. Set the enemy type from ENEMY_TYPES. Set the enemy side.
+	/// </summary>
+	/// <param name="type"> What type of AI or PLAYER_TWO. </param>
+	/// <param name="isWhite"> What side will the AI or PLAYER_TWO take.</param>
 	public void UpdateEnemy(ENEMY_TYPES type, bool isWhite)
 	{
 		Enemy.EnemyIsAI = type != ENEMY_TYPES.PLAYER_TWO;
@@ -736,20 +774,22 @@ public partial class HexEngineSharp : Node
 		Enemy.EnemyPlaysWhite = isWhite;
 		return;
 	}
+
+
 	public void DisableAIMoveLock()
 	{
-		bypassMoveLock = false;
+		moveLock = false;
 		return;
 	}
 	public void EnableAIMoveLock()
 	{
-		bypassMoveLock = true;
+		moveLock = true;
 		return;
 	}
 		
 
 
-
+	//FEN - BUILDING
 	public void FenBuildCleanBB()
 	{
 		HexState.IsWhiteTurn = true;
@@ -765,7 +805,7 @@ public partial class HexEngineSharp : Node
 
 
 
-	/// Getter // bools
+	// Getters // bools
 	public bool uncaptureValid(){ return HexState.UncaptureValid; }
 	public bool unpromoteValid() { return HexState.UnpromoteValid; }
 	public bool _getIsWhiteTurn() { return HexState.IsWhiteTurn; }
@@ -864,7 +904,7 @@ public partial class HexEngineSharp : Node
 
 
 
-	/// STRICT GDSCRIPT INTERACTIONS
+	// STRICT GDSCRIPT INTERACTIONS
 	public Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>> GDGetActivePieces()
 	{
 		var gdReturn = new Godot.Collections.Array<Godot.Collections.Dictionary<PIECES, Godot.Collections.Array<Vector2I>>>();
@@ -904,24 +944,24 @@ public partial class HexEngineSharp : Node
 		return gdReturn;
 	} 
 	public Godot.Collections.Array<String> GetTop5Hist()
-		{	
-			Godot.Collections.Array<String> Histtop = new Godot.Collections.Array<string>();
-			Stack<HistEntry> topStore = new Stack<HistEntry>();
-			for (int i = 0; i < 5; i++)
-			{
-				if(historyStack.Count == 0)
-					break;
-				var top = historyStack.Pop();
-				topStore.Push(top);
-				Histtop.Add(top.SimpleString());
-			}
-			
-			while(topStore.Count != 0)
-				historyStack.Push(topStore.Pop());
-			
-			
-			return Histtop;
+	{	
+		Godot.Collections.Array<String> Histtop = new Godot.Collections.Array<string>();
+		Stack<HistEntry> topStore = new Stack<HistEntry>();
+		for (int i = 0; i < 5; i++)
+		{
+			if(historyStack.Count == 0)
+				break;
+			var top = historyStack.Pop();
+			topStore.Push(top);
+			Histtop.Add(top.SimpleString());
 		}
+		
+		while(topStore.Count != 0)
+			historyStack.Push(topStore.Pop());
+		
+		
+		return Histtop;
+	}
 
 
 

@@ -586,7 +586,7 @@ public class HexMoveGenerator
 		{
 			if(IsMyKingSafeFromSliding(pin.Value))
 				continue;
-			lastPinningPieces[pin.Key] = blockingPieces[pin.Value];
+			lastPinningPieces[pin.Key] = blockingPieces[pin.Value]; //self in blocking pieces list adds n checks to interszection check
 			lastPinningPieces[pin.Key].Add(pin.Value); // pinned can be index by length - 1
 		}
 	}

@@ -10,7 +10,7 @@ namespace HexChess
 	class HistEntry
 	{
 		public Vector2I From {get; private set;}
-		public Vector2I To {get; private set;}
+		public Vector2I To {get; set;}
 
 		public bool EnPassant {get; private set;}
 		public bool Check {get; private set;}
