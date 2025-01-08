@@ -25,14 +25,14 @@ public class BoardState
 	public Vector2I EnPassantCords {get; set;}
 	/// <summary> Last turn's Enpassant's Target Cordinates. </summary>
 	public Vector2I EnPassantTarget {get; set;}
-	/// <summary> Singlas if last turn had an Enpassant move. </summary>
+	/// <summary> Signals if last turn had an Enpassant move. </summary>
 	public bool EnPassantCordsValid {get; set;} = false;
  
 	// Check & Over
 	/// <summary>
 	/// 
 	/// </summary>
-	public Vector2I GameInCheckFrom {get; set;}
+	//public Vector2I GameInCheckFrom {get; set;}
 	public bool IsOver {get; set;} = false;
 	public bool IsCheck {get; set;} = false;
 	public bool CheckByMany {get; set;} = false;
@@ -60,9 +60,35 @@ public class BoardState
 		WhiteCaptures = new List<PIECES>();
 		EnPassantCords  = new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
 		EnPassantTarget = new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
-		GameInCheckFrom = new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
+		//GameInCheckFrom = new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
 		UndoTo 			= new Vector2I(HEX_BOARD_RADIUS, HEX_BOARD_RADIUS);
     }
+
+
+	/// <summary>
+	/// Reset the InCheck, CaptureValid, and EnPassantValid flags.
+	/// </summary>
+	public void ResetTurnFlags()
+	{
+		IsCheck = false;
+		CheckByMany = false;
+		CaptureValid = false;
+		EnPassantCordsValid = false;
+		return;
+	}
+
+
+	/// <summary>
+	/// Reset the turn flags and set the over flag to false.
+	/// </summary>
+	public void resetState()
+	{
+		ResetTurnFlags();
+		IsOver = false;
+		//GameInCheckFrom = new Vector2I(HEX_BOARD_RADIUS+1,HEX_BOARD_RADIUS+1);
+	}
+
+
 	/// <summary>
 	/// increment the turn number
 	/// </summary>
@@ -79,6 +105,8 @@ public class BoardState
 		TurnNumber -= 1;
 		return;
 	}
+	
+
 	/// <summary>
 	/// Flip the iswhiteturn boolean
 	/// </summary>
@@ -87,17 +115,8 @@ public class BoardState
 		IsWhiteTurn = !IsWhiteTurn;
 		return;
 	}
-	/// <summary>
-	/// Reset the InCheck, CaptureValid, and EnPassantValid flags.
-	/// </summary>
-	public void ResetTurnFlags()
-	{
-		IsCheck = false;
-		CheckByMany = false;
-		CaptureValid = false;
-		EnPassantCordsValid = false;
-		return;
-	}
+
+
 	/// <summary>
 	/// Swap the player turn and increment the turn number.
 	/// </summary>
@@ -116,5 +135,7 @@ public class BoardState
 		DecrementTurnNumber();
 		SwapPlayerTurn();
 	}
+
+
 }
 }

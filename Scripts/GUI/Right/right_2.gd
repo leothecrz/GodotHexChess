@@ -39,6 +39,9 @@ func _ready() -> void:
 
 
 func addPiece(tile):
+	if(tilesList.has(tile)):
+		print("Piece already there");
+		return;
 	if(selected == GDHexConst.PIECES.KING):
 		if(selectedSideW):
 			if(wKingPlaced) : return;
@@ -46,10 +49,7 @@ func addPiece(tile):
 		else:
 			if(bKingPlaced) : return;
 			bKingPlaced = true;
-	if(tilesList.has(tile)):
-		print("Piece already there");
-		return;
-	tilesList[tile] = selected;
+	tilesList[tile] = [selected, selectedSideW];
 	placePiece.emit(selected, selectedSideW, tile);
 	pieceCount +=1;
 	return;
@@ -58,8 +58,8 @@ func removePiece(tile):
 	if(not tilesList.has(tile)):
 		print("No piece there");
 		return;
-	if(tilesList[tile] == GDHexConst.PIECES.KING):
-		if(selectedSideW):
+	if(tilesList[tile][0] == GDHexConst.PIECES.KING): 
+		if(tilesList[tile][1]):
 			wKingPlaced = false;
 		else:
 			bKingPlaced = false;

@@ -237,7 +237,9 @@ public class HexConst
 		}
 		
 
+
 		// Copy Data
+
 
 
 		public static Dictionary<MOVE_TYPES, List<Vector2I>> DeepCopyMoveTemplate(Dictionary<MOVE_TYPES, List<Vector2I>> original)
@@ -286,7 +288,9 @@ public class HexConst
 		}
 		
 
+
 		// Strings
+
 
 
 		public static string PrettyPrintLegalMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> legalMoves)
@@ -334,8 +338,45 @@ public class HexConst
 			return string.Join(", ", vectorList.Select(v => $"({FormatVector2I(v)})"));
 		}
 
+		public static void PrettyPrintATKBOARD(Dictionary<int, Dictionary<int,int>> board)
+		{
+			if (board == null || board.Count == 0)
+			{
+				GD.Print("The board is empty.");
+				return;
+			}
+			String outString = "";
+			// Loop over each row (r) in the range -Radius to +Radius.
+			for (int r = -5; r <= 5; r++)
+			{
+				// Calculate the starting and ending columns for the current row.
+				int qStart = Math.Max(-5, -5 - r);
+				int qEnd = Math.Min(5, 5 - r);
+
+				// Print leading spaces for alignment.
+				outString += new string(' ', Math.Abs(r)*2);
+
+				// Loop over each column (q) in the range for the current row.
+				for (int q = qStart; q <= qEnd; q++)
+				{
+					if (board.ContainsKey(r) && board[r].ContainsKey(q))
+					{
+						outString += ($" {board[r][q]:D2} "); // Print cell value, zero-padded for alignment.
+					}
+					else
+					{
+						outString += " .. "; // Empty space for missing cells.
+					}
+				}
+
+				outString += "\n"; // Move to the next row.
+			}
+			GD.Print(outString);
+		}
+
 
 		// ID
+
 
 
 		public static bool isPieceWhite(int id)
@@ -355,7 +396,9 @@ public class HexConst
 		}
 
 
+
 		// Positions
+
 
 
 		public static bool isBlackPawnStart(Vector2I cords)
@@ -406,7 +449,9 @@ public class HexConst
 		}
 
 
+
 		//Encoding
+
 
 
 		/// <summary>
@@ -471,7 +516,9 @@ public class HexConst
 		}
 
 
+
 		// Attack Search 
+
 
 
 		/// <summary>
@@ -520,6 +567,7 @@ public class HexConst
 		}
 
 
+
 		//Deep Copy 
 		
 		
@@ -547,7 +595,9 @@ public class HexConst
 
 
 
+
 		// Memory Optimization
+
 
 
 		public static readonly List<Vector2I> EmptyVector2IList = new();
@@ -555,6 +605,7 @@ public class HexConst
 		
 
 		//Hueristic Functions
+
 
 
 		private const long CHECK_VAL = 1500;

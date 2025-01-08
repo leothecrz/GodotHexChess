@@ -10,6 +10,14 @@ namespace HexChess
 
 public class BitboardState
 {
+	
+
+	/// <summary>
+	/// PieceList
+	/// </summary>
+	public Dictionary<PIECES, List<Vector2I>>[] ActivePieces {get; private set;}
+
+
 	/// <summary> All bitboards for WHITE side. Use [piecetype] to get the type's bitboard. </summary>
 	public Bitboard128[] WHITE_BB {get; private set;}
 	/// <summary> All bitboards for BLACK side. Use [piecetype] to get the type's bitboard. </summary>
@@ -25,6 +33,7 @@ public class BitboardState
 	/// <summary> Constructor. Initiates the state bitboards with the using the default PIECES. </summary>
 	public BitboardState()
 	{
+		ActivePieces = null;
 		InitiateStateBitboards();
 	}
 
@@ -156,7 +165,8 @@ public class BitboardState
 		};
 		ExtractSidesPieces(BLACK_BB, pieceCords[(int)SIDES.BLACK]);
 		ExtractSidesPieces(WHITE_BB, pieceCords[(int)SIDES.WHITE]);
-		return pieceCords;
+		ActivePieces = pieceCords;
+		return ActivePieces;
 	}
 
 
@@ -263,6 +273,28 @@ public class BitboardState
 		activeBoard[typeIndex] = activeBoard[typeIndex].AND(mask);
 		return;
 	}
+
+
+
+	public int GetPieceCount()
+	{
+		var pieceCount = 0; 
+		foreach(var side in ActivePieces)
+			foreach(var  type in side.Keys)
+				foreach(var piece in side[type])
+					pieceCount+=1;
+		return pieceCount;
+	}
+	public int GetAPIndexOf(int selfColor, PIECES pieceType, Vector2I cords)
+	{
+		for(int i=0; i<ActivePieces[selfColor][pieceType].Count; i+=1)
+		{
+			if(cords == ActivePieces[selfColor][pieceType][i])
+				return i;
+		}
+		return -1;
+	}
+
 
 }
 

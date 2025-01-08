@@ -782,9 +782,6 @@ func _on_fen_builder_clear_piece(pos: Vector2i) -> void:
 			for index : HexPiece in type.get_children():
 				if(index.__getPieceCords() != pos):
 					continue;
-				print("\n",index.__getPieceSide())
-				print(index.__getPieceType())
-				print(index.__getPieceCords(),"\n")
 				EngineNode.FenBuildRemoveFromBB(index.__getPieceCords(),index.__getPieceType(), index.__getPieceSide() == GDHexConst.SIDES.WHITE);
 				type.remove_child(index);
 				index.queue_free();
