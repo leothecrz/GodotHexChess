@@ -702,12 +702,8 @@ public class HexMoveGenerator
 	//
 	private void fillRookCheckMoves(Vector2I kingCords, Vector2I moveToCords)
 	{
-		var deltaQ = kingCords.X - moveToCords.X;
-		var deltaR = kingCords.Y - moveToCords.Y;
-		var direction = new Vector2I(
-			(deltaQ > 0) ? 1 : ( (deltaQ < 0) ? -1 : 0 ),
-			(deltaR > 0) ? 1 : ( (deltaR < 0) ? -1 : 0 )
-			);
+		var direction = GetRookVector(kingCords, moveToCords);
+		if(direction == Vector2I.Zero) return;
 
 		while( true )
 		{
@@ -726,28 +722,10 @@ public class HexMoveGenerator
 	}
 	private void fillBishopCheckMoves(Vector2I kingCords, Vector2I moveToCords)
 	{
-		var deltaQ = kingCords.X - moveToCords.X;
-		var deltaR = kingCords.Y - moveToCords.Y;
-		var direction = new Vector2I(0,0);
 
-		if(deltaQ > 0)
-			if(deltaR < 0)
-				if(Math.Abs(deltaQ) < Math.Abs(deltaR))
-					direction = new Vector2I(1,-2);
-				else
-					direction = new Vector2I(2,-1);
-			else if (deltaR > 0)
-				direction = new Vector2I(1,1);
-		else if (deltaQ < 0)
-			if(deltaR > 0)
-				if(Math.Abs(deltaQ) < Math.Abs(deltaR))
-					direction = new Vector2I(-1,2);
-				else
-					direction = new Vector2I(-2,1);
-			else if (deltaR < 0)
-				direction = new Vector2I(-1,-1);
-		
-		
+		var direction = GetBishopVector(kingCords, moveToCords);	
+		if(direction == Vector2I.Zero) return;
+
 		while( true )
 		{
 			GameInCheckMoves.Add(moveToCords);
@@ -891,11 +869,9 @@ public class HexMoveGenerator
 		modAtkBoard(moves,1);
 		filterLegalMoves();
 
-		GD.Print("after move gen:");
 		printATK();
 
 		lastInfluencedPieces = null; //not necessary but explicit
-		
 		return;
 	}
 	
@@ -915,7 +891,7 @@ public class HexMoveGenerator
 		else 
 			effectedPieces[pieceType] = new(){cords};
 		
-		if(pinningPieces.ContainsKey(moveTo))
+		if(pinningPieces.ContainsKey(moveTo)) //capture pinning
 		{
 			var val = pinningPieces[moveTo];
 			PIECES pinned = Bitboards.GetPieceTypeFrom(QRToIndex(val.X,val.Y), HexState.IsWhiteTurn);
@@ -925,9 +901,21 @@ public class HexMoveGenerator
 				effectedPieces[pinned] = new(){val};
 		}
 
+		foreach(var bb in blockingPieces) // interrup pinning
+		{
+			if(!bb.Value.Contains(moveTo))
+				continue;
+
+			var val = bb.Key;
+			PIECES pinned = Bitboards.GetPieceTypeFrom(QRToIndex(val.X,val.Y), HexState.IsWhiteTurn);
+			if (effectedPieces.ContainsKey(pinned)) 
+				effectedPieces[pinned].Add(val);
+			else 
+				effectedPieces[pinned] = new(){val};
+		}
+
+
 		rmvSelfAtks(effectedPieces); // needs to remove atk from all effected pieces
-		GD.Print("after atk removed");
-		printATK();
 
 		effectedPieces[pieceType].RemoveAt(effectedPieces[pieceType].Count-1);
 		effectedPieces[pieceType].Add(moveTo);

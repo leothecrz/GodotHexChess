@@ -46,7 +46,8 @@ public partial class HexEngineSharp : Node
 		myking = BitBoards.ActivePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
 		theirKing = BitBoards.ActivePieces[(int)(HexState.IsWhiteTurn ?  SIDES.BLACK : SIDES.WHITE)][PIECES.KING][KING_INDEX];
 	}
-	
+
+
 	//Init
 
 
@@ -57,8 +58,6 @@ public partial class HexEngineSharp : Node
 	/// <returns></returns>
 	private bool fillBoardwithFEN(string fenString)
 	{
-		//Board Status
-		BitBoards.InitiateStateBitboards();
 		string [] fenSections =  fenString.Split(' ');
 		if (fenSections.Length != 4)
 		{
@@ -86,6 +85,7 @@ public partial class HexEngineSharp : Node
 			return false;
 		}
 	
+		BitBoards.InitiateStateBitboards();
 		for(int q=-HEX_BOARD_RADIUS; q <= HEX_BOARD_RADIUS; q+=1)
 		{
 			int mappedQ = q + HEX_BOARD_RADIUS;
@@ -208,7 +208,7 @@ public partial class HexEngineSharp : Node
 	}
 
 
-	// Board
+	// Board Search
 
 
 	private List<Vector2I> searchForPawnsAtk(Vector2I pos, bool isWTurn)
@@ -305,6 +305,7 @@ public partial class HexEngineSharp : Node
 	
 	// Move Do
 
+
 	private void handleEnpassant(Vector2I cords, Vector2I moveTo)
 	{
 		var newECords = mGen.moves[cords][MOVE_TYPES.ENPASSANT][0];
@@ -315,8 +316,6 @@ public partial class HexEngineSharp : Node
 	private bool handleCapture(Vector2I _debug_cords, Vector2I moveTo, PIECES pieceType)
 	{
 		bool revertEnPassant = false;
-
-
 		int moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
 		PIECES type = BitBoards.GetPieceTypeFrom(moveToIndex, !HexState.IsWhiteTurn);
 		int opColor = (int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE);
@@ -333,17 +332,13 @@ public partial class HexEngineSharp : Node
 			revertEnPassant = true;
 		}
 
-		mGen.pinningInfluenceCheck(moveTo, _debug_cords);
+		mGen.pinningInfluenceCheck(moveTo, _debug_cords); // capture pinning piece
 
 		BitBoards.ClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!HexState.IsWhiteTurn,HexState.CaptureType);
-
 		HexState.CaptureIndex = BitBoards.GetAPIndexOf(opColor, HexState.CaptureType, moveTo);
 		BitBoards.ActivePieces[opColor][HexState.CaptureType].RemoveAt(HexState.CaptureIndex);
+		
 		mGen.removeCapturedFromATBoard(HexState.CaptureType, moveTo);
-
-		// ENPASSANT FIX
-		if(revertEnPassant)
-			moveTo.Y += HexState.IsWhiteTurn ? -1 : 1;
 
 		//Add To Captures
 		(HexState.IsWhiteTurn ? HexState.WhiteCaptures : HexState.BlackCaptures).Add(HexState.CaptureType);
@@ -355,10 +350,12 @@ public partial class HexEngineSharp : Node
 		HexState.ResetTurnFlags();
 		//MOVE DATA
 		int index = QRToIndex(cords.X,cords.Y);
+		int selfColor = (int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK );	
+
 		PIECES pieceType = BitBoards.GetPieceTypeFrom(index, HexState.IsWhiteTurn);
 		int pieceVal = ToPieceInt(pieceType, !HexState.IsWhiteTurn);
 		int previousPieceVal = pieceVal;
-		int selfColor = (int)( HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK );	
+		
 		Vector2I moveTo = mGen.moves[cords][moveType][moveIndex];
 		HistEntry histEntry = new(pieceVal, cords, moveTo);
 		
@@ -579,12 +576,19 @@ public partial class HexEngineSharp : Node
 		// Undo Onto
 		undoOnto();
 
+		// IF PINNING pieces contains (MoveTo) find path from (MoveFrom) to (Pinned) save in blocking pieces of (Pinned) 
+
 		// Calculate new path and store in blocking
-		// if(mGen.pinningPieces.ContainsKey(activeMove.To))
-		// {
-		// 	mGen.pinningPieces[activeMove.From] = mGen.pinningPieces[activeMove.To];
-		// 	mGen.blockingPieces[mGen.pinningPieces[activeMove.To]].Add(activeMove.To);
-		// }
+		//limit when ??
+		if(!activeMove.Capture && mGen.pinningPieces.ContainsKey(activeMove.To))
+		{
+			var pinned = mGen.pinningPieces[activeMove.To];
+			var path = GetAxialPath(activeMove.From, pinned);
+
+			mGen.pinningPieces.Remove(activeMove.To);
+			mGen.pinningPieces[activeMove.From] = pinned;
+			mGen.blockingPieces[pinned] = path;
+		}
 
 		mGen.addInflunceFrom(activeMove.From); // Enpassant Undo
 

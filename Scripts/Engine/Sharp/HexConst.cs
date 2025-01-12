@@ -3,6 +3,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 
 namespace HexChess
 {
@@ -236,6 +237,66 @@ public class HexConst
 			return ('0' <= activeChar) && (activeChar <= '9');
 		}
 		
+		public static Vector2I GetBishopVector(Vector2I from, Vector2I to)
+		{
+			var deltaQ = from.X - to.X;
+			var deltaR = from.Y - to.Y;
+			var direction = new Vector2I(0,0);
+			if(deltaQ > 0)
+				if(deltaR < 0)
+					if(Math.Abs(deltaQ) < Math.Abs(deltaR))
+						direction = new Vector2I(1,-2);
+					else
+						direction = new Vector2I(2,-1);
+				else if (deltaR > 0)
+					direction = new Vector2I(1,1);
+			else if (deltaQ < 0)
+				if(deltaR > 0)
+					if(Math.Abs(deltaQ) < Math.Abs(deltaR))
+						direction = new Vector2I(-1,2);
+					else
+						direction = new Vector2I(-2,1);
+				else if (deltaR < 0)
+					direction = new Vector2I(-1,-1);
+			return direction;
+		}
+		public static Vector2I GetRookVector(Vector2I from, Vector2I to)
+		{
+			var deltaQ = from.X - to.X;
+			var deltaR = from.Y - to.Y;
+			var direction = new Vector2I(
+				(deltaQ > 0) ? 1 : ( (deltaQ < 0) ? -1 : 0 ),
+				(deltaR > 0) ? 1 : ( (deltaR < 0) ? -1 : 0 )
+				);
+			return direction;
+		}
+
+
+		public static List<Vector2I> GetAxialPath(Vector2I from, Vector2I to)
+		{
+			List<Vector2I> path = new();
+			Vector2I vector = Vector2I.Zero;
+			if(from.X == to.X || from.Y == to.Y || SAxialCordFrom(from) == SAxialCordFrom(to))
+			{
+				vector = GetRookVector(from, to);
+			}
+			if(vector == Vector2I.Zero)
+			{
+				var delta = from - to;
+				if(delta.X + delta.Y + SAxialCordFrom(delta) == 0)
+					vector = GetBishopVector(from, to);
+			}
+			if(vector == Vector2I.Zero)	
+				return path;
+
+			while(from != to)
+			{
+				path.Add(to);
+				to += vector;
+			}
+
+			return path;
+		}
 
 
 		// Copy Data

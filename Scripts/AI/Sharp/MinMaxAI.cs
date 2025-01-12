@@ -112,10 +112,16 @@ public partial class MinMaxAI : AIBase
 		long standingValue = multiplier * Hueristic(hexEngine);
 		if(standingValue >= beta) return beta;
 		if(alpha < standingValue) alpha = standingValue;
-		//GD.Print($"PreQuiescenece:{standingValue} - alpha:{alpha} - beta:{beta}");
+
 		int index;
 		long value = long.MinValue;
 		var legalmoves = DeepCopyLegalMoves(hexEngine.GetMoves());
+
+		var WAB = hexEngine._duplicateWAB();
+		var BAB = hexEngine._duplicateBAB();
+		var BP = hexEngine._duplicateBP();
+		var InPi = hexEngine._duplicateIP();
+		var PP = hexEngine._duplicatePNP();
 
 		//List<long> postQ = new();
 
@@ -124,12 +130,6 @@ public partial class MinMaxAI : AIBase
 			index = 0;
 			foreach( Vector2I move in legalmoves[piece][MOVE_TYPES.CAPTURE] )
 			{
-				var WAB = hexEngine._duplicateWAB();
-				var BAB = hexEngine._duplicateBAB();
-				var BP = hexEngine._duplicateBP();
-				var InPi = hexEngine._duplicateIP();
-				var PP = hexEngine._duplicatePNP();
-				
 				hexEngine._makeMove(piece, MOVE_TYPES.CAPTURE, index, PIECES.QUEEN);
 				var newVal = -QuiescenceSearch(hexEngine, -multiplier, -beta, -alpha);
 				//postQ.Add(newVal);
@@ -251,7 +251,7 @@ public partial class MinMaxAI : AIBase
 		var WAB = hexEngine._duplicateWAB();
 		var BAB = hexEngine._duplicateBAB();
 		var BP = hexEngine._duplicateBP();
-		var PP = hexEngine._duplicatePNP();
+		var PNP = hexEngine._duplicatePNP();
 		var InPi = hexEngine._duplicateIP();
 
 		//Insert Iterative Deepening Here
@@ -262,9 +262,6 @@ public partial class MinMaxAI : AIBase
 					int index = 0;
 					foreach(Vector2I move in legalmoves[piece][movetype])
 					{
-
-						
-						
 						hexEngine._makeMove(piece,movetype,index,PIECES.QUEEN);
 						long val = NegativeMaximum(hexEngine, depth, isMaxPlayer ? 1 : -1, long.MinValue, long.MaxValue);
 						
@@ -274,9 +271,9 @@ public partial class MinMaxAI : AIBase
 							selectMove(piece, (int)movetype, index, move);
 							GD.Print($"Cords: ({CORDS.X},{CORDS.Y}), To: ({TO.X},{TO.Y}), Type: {MOVETYPE}, Index: {MOVEINDEX} \n");
 						}
-
+						index += 1;
 						hexEngine._undoLastMove(false);
-						hexEngine._restoreState(WAB,BAB,BP,InPi,new(),legalmoves);
+						hexEngine._restoreState(WAB,BAB,BP,InPi,PNP,legalmoves);
 					}
 				}
 			
