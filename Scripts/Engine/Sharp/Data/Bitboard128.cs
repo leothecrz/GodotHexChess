@@ -88,7 +88,19 @@ namespace HexChess
 			this.Front = Front;
 			this.Back = Back;
 		}
-		
+		public Bitboard128(List<int> indexlist)
+		{
+			this.Front = 0;
+			this.Back = 0;
+			foreach(var i in indexlist)
+			{
+				if(i > Bitboard128.INDEX_TRANSITION)
+					this.Front |= TwoPowerN( i - Bitboard128.INDEX_OFFSET );
+				else
+					this.Back |= TwoPowerN( i );
+			}
+		}
+
 		public Bitboard128 XOR(Bitboard128 to)
 		{
 			return new Bitboard128(Front ^ to.Front, Back ^ to.Back);

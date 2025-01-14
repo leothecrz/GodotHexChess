@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Godot;
@@ -21,6 +22,8 @@ public class HexMoveGenerator
 	//ATK
 	public Dictionary<int, Dictionary<int,int>> WhiteAttackBoard {get; set;} // replace with bitboards
 	public Dictionary<int, Dictionary<int,int>> BlackAttackBoard {get; set;} // replace with bitboards
+
+
 
 	//PIECES
 	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces {get; set;}
@@ -80,6 +83,7 @@ public class HexMoveGenerator
 
 		WhiteAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
 		BlackAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
+		count = 0;
 	}
 
 
@@ -88,6 +92,7 @@ public class HexMoveGenerator
 	private void SetStartRunningAverage()
 	{
 		startTime = Time.GetTicksUsec();
+		count += 1;
 	}
 	private void updateRunningAverage()
 	{
@@ -629,12 +634,23 @@ public class HexMoveGenerator
 	private void prepPinning()
 	{
 		lastPinningPieces = new(){};
+		
 		foreach(var pin in pinningPieces)
 		{
-			if(IsMyKingSafeFromSliding(pin.Value))
-				continue;
+			if(IsMyKingSafeFromSliding(pin.Value)) // TODO:: should also check that the line is not interupted
+				goto toNext;
+
+			List<Vector2I> path = GetAxialPath(myKingCords, pin.Value);
+			path.Remove(pin.Value);
+			foreach(Vector2I tile in path)
+			{
+				if(Bitboards.IsIndexEmpty(QRToIndex(tile.X, tile.Y)))
+					continue;
+				goto toNext;
+			}
 			lastPinningPieces[pin.Key] = blockingPieces[pin.Value]; //self in blocking pieces list adds n checks to interszection check
 			lastPinningPieces[pin.Key].Add(pin.Value); // pinned can be index by length - 1
+			toNext:;
 		}
 	}
 	//Blocking
