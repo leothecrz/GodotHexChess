@@ -12,6 +12,7 @@ public class BitboardState
 {
 	
 
+
 	/// <summary>
 	/// PieceList
 	/// </summary>
@@ -28,6 +29,7 @@ public class BitboardState
 	public Bitboard128 BIT_BLACK {get; private set;}
 	/// <summary> Combined State of WHITE_BB and BLACK_BB </summary>
 	public Bitboard128 BIT_ALL {get; private set;}
+
 
 
 	/// <summary> Constructor. Initiates the state bitboards with the using the default PIECES. </summary>
@@ -276,6 +278,9 @@ public class BitboardState
 
 
 
+	//GETS
+
+
 	public int GetPieceCount()
 	{
 		var pieceCount = 0; 
@@ -295,6 +300,7 @@ public class BitboardState
 		return -1;
 	}
 
+	
 
 }
 

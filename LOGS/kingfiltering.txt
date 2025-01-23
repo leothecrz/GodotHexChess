@@ -2,3 +2,13 @@
 
 rook to check
 king to capture
+
+
+6/Q6/8/R1p5N/01/bb7B1/k8K/6r1N/1p4q1/7/6 w - 27
+
+rook capture bishop for check
+
+
+
+6/B6/5P1R/n2p2P1N/3Q6/b1b1p1P2BB/k2p2n1K1/2p2P2N/r7/p5q/6 w - 25
+
