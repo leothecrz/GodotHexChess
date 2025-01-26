@@ -271,21 +271,39 @@ public class HexConst
 			return direction;
 		}
 
+		public static bool IsOnBishopVector(Vector2I from, Vector2I to)
+		{
+			Vector2I delta = to - from;
+			var deltaS = SAxialCordFrom(delta);
+			if((delta.X == delta.Y) && (deltaS / delta.X == -2))
+				return true;
+			else if ((delta.X == deltaS) && delta.Y / delta.X == -2)
+				return true;
+			else if ((delta.Y == deltaS) && delta.X / delta.Y == -2)
+				return true;
+			return false;
+		}
+
+		public static bool IsOnRookVector(Vector2I from ,Vector2I to)
+		{
+			if(from.X == to.X)
+				return true;
+			if(from.Y == to.Y)
+				return true;
+			if(SAxialCordFrom(from) == SAxialCordFrom(to))
+				return true;
+			return false;
+		}
 
 		public static List<Vector2I> GetAxialPath(Vector2I from, Vector2I to)
-		{
-			List<Vector2I> path = new();
+		{			
 			Vector2I vector = Vector2I.Zero;
-			if(from.X == to.X || from.Y == to.Y || SAxialCordFrom(from) == SAxialCordFrom(to))
-			{
+			if(IsOnRookVector(from, to))
 				vector = GetRookVector(from, to);
-			}
-			if(vector == Vector2I.Zero)
-			{
-				var delta = from - to;
-				if(delta.X + delta.Y + SAxialCordFrom(delta) == 0)
-					vector = GetBishopVector(from, to);
-			}
+			if(vector == Vector2I.Zero && IsOnBishopVector(from,to))
+				vector = GetBishopVector(from, to);
+
+			List<Vector2I> path = new();
 			if(vector == Vector2I.Zero)	
 				return path;
 
@@ -294,7 +312,6 @@ public class HexConst
 				path.Add(to);
 				to += vector;
 			}
-
 			return path;
 		}
 

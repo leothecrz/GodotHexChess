@@ -599,6 +599,7 @@ public partial class HexEngineSharp : Node
 		if(!activeMove.Capture && mGen.pinningPieces.ContainsKey(activeMove.To))
 		{
 			var pinned = mGen.pinningPieces[activeMove.To];
+			//Asumes path is possible // fails when bishop or rook path not possible. 
 			var path = GetAxialPath(activeMove.From, pinned);
 
 			mGen.pinningPieces.Remove(activeMove.To);
