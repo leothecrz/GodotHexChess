@@ -2,6 +2,8 @@
 
 [//]: # ( EX. LB. Hexagonal Chess Banner RB. LP. path_to_banner_image RP. )
 
+<img src="ArtResources/Images/HexChessLogo3.png" alt="HexChessLOGO">
+
 A Simple twist on chess, its played on a hexagonal board. 
 
 ## Table of Contents
@@ -36,6 +38,9 @@ A Simple twist on chess, its played on a hexagonal board.
     - (WIP)
   
 ## Gameplay
+
+<img src ="ArtResources/README/Gameplay_Main.png" >
+
 Hexagonal Chess follows most of the traditional chess rules with a couple caveats:
 - Each piece’s movement is adapted to fit a hexagonal grid.
 	- PAWN: Moves 1 Hex towards the opponent. Can attack 1 Hex to either opponent facing diagonals.  
@@ -45,6 +50,8 @@ Hexagonal Chess follows most of the traditional chess rules with a couple caveat
 	- QUEEN: Has both ROOK and BISHOP moves.
 	- KING : Moves 1 Hex to all 6 edge touching Hex and to all Hex 1 vetex line away.
 - 
+
+<img src ="ArtResources/README/Gameplay_Pieces.png" >
 
 ### Rules Overview:
 - Each player takes turns to move one piece.

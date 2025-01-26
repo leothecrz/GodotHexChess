@@ -593,7 +593,6 @@ public partial class HexEngineSharp : Node
 		undoOnto();
 
 		// IF PINNING pieces contains (MoveTo) find path from (MoveFrom) to (Pinned) save in blocking pieces of (Pinned) 
-
 		// Calculate new path and store in blocking
 		//limit when ??
 		if(!activeMove.Capture && mGen.pinningPieces.ContainsKey(activeMove.To))
