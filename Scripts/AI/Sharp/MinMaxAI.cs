@@ -208,7 +208,7 @@ public partial class MinMaxAI : AIBase
 					alpha = Math.Max(alpha, value);
 					
 					hexEngine._undoLastMove(false);
-					hexEngine._restoreState(WAB,BAB,BP,InPi,new(),legalmoves);
+					hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
 					index += 1;
 					
 					if(alpha >= beta) goto ESCAPELOOP;

@@ -185,7 +185,7 @@ public partial class HexEngineSharp : Node
 				Enemy.EnemyAI = new RandomAI(Enemy.EnemyPlaysWhite);
 				break;
 			case ENEMY_TYPES.MIN_MAX:
-				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 2);
+				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 1);
 				break;
 		}
 		return;
@@ -334,6 +334,11 @@ public partial class HexEngineSharp : Node
 		PIECES type = BitBoards.GetPieceTypeFrom(moveToIndex, !HexState.IsWhiteTurn);
 		int opColor = (int)(HexState.IsWhiteTurn ? SIDES.BLACK : SIDES.WHITE);
 
+		if(type == PIECES.KING)
+		{
+			GD.PrintErr("King DIED");
+		}
+
 		HexState.CaptureType = type;
 		HexState.CaptureValid = true;
 
@@ -419,11 +424,12 @@ public partial class HexEngineSharp : Node
 		BitBoards.AddFromIntTo(cordsPIECES, moveTo.X, moveTo.Y, HexState.IsWhiteTurn);
 		BitBoards.ClearCombinedStateBitboards();
 		BitBoards.GenerateCombinedStateBitboards();
-		BitBoards.ActivePieces[selfSide][cordsPIECES][BitBoards.GetAPIndexOf(selfSide,cordsPIECES,cords)] = moveTo;
+		var index = BitBoards.GetAPIndexOf(selfSide,cordsPIECES,cords);
+		BitBoards.ActivePieces[selfSide][cordsPIECES][index] = moveTo;
 
 		//CHECK SELF MOVED PIECE EFFECTS
-		GetKings(out Vector2I _, out Vector2I enemykingCords);
-		mGen.generateMovesForPieceMove(cordsPIECES, cords, moveTo);
+		GetKings(out Vector2I myking, out Vector2I enemykingCords);
+		mGen.generateMovesForPieceMove(cordsPIECES, cords, moveTo, myking);
 		if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from)) // moved piece effect caused check?
 		{
 			histEntry.FlipCheck();
@@ -600,7 +606,6 @@ public partial class HexEngineSharp : Node
 			var pinned = mGen.pinningPieces[activeMove.To];
 			//Asumes path is possible // fails when bishop or rook path not possible. 
 			var path = GetAxialPath(activeMove.From, pinned);
-
 			mGen.pinningPieces.Remove(activeMove.To);
 			mGen.pinningPieces[activeMove.From] = pinned;
 			mGen.blockingPieces[pinned] = path;

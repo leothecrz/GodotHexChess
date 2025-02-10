@@ -1,11 +1,5 @@
 
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using Godot;
 
 using static HexChess.HexConst;
@@ -890,8 +884,9 @@ public class HexMoveGenerator
 	/// <param name="pieceType"></param>
 	/// <param name="cords"></param>
 	/// <param name="moveTo"></param>
-	public void generateMovesForPieceMove(PIECES pieceType, Vector2I cords, Vector2I moveTo)
+	public void generateMovesForPieceMove(PIECES pieceType, Vector2I cords, Vector2I moveTo, Vector2I myking)
 	{
+		myKingCords = myking;
 		Dictionary<PIECES, List<Vector2I>> effectedPieces = GetAPfromInfluenceOf(cords);
 		
 		if (effectedPieces.ContainsKey(pieceType)) 
@@ -943,13 +938,15 @@ public class HexMoveGenerator
 	
 		effectedPieces[pieceType].RemoveAt(effectedPieces[pieceType].Count-1);
 		effectedPieces[pieceType].Add(moveTo);
-
+		
 		prepBlockingFrom(myKingCords);
 
 		//my king cords not set for filter
 		ATKMOD = 1;
 		findPseudoMovesFor(effectedPieces);
 		filterLegalMoves();
+		
+		return;
 	}
 
 

@@ -674,8 +674,10 @@ func syncUndo() -> void:
 	updateGUI_Elements();
 	return;
 ##
-func undoAI() -> void:
+func undoAI(gameWasOver : bool) -> void:
 	if(not EngineNode._getIsEnemyAI()):
+		return;
+	if(gameWasOver):
 		return;
 	EngineNode._undoLastMove(true);
 	syncUndo();
@@ -749,9 +751,10 @@ func _on_undo_pressed() -> void:
 		spawnNotice("[center]NOT available during multiplayer ... yet.[/center]", 1.0);
 		return;
 	
+	var gamewasover = EngineNode._getGameOverStatus(); #undo only once on gameover, ai had no turn to undo
 	EngineNode._undoLastMove(true);
 	syncUndo();
-	undoAI();
+	undoAI(gamewasover);
 	return;
 
 ## Settings Button Pressed

@@ -325,7 +325,7 @@ public class HexConst
 			var copy = new Dictionary<MOVE_TYPES, List<Vector2I>>();
 			foreach (var kvp in original)
 			{
-				var newList = new List<Vector2I>(kvp.Value);
+				var newList = new List<Vector2I>();
 				copy.Add(kvp.Key, newList);
 			}
 			return copy;
