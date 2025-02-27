@@ -185,7 +185,7 @@ public partial class HexEngineSharp : Node
 				Enemy.EnemyAI = new RandomAI(Enemy.EnemyPlaysWhite);
 				break;
 			case ENEMY_TYPES.MIN_MAX:
-				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 1);
+				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 3);
 				break;
 		}
 		return;
@@ -327,7 +327,7 @@ public partial class HexEngineSharp : Node
 		HexState.EnPassantTarget = moveTo;
 		HexState.EnPassantCordsValid = true;
 	}
-	private bool handleCapture(Vector2I _debug_cords, Vector2I moveTo, PIECES pieceType)
+	private bool handleCapture(Vector2I from, Vector2I moveTo, PIECES pieceType)
 	{
 		bool revertEnPassant = false;
 		int moveToIndex = QRToIndex(moveTo.X, moveTo.Y);
@@ -351,7 +351,7 @@ public partial class HexEngineSharp : Node
 			revertEnPassant = true;
 		}
 
-		mGen.pinningInfluenceCheck(moveTo, _debug_cords); // capture pinning piece
+		mGen.pinningInfluenceCheck(moveTo, from); // capture pinning piece
 
 		BitBoards.ClearIndexOf(QRToIndex(moveTo.X,moveTo.Y),!HexState.IsWhiteTurn,HexState.CaptureType);
 		HexState.CaptureIndex = BitBoards.GetAPIndexOf(opColor, HexState.CaptureType, moveTo);
@@ -854,6 +854,20 @@ public partial class HexEngineSharp : Node
 	public int getPiecetype(int p) { return (int)MaskPieceTypeFrom(p); }
 	public int unpromoteType() { return (int) HexState.UnpromoteType; }
 	public int unpromoteIndex() { return (int) HexState.UnpromoteIndex; }
+	public Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>> GetActingAttackBoard()
+	{
+		
+		var finalBoard = new Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>>();
+		var acting = HexState.IsWhiteTurn ? mGen.BlackAttackBoard : mGen.WhiteAttackBoard;
+		
+		foreach(var key in acting.Keys)
+		{
+			finalBoard[key] = new();
+			foreach(var innerKey in acting[key].Keys)
+				finalBoard[key][innerKey] = acting[key][innerKey];
+		}
+		return finalBoard;
+	}
 	// strings
 	public string _getBoardFenNow()
 	{

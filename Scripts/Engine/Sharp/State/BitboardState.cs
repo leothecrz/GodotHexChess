@@ -160,11 +160,7 @@ public class BitboardState
 	/// </returns>
 	public Dictionary<PIECES,List<Vector2I>>[] ExtractPieceList()
 	{
-		Dictionary<PIECES,List<Vector2I>>[] pieceCords = new Dictionary<PIECES,List<Vector2I>>[] 
-		{
-			InitPiecesDict(), 
-			InitPiecesDict()
-		};
+		Dictionary<PIECES,List<Vector2I>>[] pieceCords = new[] { InitiatePIECESDictionaryMoveList(), InitiatePIECESDictionaryMoveList() };
 		ExtractSidesPieces(BLACK_BB, pieceCords[(int)SIDES.BLACK]);
 		ExtractSidesPieces(WHITE_BB, pieceCords[(int)SIDES.WHITE]);
 		ActivePieces = pieceCords;

@@ -1,9 +1,8 @@
 using Godot;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
+using System.Collections.Generic;
 
 namespace HexChess
 {
@@ -24,43 +23,49 @@ public class HexConst
 		public const int TYPE_MASK = 0b0111;
 		public const int SIDE_MASK = 0b1000;
 		// Vectors
-		public static readonly Dictionary<string,Vector2I> ROOK_VECTORS = new Dictionary<string, Vector2I> { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0) } };
-		public static readonly Dictionary<string,Vector2I> BISHOP_VECTORS = new Dictionary<string, Vector2I> { { "lfoward", new Vector2I(-2,1)}, { "rFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "lbackward", new Vector2I(1,1)}, { "rBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
-		public static readonly Dictionary<string,Vector2I> KING_VECTORS = new Dictionary<string, Vector2I> { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0)}, { "dlfoward", new Vector2I(-2,1)}, { "drFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "dlbackward", new Vector2I(1,1)}, { "drBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
-		public static readonly Dictionary<string,Vector2I> KNIGHT_VECTORS = new Dictionary<string, Vector2I> { { "left", new Vector2I(-1,-2)}, { "lRight", new Vector2I(1,-3)}, { "rRight", new Vector2I(2,-3)} };
+		public static readonly Dictionary<string,Vector2I> ROOK_VECTORS 	= new() { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0) } };
+		public static readonly Dictionary<string,Vector2I> BISHOP_VECTORS 	= new() { { "lfoward", new Vector2I(-2,1)}, { "rFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "lbackward", new Vector2I(1,1)}, { "rBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
+		public static readonly Dictionary<string,Vector2I> KING_VECTORS 	= new() { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0)}, { "dlfoward", new Vector2I(-2,1)}, { "drFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "dlbackward", new Vector2I(1,1)}, { "drBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
+		public static readonly Dictionary<string,Vector2I> KNIGHT_VECTORS 	= new() { { "left", new Vector2I(-1,-2)}, { "lRight", new Vector2I(1,-3)}, { "rRight", new Vector2I(2,-3)} };
 		// Templates
-		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> DEFAULT_MOVE_TEMPLATE = new Dictionary<MOVE_TYPES, List<Vector2I>> { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I>{}},  };
-		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> PAWN_MOVE_TEMPLATE = new Dictionary<MOVE_TYPES, List<Vector2I>> { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I> {}}, {MOVE_TYPES.ENPASSANT, new List<Vector2I> {}}, {MOVE_TYPES.PROMOTE, new List<Vector2I> {}} };
+		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> DEFAULT_MOVE_TEMPLATE = new() { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I>{}},  };
+		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> PAWN_MOVE_TEMPLATE 	= new() { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I> {}}, {MOVE_TYPES.ENPASSANT, new List<Vector2I> {}}, {MOVE_TYPES.PROMOTE, new List<Vector2I> {}} };
 		// Positions
-		public static readonly int[] PAWN_START 		= {-4, -3, -2, -1, 0, 1, 2, 3, 4};
+		public static readonly int[] PAWN_START 		= {    -4, -3, -2, -1, 0, 1, 2, 3, 4   };
 		public static readonly int[] PAWN_PROMOTE 		= {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
 		public static readonly int[] KNIGHT_MULTIPLERS 	= {-1, 1, -1, 1};
 		
 
 		/// <summary>
-		/// Create an active pieces dictionary. For every piece type a list of vector2i is held for the position on each piece. 
+		/// Creates a dictionary with PIECES as the Key and an empty Vector2I list as the held value. 
 		/// </summary>
-		/// <returns> Active Pieces Dictionary </returns>
-		public static Dictionary<PIECES, List<Vector2I>> InitPiecesDict()
+		/// <returns> The created dictionary </returns>
+		public static Dictionary<PIECES, List<Vector2I>> InitiatePIECESDictionaryMoveList()
 		{
-			return new(){ 
-				{PIECES.PAWN, new()},
-				{PIECES.KNIGHT, new()},
-				{PIECES.ROOK, new ()},
-				{PIECES.BISHOP, new()},
-				{PIECES.QUEEN, new()},
-				{PIECES.KING, new()} 
+			return new()
+			{ 
+				{PIECES.PAWN, new(){}},
+				{PIECES.KNIGHT, new(){}},
+				{PIECES.ROOK, new (){}},
+				{PIECES.BISHOP, new(){}},
+				{PIECES.QUEEN, new(){}},
+				{PIECES.KING, new(){}} 
 			};
 		}
 
-		public static Dictionary<int,Dictionary<int,int>> createAttackBoard(int radius)
+		/// <summary>
+		/// Create a 2D int key dictionary with a int as the held value. Dictionary is jagged. 
+		/// </summary>
+		/// <param name="radius">The number of hexagons fron the center to the edge.</param>
+		/// <returns> QR Dictionary with r radius. </returns>
+		public static Dictionary<int,Dictionary<int,int>> CreateQRDictionary(int radius)
 	{
 		var rDictionary = new Dictionary<int,Dictionary<int,int>>(2*radius);
 		for( int q=-radius; q <= radius; q +=1 )
 		{
 			int negQ = q * -1;
-			int minRow = Math.Max(-radius, (negQ-radius));
-			int maxRow = Math.Min(radius, (negQ+radius));
+			int minRow = Math.Max(-radius, negQ-radius);
+			int maxRow = Math.Min(radius, negQ+radius);
 			rDictionary.Add(q, new Dictionary<int, int>(maxRow-minRow));
 			for(int r = minRow; r<= maxRow; r += 1 )
 				rDictionary[q].Add(r, 0);
@@ -77,12 +82,11 @@ public class HexConst
 		public static int QRToIndex (int q, int r)
 		{
 			int normalq = q + 5;
-			int i = 0;
 			int index = 0;
+			int i = 0;
 			foreach(int size in Bitboard128.COLUMN_SIZES)
 			{
-				if (normalq == i)
-					break; 
+				if (normalq == i) break; 
 				index += size;
 				i += 1;
 			}
@@ -90,11 +94,17 @@ public class HexConst
 			if(q <= 0)
 				index += 5 - r;
 			else
-				index += (Bitboard128.COLUMN_SIZES[normalq]-6) - r;
+				index += Bitboard128.COLUMN_SIZES[normalq] - 6 - r;
 					
 			return index;
 		}
-		public static Vector2I IndexToQR (int index){
+		/// <summary>
+		/// Given an index find the mapped QR cordinates for a r=5 hex board. 0 = (-5,5). 5 = (-5,0). 85 = (5,0). 90 = (5,-5). 91 Total positions.
+		/// </summary>
+		/// <param name="index"> Index to to check</param>
+		/// <returns></returns>
+		public static Vector2I IndexToQR (int index)
+		{
 			int accumulated_index = 0;
 			int normalq = 0;
 			int r;
@@ -109,11 +119,16 @@ public class HexConst
 			if( normalq <= 5 )
 				r = 5 - (index - accumulated_index);
 			else
-				r = (Bitboard128.COLUMN_SIZES[normalq] - 6) - (index - accumulated_index);
+				r = Bitboard128.COLUMN_SIZES[normalq] - 6 - (index - accumulated_index);
 			
 			var q = normalq - 5;
 			return new Vector2I(q, r);
 		}
+		/// <summary>
+		/// Given a QR pair determine the corresponding S cordinate to complete 3 value axial cordinates.
+		/// </summary>
+		/// <param name="cords">QR Pair</param>
+		/// <returns> Value of determined S cordinate</returns>
 		public static int SAxialCordFrom(Vector2I cords)
 		{
 			return (-1 * cords.X) - cords.Y;
@@ -133,7 +148,10 @@ public class HexConst
 				GD.Print("\n");
 			}
 		}
-		// set all values of given board to zero.
+		/// <summary>
+		/// set all values of given board to zero.
+		/// </summary>
+		/// <param name="board"></param>
 		public static void ZeroBoard(Dictionary<int, Dictionary<int,int>> board)
 		{
 			foreach( int key in board.Keys)
@@ -141,7 +159,11 @@ public class HexConst
 					board[key][innerKey] = 0;
 			return;
 		}
-		// Count the amount of moves found
+		/// <summary>
+		/// Given a formatted move list count all found moves.
+		/// </summary>
+		/// <param name="movesList">Formatted Move List</param>
+		/// <returns>Move Count</returns>
 		public static int CountMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> movesList)
 		{
 			int count = 0;
@@ -316,6 +338,7 @@ public class HexConst
 		}
 
 
+
 		// Copy Data
 
 
@@ -451,6 +474,7 @@ public class HexConst
 			}
 			GD.Print(outString);
 		}
+
 
 
 		// ID

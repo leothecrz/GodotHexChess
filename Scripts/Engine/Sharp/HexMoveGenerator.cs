@@ -78,8 +78,8 @@ public class HexMoveGenerator
 
 		GameInCheckMoves = new List<Vector2I>(){};
 
-		WhiteAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
-		BlackAttackBoard = createAttackBoard(HEX_BOARD_RADIUS);
+		WhiteAttackBoard = CreateQRDictionary(HEX_BOARD_RADIUS);
+		BlackAttackBoard = CreateQRDictionary(HEX_BOARD_RADIUS);
 		count = 0;
 		ATKMOD = 0;
 	}
@@ -503,11 +503,18 @@ public class HexMoveGenerator
 	public void rmvSelfAtks(Dictionary<PIECES, List<Vector2I>> lol) 
 	{
 		var savedMoves = moves;
+		var influence = influencedPieces;
+		var pin = pinningPieces;
+
+		influencedPieces = new();
+		pinningPieces = new();
 		
 		ATKMOD = -1;
 		findPseudoMovesFor(lol);
 	
 		moves = savedMoves;
+		influencedPieces = influence;
+		pinningPieces = pin;
 		return;
 	}
 	/// <summary>
@@ -544,6 +551,9 @@ public class HexMoveGenerator
 			return;
 		
 		var pinned = pinningPieces[pinner];
+		
+		if(pinned == acting)
+			return;
 
 		if(influencedPieces.ContainsKey(acting))
 			influencedPieces[acting].Add(pinned);
@@ -599,22 +609,24 @@ public class HexMoveGenerator
 	/// <returns></returns>
 	public Dictionary<PIECES, List<Vector2I>> GetAPfromInfluenceOf(Vector2I lastCords)
 	{
-		//var internalDictionary = new Dictionary<PIECES, List<Vector2I>> {{type, new List<Vector2I>{cords}}};
 		var internalDictionary = new Dictionary<PIECES, List<Vector2I>>(){};
 		
-		if (influencedPieces.ContainsKey(lastCords))
+		if (!influencedPieces.ContainsKey(lastCords))
+			return internalDictionary;
+
+		foreach( Vector2I item in influencedPieces[lastCords] )
 		{
-			foreach( Vector2I item in influencedPieces[lastCords] )
-			{
-				var index = QRToIndex(item.X,item.Y);
-				if (Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn) continue;
-				var inPieceType = Bitboards.GetPieceTypeFrom(index, HexState.IsWhiteTurn);
-				if ( internalDictionary.ContainsKey(inPieceType) )
-					internalDictionary[inPieceType].Add(item);
-				else
-					internalDictionary[inPieceType] = new List<Vector2I> { item };
-			}
+			var index = QRToIndex(item.X,item.Y);
+			if (Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn) 
+				continue;
+			
+			var inPieceType = Bitboards.GetPieceTypeFrom(index, HexState.IsWhiteTurn);
+			if ( internalDictionary.ContainsKey(inPieceType) )
+				internalDictionary[inPieceType].Add(item);
+			else
+				internalDictionary[inPieceType] = new List<Vector2I> { item };
 		}
+		
 		return internalDictionary;
 	}
 
@@ -694,6 +706,7 @@ public class HexMoveGenerator
 			CheckForBlockOn(direction, cords, piece, isW);
 		return;
 	}
+	//
 	public void prepBlockingFrom(Vector2I cords)
 	{
 		prepPinning();
@@ -887,7 +900,7 @@ public class HexMoveGenerator
 	public void generateMovesForPieceMove(PIECES pieceType, Vector2I cords, Vector2I moveTo, Vector2I myking)
 	{
 		myKingCords = myking;
-		Dictionary<PIECES, List<Vector2I>> effectedPieces = GetAPfromInfluenceOf(cords);
+		Dictionary<PIECES, List<Vector2I>> effectedPieces = GetAPfromInfluenceOf(cords); // zero hold pos of moving piece
 		
 		if (effectedPieces.ContainsKey(pieceType)) 
 			effectedPieces[pieceType].Add(cords);

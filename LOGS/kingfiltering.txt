@@ -17,3 +17,6 @@ rook capture bishop for check
 6/r4P1/8/n1p3r1N/q8Q/bb7BB/k8K/n7N/8/R6/6 w - 23
 stack position 6.
 ignores in check
+
+6/7/8/3p4N/R9/1b7B1/9K/2k3rQN/1p4q1/7/6 b - 34
+rook captures queen

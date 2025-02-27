@@ -15,6 +15,7 @@ extends Control;
 ##
 @onready var TAndFrom = $DynamicGUI/PosGUI;
 @onready var MoveNode = $DynamicGUI/MoveGUI;
+@onready var ATKBRDGUI =$DynamicGUI/ATKBoardGUI;
 @onready var ChessPiecesNode = $DynamicGUI/PiecesContainer;
 ##
 @onready var BGMusicPlayer = $BGMusic;
@@ -33,6 +34,7 @@ var isRotatedWhiteDown : bool = true;
 #Game
 var gameRunning : bool = false;
 var fenBuilding : bool = false;
+var showingATK : bool = false;
 var minimumUndoSizeReq : int = 1;
 var selfSide : int = 1;
 # Temp
@@ -419,13 +421,13 @@ func _on_fen_id_pressed(id: int) -> void:
 		_: return;
 func _on_test_id_pressed(id: int) -> void:
 	match ( id ):
-		0:
+		0: # Run Engine Suite
 			if(gameRunning): 
 				spawnNotice("[center]Game is Running.[/center]",  0.8);  
 				return;
 			EngineNode.Test(0);
 			return;
-		1:
+		1: # Evaluate Board
 			if(not gameRunning): 
 				spawnNotice("[center]Game NOT Running[/center]",  0.8); 
 				return;
@@ -433,6 +435,26 @@ func _on_test_id_pressed(id: int) -> void:
 				spawnNotice("[center]AI Running[/center]",  0.8); 
 				return;
 			spawnNotice("[center] Board H(): %d [/center]" % EngineNode.TestReturnInt(1),  2);
+			return;
+		2: #Show ATKBRD
+			if(showingATK):
+				showingATK = !showingATK;
+				for child in ATKBRDGUI.get_children():
+					child.queue_free();
+				return;
+			if(not gameRunning):
+				return;
+			showingATK = !showingATK;
+			var activeboard : Dictionary = EngineNode.GetActingAttackBoard();
+			for key : int in activeboard.keys():
+				var innerDict : Dictionary = activeboard[key];
+				for innerkey : int in innerDict.keys() :
+					var next = preload("res://Scenes/HexTileATK.tscn").instantiate();
+					next.__setSetupVars(Vector2i.ZERO,GDHexConst.MOVE_TYPES.MOVES,0,Vector2i.ZERO, cordinateToOrigin(Vector2i(key,innerkey)), 0.03)
+					var lbl : Label = next.get_child(next.get_child_count()-1);
+					var lblnum : int = activeboard[key][innerkey]
+					lbl.text = str(lblnum);
+					ATKBRDGUI.add_child(next);
 			return;
 		_:
 			return;

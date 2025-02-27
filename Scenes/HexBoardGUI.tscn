@@ -189,10 +189,12 @@ transparent_bg = true
 size = Vector2i(150, 100)
 transparent = true
 theme = ExtResource("6_4nxpu")
-item_count = 2
+item_count = 3
 item_0/text = "Run Engine Suite"
 item_1/text = "Evaluate Board"
 item_1/id = 1
+item_2/text = "Show ATKBRD"
+item_2/id = 2
 
 [node name="Captures" type="Control" parent="StaticGUI/Left/BG"]
 layout_mode = 1
@@ -1087,6 +1089,8 @@ texture = ExtResource("4_p44o5")
 [node name="Queens" type="Node" parent="DynamicGUI/PiecesContainer/White"]
 
 [node name="King" type="Node" parent="DynamicGUI/PiecesContainer/White"]
+
+[node name="ATKBoardGUI" type="Node" parent="DynamicGUI"]
 
 [node name="BGMusic" type="AudioStreamPlayer" parent="."]
 editor_description = "Background music source"
