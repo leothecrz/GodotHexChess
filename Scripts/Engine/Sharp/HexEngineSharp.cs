@@ -20,11 +20,14 @@ public partial class HexEngineSharp : Node
 
 	// Internal
 	private Stack<HistEntry> historyStack; // HISTORY
-	private bool moveLock; //MOVE AUTH
+	/// <summary>
+	/// MOVE AUTHORITY - locks the MakeMove API when an AI opponent is set and it is its turn.
+	/// </summary>
+	private bool moveLock;
 
 
 	/// <summary>
-	/// Constructor. Initiates state holders and the move generator.
+	/// Constructor. (or) When node is initiated. Initiates state holders and the move generator.
 	/// HexEngineSharp is the master cordinator of the engine module.
 	/// </summary>
 	public HexEngineSharp()
@@ -42,10 +45,10 @@ public partial class HexEngineSharp : Node
 
 
 	/// <summary>
-	/// Dependeing on the hexstate iswhiteturn field get the positions of the kings.
+	/// Retrives the position of both kings based on the current turn.  
 	/// </summary>
-	/// <param name="myking"> King of the turn's side</param>
-	/// <param name="theirKing"> King of the opposing turn's side</param>
+	/// <param name="myking"> The position of the king belonging to the current turn's side.</param>
+	/// <param name="theirKing"> Opposing king </param>
 	private void GetKings(out Vector2I myking, out Vector2I theirKing)
 	{
 		myking = BitBoards.ActivePieces[(int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK)][PIECES.KING][KING_INDEX];
@@ -185,7 +188,7 @@ public partial class HexEngineSharp : Node
 				Enemy.EnemyAI = new RandomAI(Enemy.EnemyPlaysWhite);
 				break;
 			case ENEMY_TYPES.MIN_MAX:
-				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 3);
+				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 2);
 				break;
 		}
 		return;
@@ -209,15 +212,16 @@ public partial class HexEngineSharp : Node
 	{
 		GetKings(out Vector2I _, out Vector2I kingCords);
 		mGen.generateNextLegalMoves(BitBoards.ActivePieces);
-		if(IsUnderAttack(kingCords, mGen.moves, out List<Vector2I> from))
-		{
-			HexState.IsCheck = true;
-			if(from.Count > 1) HexState.CheckByMany = true;
-			
-			mGen.GameInCheckMoves = new();
-			foreach(Vector2I atk in from)
-				mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(atk.X,atk.Y), HexState.IsWhiteTurn), atk, kingCords);
-		}
+		if(!IsUnderAttack(kingCords, mGen.moves, out List<Vector2I> from))
+			return;
+		
+		HexState.IsCheck = true;
+		HexState.CheckByMany = from.Count > 1;
+		mGen.GameInCheckMoves = new();
+
+		foreach(Vector2I atk in from)
+			mGen.fillInCheckMoves(BitBoards.GetPieceTypeFrom(QRToIndex(atk.X,atk.Y), HexState.IsWhiteTurn), atk, kingCords);
+	
 	}
 
 
@@ -336,7 +340,7 @@ public partial class HexEngineSharp : Node
 
 		if(type == PIECES.KING)
 		{
-			GD.PrintErr("King DIED");
+			GD.PrintErr("King DIED"); // Should not be possible.
 		}
 
 		HexState.CaptureType = type;
@@ -643,9 +647,9 @@ public partial class HexEngineSharp : Node
 		moveLock = true;
 		
 		HexState.resetState();
-		mGen.resetState();		
-		fillOpAtkBrd();
-				
+		mGen.resetState();	
+
+		fillOpAtkBrd();	// ATK BRD set for king moves
 		mGen.generateNextLegalMoves(BitBoards.ActivePieces);
 
 		initiateEngineAI();
@@ -854,20 +858,7 @@ public partial class HexEngineSharp : Node
 	public int getPiecetype(int p) { return (int)MaskPieceTypeFrom(p); }
 	public int unpromoteType() { return (int) HexState.UnpromoteType; }
 	public int unpromoteIndex() { return (int) HexState.UnpromoteIndex; }
-	public Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>> GetActingAttackBoard()
-	{
-		
-		var finalBoard = new Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>>();
-		var acting = HexState.IsWhiteTurn ? mGen.BlackAttackBoard : mGen.WhiteAttackBoard;
-		
-		foreach(var key in acting.Keys)
-		{
-			finalBoard[key] = new();
-			foreach(var innerKey in acting[key].Keys)
-				finalBoard[key][innerKey] = acting[key][innerKey];
-		}
-		return finalBoard;
-	}
+	
 	// strings
 	public string _getBoardFenNow()
 	{
@@ -981,7 +972,7 @@ public partial class HexEngineSharp : Node
 		}
 		return gdReturn;
 	} 
-	public Godot.Collections.Array<String> GetTop5Hist()
+	public Godot.Collections.Array<string> GetTop5Hist()
 	{	
 		Godot.Collections.Array<String> Histtop = new Godot.Collections.Array<string>();
 		Stack<HistEntry> topStore = new Stack<HistEntry>();
@@ -1000,7 +991,20 @@ public partial class HexEngineSharp : Node
 		
 		return Histtop;
 	}
-
+	public Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>> GetActingAttackBoard()
+	{
+		
+		var finalBoard = new Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>>();
+		var acting = HexState.IsWhiteTurn ? mGen.BlackAttackBoard : mGen.WhiteAttackBoard;
+		
+		foreach(var key in acting.Keys)
+		{
+			finalBoard[key] = new();
+			foreach(var innerKey in acting[key].Keys)
+				finalBoard[key][innerKey] = acting[key][innerKey];
+		}
+		return finalBoard;
+	}
 
 
 

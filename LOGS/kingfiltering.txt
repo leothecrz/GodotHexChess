@@ -20,3 +20,6 @@ ignores in check
 
 6/7/8/3p4N/R9/1b7B1/9K/2k3rQN/1p4q1/7/6 b - 34
 rook captures queen
+
+
+6/7/8/k8/01/11/2R7/9/r6K/7/6 w - 1

@@ -465,7 +465,13 @@ public class HexMoveGenerator
 
 
 
-	//Based on the turn determine the appropriate board to update.
+	/// <summary>
+	/// Update the indicated attack board position on the selected side by the given ammount.
+	/// </summary>
+	/// <param name="q"> Q Cord</param>
+	/// <param name="r"> R Cord</param>
+	/// <param name="mod"> update amount</param>
+	/// <param name="modw"> modify White? else Black.</param>
 	private void updateAttackBoard(int q, int r, int mod, bool modw)
 	{
 		var atkbrd = modw ? WhiteAttackBoard : BlackAttackBoard;
@@ -486,37 +492,7 @@ public class HexMoveGenerator
 			updateAttackBoard(cords.X+1, rightCaptureR, mod, HexState.IsWhiteTurn);
 		return;
 	}
-	//
-	// public void modAtkBoard(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves, int mod)
-	// {
-	// 	foreach(KeyValuePair<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> movePair in moves)
-	// 	{
-	// 		if(movePair.Value.Keys.Count == 4) // PAWN
-	// 			updateAtkBrbPawns(movePair.Key, mod);
-	// 		else
-	// 			foreach(KeyValuePair<MOVE_TYPES, List<Vector2I>> innerPair in movePair.Value)
-	// 				foreach(Vector2I move in innerPair.Value)
-	// 					updateAttackBoard(move.X, move.Y, mod, HexState.IsWhiteTurn);
-	// 	}
-	// }
-	//
-	public void rmvSelfAtks(Dictionary<PIECES, List<Vector2I>> lol) 
-	{
-		var savedMoves = moves;
-		var influence = influencedPieces;
-		var pin = pinningPieces;
-
-		influencedPieces = new();
-		pinningPieces = new();
-		
-		ATKMOD = -1;
-		findPseudoMovesFor(lol);
 	
-		moves = savedMoves;
-		influencedPieces = influence;
-		pinningPieces = pin;
-		return;
-	}
 	/// <summary>
 	/// TO BE REPLACED
 	/// SHOULD REMOVE ANY INFLUNCED AS WELL
@@ -527,7 +503,21 @@ public class HexMoveGenerator
 	{
 		HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 		var movedPiece = new Dictionary<PIECES, List<Vector2I>> { {pieceType, new List<Vector2I> {new Vector2I(cords.X, cords.Y)}} };
-		rmvSelfAtks(movedPiece);
+		
+		var savedMoves = moves;
+		var influence = influencedPieces;
+		var pin = pinningPieces;
+
+		influencedPieces = new();
+		pinningPieces = new();
+		
+		ATKMOD = -1;
+		findPseudoMovesFor(movedPiece);
+	
+		moves = savedMoves;
+		influencedPieces = influence;
+		pinningPieces = pin;
+
 		HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 		return;
 	}
@@ -556,7 +546,8 @@ public class HexMoveGenerator
 			return;
 
 		if(influencedPieces.ContainsKey(acting))
-			influencedPieces[acting].Add(pinned);
+			if(!influencedPieces[acting].Contains(pinned))
+				influencedPieces[acting].Add(pinned);
 		else
 			influencedPieces[acting] = new(){pinned};
 	}
@@ -862,7 +853,7 @@ public class HexMoveGenerator
 	/// <param name="AP"></param>
 	public void generateNextLegalMoves(Dictionary<PIECES, List<Vector2I>>[] AP)
 	{
-		int selfside = -1;
+		int selfside;
 		if(HexState.IsWhiteTurn)
 		{
 			selfside = (int) SIDES.WHITE;
@@ -883,9 +874,6 @@ public class HexMoveGenerator
 		ATKMOD = 1;
 		findPseudoMovesFor(AP[selfside]);
 		filterLegalMoves();
-
-		//printATK();
-
 		lastInfluencedPieces = null; //not necessary but explicit
 		return;
 	}
@@ -893,6 +881,9 @@ public class HexMoveGenerator
 
 	/// <summary>
 	/// Update the atk brd for the effects of 'cords' moving to 'moveto'
+	/// 
+	/// (WIP) remove previous effects on attackboard before recalculing moves.
+	/// AP INFLUENCE has zero as key. ERROR 
 	/// </summary>
 	/// <param name="pieceType"></param>
 	/// <param name="cords"></param>
@@ -911,10 +902,11 @@ public class HexMoveGenerator
 		{
 			var val = pinningPieces[moveTo];
 			PIECES pinned = Bitboards.GetPieceTypeFrom(QRToIndex(val.X,val.Y), HexState.IsWhiteTurn);
-			if (effectedPieces.ContainsKey(pinned)) 
-				effectedPieces[pinned].Add(val);
-			else 
-				effectedPieces[pinned] = new(){val};
+			if(val != cords)
+				if (effectedPieces.ContainsKey(pinned)) 
+					effectedPieces[pinned].Add(val);
+				else 
+					effectedPieces[pinned] = new(){val};
 		}
 
 		foreach(var bb in blockingPieces) // interrup pinning
@@ -924,8 +916,12 @@ public class HexMoveGenerator
 
 			var val = bb.Key;
 			PIECES pinned = Bitboards.GetPieceTypeFrom(QRToIndex(val.X,val.Y), HexState.IsWhiteTurn);
-			if (effectedPieces.ContainsKey(pinned)) 
-				effectedPieces[pinned].Add(val);
+			if(pinned == PIECES.ZERO)
+				continue;
+			
+			if (effectedPieces.ContainsKey(pinned))
+				if(!effectedPieces[pinned].Contains(val)) 
+					effectedPieces[pinned].Add(val);
 			else 
 				effectedPieces[pinned] = new(){val};
 		}
