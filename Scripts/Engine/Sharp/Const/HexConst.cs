@@ -103,6 +103,10 @@ public class HexConst
 		/// </summary>
 		/// <param name="index"> Index to to check</param>
 		/// <returns></returns>
+		public static int QRToIndex(Vector2I vec)
+		{
+			return QRToIndex(vec.X, vec.Y);
+		}
 		public static Vector2I IndexToQR (int index)
 		{
 			int accumulated_index = 0;
