@@ -284,10 +284,7 @@ public class HexMoveGenerator
 					Vector2I pos = new Vector2I(checkingQ,checkingR);
 					if(influencedPieces.ContainsKey(pos)) influencedPieces[pos].Add(rook);
 					else influencedPieces[pos] = new List<Vector2I> {rook};
-					//
-					if(influencedPieces.ContainsKey(rook)) influencedPieces[rook].Add(pos);
-					else influencedPieces[rook] = new List<Vector2I> {pos};
-					//					
+									
 					if( Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn ) //Enemy
 					{ 
 						moves[rook][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
@@ -337,10 +334,7 @@ public class HexMoveGenerator
 					Vector2I pos = new (checkingQ,checkingR);
 					if(influencedPieces.ContainsKey(pos)) influencedPieces[pos].Add(bishop);
 					else influencedPieces[pos] = new () {bishop};
-					//
-					if(influencedPieces.ContainsKey(bishop)) influencedPieces[bishop].Add(pos);
-					else influencedPieces[bishop] = new () {pos};
-					//
+					
 
 					if( Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn ) // Enemy
 					{

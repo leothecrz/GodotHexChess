@@ -96,7 +96,7 @@ namespace HexChess
 
 		public override string ToString()
 		{
-			return $"P:{Piece}, from:({From.X},{From.Y}), to:({To.X},{To.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{ProPiece} -- cap:{Capture} top:{CaptureTopSneak} type:{CapPiece}";
+			return $"P:{Piece} - {HexConst.MaskPieceTypeFrom(Piece)}, from:({From.X},{From.Y}), to:({To.X},{To.Y}) -- e:{EnPassant} c:{Check} o:{Over} -- p:{Promote} type:{ProPiece} -- cap:{Capture} top:{CaptureTopSneak} type:{CapPiece}";
 		}
 	}
 }

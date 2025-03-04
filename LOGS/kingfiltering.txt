@@ -23,3 +23,6 @@ rook captures queen
 
 
 6/7/8/k8/01/11/2R7/9/r6K/7/6 w - 1
+
+
+6/p6/8/R1p5N/q9/bb6Q1B/k8K/n5P1B/8/p4P1/6 b - 24

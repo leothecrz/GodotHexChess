@@ -340,6 +340,7 @@ public partial class HexEngineSharp : Node
 
 		if(type == PIECES.KING)
 		{
+			GD.PrintErr(_getBoardFenNow());
 			GD.PrintErr("King DIED"); // Should not be possible.
 		}
 
