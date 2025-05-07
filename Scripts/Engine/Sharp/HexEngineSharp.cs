@@ -894,8 +894,8 @@ public partial class HexEngineSharp : Node
 					{
 						if(dist > 9)
 						{
-							stack.Push('1');
 							stack.Push((char)('0' + (char)(dist-10)));
+							stack.Push('1');
 						}
 						else
 							stack.Push((char)('0' + (char)dist));
@@ -912,8 +912,8 @@ public partial class HexEngineSharp : Node
 			{
 				if(dist > 9)
 				{
-					stack.Push('1');
 					stack.Push((char)('0' + (char)(dist-10)));
+					stack.Push('1');
 				}
 				else
 					stack.Push((char)('0' + (char)dist));
