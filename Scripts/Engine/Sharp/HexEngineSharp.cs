@@ -62,7 +62,7 @@ public partial class HexEngineSharp : Node
 
 
 	/// <summary>
-	/// Fill The Board by translating a fen string. DOES NOT VERIFY FEN STRING FOR ILLEGAL POSITIONS -- (W I P)
+	/// Fill The Board by translating a fen string. Set the board state. DOES NOT VERIFY FEN STRING FOR ILLEGAL POSITIONS -- (W I P)
 	/// </summary>
 	/// <param name="fenString"> a string in the fasion of "////////// w/b EnPassant Turn#" to describe the board state. </param>
 	/// <returns></returns>
@@ -71,7 +71,7 @@ public partial class HexEngineSharp : Node
 		string [] fenSections =  fenString.Split(' ');
 		if (fenSections.Length != 4)
 		{
-			GD.PushError("Not Enough Fen Sections");
+			GD.PushError("Not Enough FEN Sections");
 			return false;
 		}
 
@@ -86,7 +86,7 @@ public partial class HexEngineSharp : Node
 		Match result = regex.Match(fenString);
 		if (!result.Success)
 		{
-			GD.PushError("Regex fail");
+			GD.PushError("Regex fail - illegal characters in the FEN STRING");
 			return false;
 		}
 		if( result.Value != fenSections[0] )
@@ -145,21 +145,28 @@ public partial class HexEngineSharp : Node
 			GD.PushError("Regex fail");
 			return false;
 		}
+
 		//EnPassant Cords
 		if(fenSections[2] != "-")
 		{
-			HexState.EnPassantCordsValid = true;
+			HexState.EnPassantCords = new (HexState.EnPassantTarget.X, HexState.EnPassantTarget.Y + (HexState.IsWhiteTurn ? -1 : 1));
 			HexState.EnPassantTarget = DecodeFEN(fenSections[2]);
-			HexState.EnPassantCords = new Vector2I(HexState.EnPassantTarget.X, HexState.EnPassantTarget.Y + (HexState.IsWhiteTurn ? -1 : 1));
+			HexState.EnPassantCordsValid = true;
 		}
 		else
 		{
-			HexState.EnPassantCords = new Vector2I(-5,-5);
-			HexState.EnPassantTarget = new Vector2I(-5,-5);
+			HexState.EnPassantCords = new (ILLEGAL_CORDS,0);
+			HexState.EnPassantTarget = new (ILLEGAL_CORDS,0);
 			HexState.EnPassantCordsValid = false;
 		}
+		
 		// Turn Number
-		HexState.TurnNumber = fenSections[3].ToInt();
+		try {HexState.TurnNumber = fenSections[3].ToInt();}
+		catch(Exception e)
+		{
+			GD.PrintErr(e);
+			return false;
+		}
 		if(HexState.TurnNumber < 1)
 			HexState.TurnNumber = 1;
 			
@@ -176,8 +183,9 @@ public partial class HexEngineSharp : Node
 	/// </summary>
 	private void initiateEngineAI()
 	{
-		if(! Enemy.EnemyIsAI)
+		if(!Enemy.EnemyIsAI)
 			return;
+			
 		switch (Enemy.EnemyType)
 		{
 			case ENEMY_TYPES.RANDOM:
@@ -188,7 +196,7 @@ public partial class HexEngineSharp : Node
 				Enemy.EnemyAI = new RandomAI(Enemy.EnemyPlaysWhite);
 				break;
 			case ENEMY_TYPES.MIN_MAX:
-				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, 2);
+				Enemy.EnemyAI = new MinMaxAI(Enemy.EnemyPlaysWhite, Enemy.EnemyDifficulty > 0 ? Enemy.EnemyDifficulty : 1);
 				break;
 		}
 		return;
@@ -212,7 +220,7 @@ public partial class HexEngineSharp : Node
 	{
 		GetKings(out Vector2I _, out Vector2I kingCords);
 		mGen.generateNextLegalMoves(BitBoards.ActivePieces);
-		if(!IsUnderAttack(kingCords, mGen.moves, out List<Vector2I> from))
+		if(!IsUnderAttack(kingCords, mGen.filteredMoves, out List<Vector2I> from))
 			return;
 		
 		HexState.IsCheck = true;
@@ -326,7 +334,7 @@ public partial class HexEngineSharp : Node
 
 	private void handleEnpassant(Vector2I cords, Vector2I moveTo)
 	{
-		var newECords = mGen.moves[cords][MOVE_TYPES.ENPASSANT][0];
+		var newECords = mGen.filteredMoves[cords][MOVE_TYPES.ENPASSANT][0];
 		HexState.EnPassantCords = new Vector2I(newECords.X, newECords.Y + (HexState.IsWhiteTurn ? 1 : -1));
 		HexState.EnPassantTarget = moveTo;
 		HexState.EnPassantCordsValid = true;
@@ -379,7 +387,7 @@ public partial class HexEngineSharp : Node
 		PIECES cordsPIECES = BitBoards.GetPieceTypeFrom(cordsIndex, HexState.IsWhiteTurn);
 		int cordsPieceVal = ToPieceInt(cordsPIECES, !HexState.IsWhiteTurn);
 		
-		Vector2I moveTo = mGen.moves[cords][moveType][moveIndex];
+		Vector2I moveTo = mGen.filteredMoves[cords][moveType][moveIndex];
 		HistEntry histEntry = new(cordsPieceVal, cords, moveTo);
 		
 		//CLEAR LAST POSITION
@@ -435,7 +443,7 @@ public partial class HexEngineSharp : Node
 		//CHECK SELF MOVED PIECE EFFECTS
 		GetKings(out Vector2I myking, out Vector2I enemykingCords);
 		mGen.generateMovesForPieceMove(cordsPIECES, cords, moveTo, myking);
-		if(IsUnderAttack(enemykingCords, mGen.moves, out List<Vector2I> from)) // moved piece effect caused check?
+		if(IsUnderAttack(enemykingCords, mGen.filteredMoves, out List<Vector2I> from)) // moved piece effect caused check?
 		{
 			histEntry.FlipCheck();
 			HexState.IsCheck = true;
@@ -454,7 +462,7 @@ public partial class HexEngineSharp : Node
 		mGen.addInflunceFrom(moveTo); //GETS STORED IN LAST_INFLUENCED_PIECES ON PURPOSE // TRACKS IF PAWN ENPASSANT CAPTURE IS LEGAL 
 		mGen.generateNextLegalMoves(BitBoards.ActivePieces);
 		
-		if((BitBoards.GetPieceCount() <= 2) || (CountMoves(mGen.moves) <= 0)) // Kings are the only remaining pieces || Check For CheckMate or StaleMate
+		if((BitBoards.GetPieceCount() <= 2) || (CountMoves(mGen.filteredMoves) <= 0)) // Kings are the only remaining pieces || Check For CheckMate or StaleMate
 		{
 			HexState.IsOver = true;
 			histEntry.FlipOver();
@@ -631,7 +639,7 @@ public partial class HexEngineSharp : Node
 
 	
 	/// <summary>
-	/// 
+	/// Given a verified FEN String initiate the board states and poopulate the board. 
 	/// </summary>
 	/// <param name="FEN_STRING"></param>
 	/// <returns></returns>
@@ -642,6 +650,7 @@ public partial class HexEngineSharp : Node
 			GD.PushError("Invalid FEN STRING");
 			return false;
 		}
+
 		BitBoards.ExtractPieceList(); // stored in BitBoards.ActivePieces
 
 		historyStack = new Stack<HistEntry> {};
@@ -650,7 +659,7 @@ public partial class HexEngineSharp : Node
 		HexState.resetState();
 		mGen.resetState();	
 
-		fillOpAtkBrd();	// ATK BRD set for king moves
+		fillOpAtkBrd();	// ATK BRD set for king moves, check if in CHECK.
 		mGen.generateNextLegalMoves(BitBoards.ActivePieces);
 
 		initiateEngineAI();
@@ -664,6 +673,7 @@ public partial class HexEngineSharp : Node
 	/// </summary>
 	/// <returns>True is success in initiation. False if initiation failed</returns>
 	public bool InitiateDefault() { return initiateEngine(DEFAULT_FEN_STRING); }
+
 
 
 
@@ -682,7 +692,7 @@ public partial class HexEngineSharp : Node
 		mGen.blockingPieces = DeepCopyPieces(BPieces);
 		mGen.pinningPieces = DeepCopyPinning(PPieces);
 		mGen.influencedPieces = DeepCopyPieces(IPieces);
-		mGen.moves = DeepCopyLegalMoves(moves);
+		mGen.filteredMoves = DeepCopyLegalMoves(moves);
 		return;
 	}
 	public Dictionary<int, Dictionary<int,int>> _duplicateWAB() { return DeepCopyBoard(mGen.WhiteAttackBoard); }
@@ -698,7 +708,10 @@ public partial class HexEngineSharp : Node
 	public void _resign()
 	{
 		if(HexState.IsOver)
+		{
+			GD.PushWarning("Resigned when no game active.");
 			return;
+		}
 		HexState.IsOver = true;
 		return;
 	}	
@@ -725,7 +738,10 @@ public partial class HexEngineSharp : Node
 		Enemy.EnemyPromoted = Enemy.EnemyAI._getMoveType() == (int) MOVE_TYPES.PROMOTE;
 		Enemy.EnemyPromotedTo = (PIECES) Enemy.EnemyAI._getPromoteTo();
 		
-		handleMove(Enemy.EnemyAI._getCords(), (MOVE_TYPES) Enemy.EnemyAI._getMoveType(), Enemy.EnemyAI._getMoveIndex(), Enemy.EnemyPromotedTo);
+		handleMove(Enemy.EnemyAI._getCords(),
+		 	(MOVE_TYPES) Enemy.EnemyAI._getMoveType(),
+			Enemy.EnemyAI._getMoveIndex(), 
+			Enemy.EnemyPromotedTo);
 		return;
 	}
 	
@@ -744,7 +760,7 @@ public partial class HexEngineSharp : Node
 			GD.PushWarning("Game Is Over");
 			return;
 		}
-		if(!mGen.moves.ContainsKey(cords))
+		if(!mGen.filteredMoves.ContainsKey(cords))
 		{
 			GD.PushWarning("Invalid Move Attempted");
 			return;
@@ -776,6 +792,7 @@ public partial class HexEngineSharp : Node
 
 
 	/// <summary>
+	/// Verify that a fen string is in a LEGAL position.
 	/// NEEDS TO BE IMPLEMENTED.
 	/// ILLEGAL MOVE IDEAS:
 	/// 	1. Pawns can not be on a promoting tile.
@@ -928,7 +945,7 @@ public partial class HexEngineSharp : Node
 	// vectors
 	public Vector2I _getEnemyTo() { return Enemy.EnemyTo; }
 	// dictionaries
-	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> GetMoves() { return mGen.moves; }
+	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> GetMoves() { return mGen.filteredMoves; }
 	public Dictionary<PIECES, List<Vector2I>>[] GetAPs() { return BitBoards.ActivePieces; }
 	
 
@@ -957,13 +974,13 @@ public partial class HexEngineSharp : Node
 	public Godot.Collections.Dictionary<Vector2I,Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>> GDGetMoves()
 	{
 		var gdReturn = new Godot.Collections.Dictionary<Vector2I,Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>>();
-		foreach(var key in mGen.moves.Keys)
+		foreach(var key in mGen.filteredMoves.Keys)
 		{
 			var innerDictionary = new Godot.Collections.Dictionary<MOVE_TYPES, Godot.Collections.Array<Vector2I>>();
-			foreach(var innerkey in mGen.moves[key].Keys)
+			foreach(var innerkey in mGen.filteredMoves[key].Keys)
 			{
 				var innerList = new Godot.Collections.Array<Vector2I>();
-				foreach(var piece in mGen.moves[key][innerkey])
+				foreach(var piece in mGen.filteredMoves[key][innerkey])
 				{
 					innerList.Add(piece);
 				}

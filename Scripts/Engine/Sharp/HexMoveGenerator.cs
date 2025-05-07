@@ -12,7 +12,9 @@ namespace HexChess
 public class HexMoveGenerator
 {
 	//MOVE DICT
-	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves {get; set;}
+	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> unfilteredMoves {get; set;}
+	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> filteredMoves {get; set;}
+
 
 	//ATK
 	public Dictionary<int, Dictionary<int,int>> WhiteAttackBoard {get; set;} // replace with bitboards
@@ -20,20 +22,46 @@ public class HexMoveGenerator
 
 
 
-	//PIECES
+	//INFLUENCE
+	/// <summary>
+	/// 
+	/// </summary>
 	private Dictionary<Vector2I, List<Vector2I>> lastInfluencedPieces {get; set;}
+	/// <summary>
+	/// 
+	/// </summary>
 	public Dictionary<Vector2I, List<Vector2I>> influencedPieces {get; set;}
 	
 	//BLOCKING
+	/// <summary>
+	/// 
+	/// </summary>
 	public Dictionary<Vector2I, List<Vector2I>> blockingPieces {get; set;}
 
+	//PINNING
+	/// <summary>
+	/// 
+	/// </summary>
 	public Dictionary<Vector2I, List<Vector2I>>  lastPinningPieces {get; set;}	
+	/// <summary>
+	/// 
+	/// </summary>
 	public Dictionary<Vector2I, Vector2I>  pinningPieces {get; set;}
 
+	//PROTECTED
+	public Dictionary<Vector2I, List<Vector2I>> protectedPieces {get; set;}
+
+
 	//CHECK
+	/// <summary>
+	/// 
+	/// </summary>
 	public List<Vector2I> GameInCheckMoves {get; set;}
 
 	//KING
+	/// <summary>
+	/// 
+	/// </summary>
 	private Vector2I myKingCords;
 
 
@@ -158,16 +186,16 @@ public class HexMoveGenerator
 			if( HexState.EnPassantCordsValid ) 
 				if ( (HexState.EnPassantCords.X == qpos) && (HexState.EnPassantCords.Y == rpos) )
 					if( EnPassantLegal() )
-						moves[pawn][MOVE_TYPES.CAPTURE].Add(move);
+						unfilteredMoves[pawn][MOVE_TYPES.CAPTURE].Add(move);
 		}
 		else
 		{
 			if(Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn)
 			{
 				if ( HexState.IsWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
-					moves[pawn][MOVE_TYPES.PROMOTE].Add(move); // PROMOTE CAPTURE
+					unfilteredMoves[pawn][MOVE_TYPES.PROMOTE].Add(move); // PROMOTE CAPTURE
 				else
-					moves[pawn][MOVE_TYPES.CAPTURE].Add(move);
+					unfilteredMoves[pawn][MOVE_TYPES.CAPTURE].Add(move);
 			}
 		}
 		
@@ -185,10 +213,10 @@ public class HexMoveGenerator
 			if(Bitboards.IsIndexEmpty(index))
 			{
 				if ( HexState.IsWhiteTurn ? isWhitePawnPromotion(move) : isBlackPawnPromotion(move) ) 
-					moves[pawn][MOVE_TYPES.PROMOTE].Add(move);
+					unfilteredMoves[pawn][MOVE_TYPES.PROMOTE].Add(move);
 				else
 				{
-					moves[pawn][MOVE_TYPES.MOVES].Add(move);
+					unfilteredMoves[pawn][MOVE_TYPES.MOVES].Add(move);
 					boolCanGoFoward = true;
 				}
 			}
@@ -199,7 +227,7 @@ public class HexMoveGenerator
 			int doubleF = HexState.IsWhiteTurn ? pawn.Y - 2 : pawn.Y + 2;
 			int index = QRToIndex(pawn.X, doubleF);
 			if (Bitboards.IsIndexEmpty(index))
-				moves[pawn][MOVE_TYPES.ENPASSANT].Add(new Vector2I(pawn.X, doubleF));
+				unfilteredMoves[pawn][MOVE_TYPES.ENPASSANT].Add(new Vector2I(pawn.X, doubleF));
 		}
 		return;
 	}
@@ -209,7 +237,7 @@ public class HexMoveGenerator
 		int leftCaptureR = HexState.IsWhiteTurn ? pawn.Y : pawn.Y + 1;
 		int rightCaptureR = HexState.IsWhiteTurn? pawn.Y-1 : pawn.Y;
 
-		moves[pawn] = DeepCopyMoveTemplate(PAWN_MOVE_TEMPLATE);
+		unfilteredMoves[pawn] = DeepCopyMoveTemplate(PAWN_MOVE_TEMPLATE);
 
 		//Foward Move
 		findFowardMovesForPawn(pawn, fowardR);
@@ -232,7 +260,7 @@ public class HexMoveGenerator
 	// Knight Moves
 	private void findMovesforKnight(Vector2I knight)
 	{
-		moves[knight] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+		unfilteredMoves[knight] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
 		var invertAt2Counter = 0;
 		foreach( int m in KNIGHT_MULTIPLERS )
 		{
@@ -246,9 +274,9 @@ public class HexMoveGenerator
 					int index = QRToIndex(checkingQ,checkingR);
 					updateAttackBoard(checkingQ, checkingR, ATKMOD, HexState.IsWhiteTurn);
 					if (Bitboards.IsIndexEmpty(index)) 
-						moves[knight][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ,checkingR));
+						unfilteredMoves[knight][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ,checkingR));
 					else if(Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn)
-						moves[knight][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ,checkingR));
+						unfilteredMoves[knight][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ,checkingR));
 				}
 			}
 			invertAt2Counter += 1;
@@ -267,7 +295,7 @@ public class HexMoveGenerator
 	// Rook Moves
 	private void findMovesForRook(Vector2I rook)
 	{
-		moves[rook] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+		unfilteredMoves[rook] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
 		foreach(string dir in ROOK_VECTORS.Keys)
 		{
 			Vector2I activeVector = ROOK_VECTORS[dir];
@@ -277,17 +305,13 @@ public class HexMoveGenerator
 			{
 				var index = QRToIndex(checkingQ,checkingR);
 				updateAttackBoard(checkingQ, checkingR, ATKMOD, HexState.IsWhiteTurn);
-				if( Bitboards.IsIndexEmpty(index) )
-					moves[rook][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
-				else
+				if( !Bitboards.IsIndexEmpty(index) )
 				{
-					Vector2I pos = new Vector2I(checkingQ,checkingR);
-					if(influencedPieces.ContainsKey(pos)) influencedPieces[pos].Add(rook);
-					else influencedPieces[pos] = new List<Vector2I> {rook};
-									
+					Vector2I pos = new(checkingQ,checkingR);
+					influenceAddCheck(pos, rook);									
 					if( Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn ) //Enemy
 					{ 
-						moves[rook][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
+						unfilteredMoves[rook][MOVE_TYPES.CAPTURE].Add(new(checkingQ, checkingR));
 						//King Escape Fix
 						if( Bitboards.GetPieceTypeFrom(index, !HexState.IsWhiteTurn) == PIECES.KING )
 						{
@@ -297,8 +321,13 @@ public class HexMoveGenerator
 								updateAttackBoard(checkingQ, checkingR, 1, HexState.IsWhiteTurn);
 						}
 					}
+					else
+					{
+						protectingAddCheck(rook, new(checkingQ, checkingR));
+					}
 					break;
 				}
+				unfilteredMoves[rook][MOVE_TYPES.MOVES].Add(new(checkingQ, checkingR));
 				checkingQ += activeVector.X;
 				checkingR += activeVector.Y;
 			}
@@ -317,7 +346,7 @@ public class HexMoveGenerator
 	// Bishop Moves
 	private void findMovesForBishop(Vector2I bishop)
 	{
-		moves[bishop] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+		unfilteredMoves[bishop] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
 		foreach( string dir in BISHOP_VECTORS.Keys )
 		{
 			Vector2I activeVector = BISHOP_VECTORS[dir];
@@ -327,18 +356,13 @@ public class HexMoveGenerator
 			{
 				var index = QRToIndex(checkingQ,checkingR);
 				updateAttackBoard(checkingQ, checkingR, ATKMOD, HexState.IsWhiteTurn);
-				if( Bitboards.IsIndexEmpty(index) )
-					moves[bishop][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
-				else
+				if( !Bitboards.IsIndexEmpty(index) )
 				{
-					Vector2I pos = new (checkingQ,checkingR);
-					if(influencedPieces.ContainsKey(pos)) influencedPieces[pos].Add(bishop);
-					else influencedPieces[pos] = new () {bishop};
-					
-
+					Vector2I pos = new(checkingQ,checkingR);
+					influenceAddCheck(pos, bishop);
 					if( Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn ) // Enemy
 					{
-						moves[bishop][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
+						unfilteredMoves[bishop][MOVE_TYPES.CAPTURE].Add(new(checkingQ, checkingR));
 						//King Escape Fix
 						if(Bitboards.GetPieceTypeFrom(index, !HexState.IsWhiteTurn) == PIECES.KING)
 						{
@@ -348,8 +372,13 @@ public class HexMoveGenerator
 								updateAttackBoard(checkingQ, checkingR, 1 , HexState.IsWhiteTurn);
 						}
 					}
+					else
+					{
+						protectingAddCheck(bishop, new(checkingQ, checkingR));
+					}
 					break;
 				}
+				unfilteredMoves[bishop][MOVE_TYPES.MOVES].Add(new(checkingQ, checkingR));
 				checkingQ += activeVector.X;
 				checkingR += activeVector.Y;
 			}
@@ -374,13 +403,13 @@ public class HexMoveGenerator
 		
 		findMovesForRooks(QueenArray);
 		foreach(Vector2I queen in QueenArray)
-			tempMoves[queen] =  DeepCopyInnerDictionary(moves, queen);
+			tempMoves[queen] =  DeepCopyInnerDictionary(unfilteredMoves, queen);
 
 		findMovesForBishops(QueenArray);
 		foreach( Vector2I queen in QueenArray)
 			foreach( MOVE_TYPES moveType in tempMoves[queen].Keys)
 				foreach( Vector2I move in tempMoves[queen][moveType])
-					moves[queen][moveType].Add(move);
+					unfilteredMoves[queen][moveType].Add(move);
 
 		return;
 	}
@@ -389,7 +418,7 @@ public class HexMoveGenerator
 	// King Moves
 	private void findMovesForKing(Vector2I king)
 	{
-		moves[king] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
+		unfilteredMoves[king] = DeepCopyMoveTemplate(DEFAULT_MOVE_TEMPLATE);
 
 		foreach( string dir in KING_VECTORS.Keys)
 		{
@@ -406,10 +435,10 @@ public class HexMoveGenerator
 
 			if( Bitboards.IsIndexEmpty(index) )
 			{
-				moves[king][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
+				unfilteredMoves[king][MOVE_TYPES.MOVES].Add(new Vector2I(checkingQ, checkingR));
 			}
 			else if( Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn )
-				moves[king][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
+				unfilteredMoves[king][MOVE_TYPES.CAPTURE].Add(new Vector2I(checkingQ, checkingR));
 			
 		}
 
@@ -433,7 +462,7 @@ public class HexMoveGenerator
 	public void findPseudoMovesFor(Dictionary<PIECES, List<Vector2I>> pieces)
 	{
 		SetStartRunningAverage();
-		moves = new Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>>();
+		unfilteredMoves = new(){};
 		foreach ( PIECES pieceType in pieces.Keys )
 		{
 			List<Vector2I> singleTypePieces = pieces[pieceType];
@@ -503,7 +532,7 @@ public class HexMoveGenerator
 		HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 		var movedPiece = new Dictionary<PIECES, List<Vector2I>> { {pieceType, new List<Vector2I> {new Vector2I(cords.X, cords.Y)}} };
 		
-		var savedMoves = moves;
+		var savedMoves = filteredMoves;
 		var influence = influencedPieces;
 		var pin = pinningPieces;
 
@@ -513,7 +542,7 @@ public class HexMoveGenerator
 		ATKMOD = -1;
 		findPseudoMovesFor(movedPiece);
 	
-		moves = savedMoves;
+		filteredMoves = savedMoves;
 		influencedPieces = influence;
 		pinningPieces = pin;
 
@@ -526,9 +555,36 @@ public class HexMoveGenerator
 
 	//Influence
 
-
-
-
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="position"></param>
+	/// <param name="piece"></param>
+	public void protectingAddCheck(Vector2I position, Vector2I piece)
+	{
+		if(protectedPieces.ContainsKey(position))
+		{ 
+			protectedPieces[position].Add(piece);
+			return;
+		}
+		protectedPieces[position] = new () {piece};
+		return;
+	}
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="position"></param>
+	/// <param name="piece"></param>
+	public void influenceAddCheck(Vector2I position, Vector2I piece)
+	{
+		if(influencedPieces.ContainsKey(position))
+		{ 
+			influencedPieces[position].Add(piece);
+			return;
+		}
+		influencedPieces[position] = new () {piece};
+		return;
+	}
 	/// <summary>
 	/// If pinner is in pinningPieces add the pinned piece to the acting piece's influence list.
 	/// </summary>
@@ -607,6 +663,7 @@ public class HexMoveGenerator
 		foreach( Vector2I item in influencedPieces[lastCords] )
 		{
 			var index = QRToIndex(item.X,item.Y);
+			
 			if (Bitboards.IsPieceWhite(index) != HexState.IsWhiteTurn) 
 				continue;
 			
@@ -700,8 +757,9 @@ public class HexMoveGenerator
 	public void prepBlockingFrom(Vector2I cords)
 	{
 		prepPinning();
-		blockingPieces = new Dictionary<Vector2I, List<Vector2I>>(){};
-		pinningPieces = new Dictionary<Vector2I, Vector2I>(){};
+		pinningPieces = new() {};
+		blockingPieces = new() {};
+		protectedPieces = new() {};
 		CheckBlockOnVectorList(cords, PIECES.ROOK, ROOK_VECTORS);
 		CheckBlockOnVectorList(cords, PIECES.BISHOP, BISHOP_VECTORS);
 	}
@@ -776,41 +834,41 @@ public class HexMoveGenerator
 
 	private void filterKing()
 	{
-		if(!moves.ContainsKey(myKingCords))
+		if(!filteredMoves.ContainsKey(myKingCords))
 			return;
 		var enemyAtkBrd = HexState.IsWhiteTurn ? BlackAttackBoard : WhiteAttackBoard;
-		foreach(MOVE_TYPES movetypes in moves[myKingCords].Keys)
-			moves[myKingCords][movetypes].RemoveAll(move => enemyAtkBrd[move.X][move.Y] > 0);	
+		foreach(MOVE_TYPES movetypes in filteredMoves[myKingCords].Keys)
+			filteredMoves[myKingCords][movetypes].RemoveAll(move => enemyAtkBrd[move.X][move.Y] > 0);	
 	}
 	private void filterPins()
 	{
 		foreach(var pin in lastPinningPieces)
 		{
-			if(!moves.ContainsKey(pin.Key))
+			if(!filteredMoves.ContainsKey(pin.Key))
 				continue;
-			foreach(var types in moves[pin.Key].Keys)
-				moves[pin.Key][types] = intersectOfTwoList(pin.Value,moves[pin.Key][types]);
+			foreach(var types in filteredMoves[pin.Key].Keys)
+				filteredMoves[pin.Key][types] = intersectOfTwoList(pin.Value,filteredMoves[pin.Key][types]);
 		}
 	}
 	private void filterBlocking()
 	{
 		foreach(var piece in blockingPieces)
 		{
-			if(!moves.ContainsKey(piece.Key))
+			if(!filteredMoves.ContainsKey(piece.Key))
 				continue;
 			
-			foreach( MOVE_TYPES moveType in moves[piece.Key].Keys)
-				moves[piece.Key][moveType] = intersectOfTwoList(piece.Value, moves[piece.Key][moveType]);
+			foreach( MOVE_TYPES moveType in filteredMoves[piece.Key].Keys)
+				filteredMoves[piece.Key][moveType] = intersectOfTwoList(piece.Value, filteredMoves[piece.Key][moveType]);
 		}
 	}
 	private void filterForInCheck(ref Dictionary<MOVE_TYPES, List<Vector2I>> kingMoves)
 	{
-		foreach(var valuePair in moves)
+		foreach(var valuePair in filteredMoves)
 		{
 			foreach(var innerValuePair in valuePair.Value)
 			{
 				var moveList = HexState.CheckByMany ? EmptyVector2IList : GameInCheckMoves;
-				moves[valuePair.Key][innerValuePair.Key] = intersectOfTwoList(moveList , moves[valuePair.Key][innerValuePair.Key]);
+				filteredMoves[valuePair.Key][innerValuePair.Key] = intersectOfTwoList(moveList , filteredMoves[valuePair.Key][innerValuePair.Key]);
 			}
 		}
 
@@ -825,14 +883,17 @@ public class HexMoveGenerator
 	}
 	public void filterLegalMoves()
 	{	
+		
+		filteredMoves = DeepCopyLegalMoves(unfilteredMoves);
+
 		filterKing();
 		if( HexState.IsCheck )
 		{
 			// King moves are handled differently than all the rest.
-			Dictionary<MOVE_TYPES, List<Vector2I>> kingMoves = moves[myKingCords];
-			moves.Remove(myKingCords);
+			Dictionary<MOVE_TYPES, List<Vector2I>> kingMoves = filteredMoves[myKingCords];
+			filteredMoves.Remove(myKingCords);
 			filterForInCheck(ref kingMoves);
-			moves[myKingCords] = kingMoves;
+			filteredMoves[myKingCords] = kingMoves;
 		}
 		if( blockingPieces.Count > 0)
 			filterBlocking();
@@ -867,37 +928,32 @@ public class HexMoveGenerator
 		myKingCords = AP[selfside][PIECES.KING][KING_INDEX];
 		prepBlockingFrom(myKingCords);
 
+		ATKMOD = 1;
 		lastInfluencedPieces = influencedPieces;
 		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};
-		
-		ATKMOD = 1;
 		findPseudoMovesFor(AP[selfside]);
 		filterLegalMoves();
 		lastInfluencedPieces = null; //not necessary but explicit
+		
+		GD.Print("Protected List:");
+		foreach(var p in protectedPieces)
+		{
+			var s = "";
+			foreach(var v in p.Value)
+			{
+				s += v;
+				s += ",";
+			}
+			GD.Print(p.Key, " : ", s);
+		}
+		
 		return;
 	}
 	
-
-	/// <summary>
-	/// Update the atk brd for the effects of 'cords' moving to 'moveto'
-	/// 
-	/// (WIP) remove previous effects on attackboard before recalculing moves.
-	/// AP INFLUENCE has zero as key. ERROR 
-	/// </summary>
-	/// <param name="pieceType"></param>
-	/// <param name="cords"></param>
-	/// <param name="moveTo"></param>
-	public void generateMovesForPieceMove(PIECES pieceType, Vector2I cords, Vector2I moveTo, Vector2I myking)
+	
+	private void fillEffectWithPinAndBlock(Vector2I cords, Vector2I moveTo, Dictionary<PIECES, List<Vector2I>> effectedPieces)
 	{
-		myKingCords = myking;
-		Dictionary<PIECES, List<Vector2I>> effectedPieces = GetAPfromInfluenceOf(cords); // zero hold pos of moving piece
-		
-		if (effectedPieces.ContainsKey(pieceType)) 
-			effectedPieces[pieceType].Add(cords);
-		else 
-			effectedPieces[pieceType] = new(){cords};
-		
-		if(pinningPieces.ContainsKey(moveTo)) //capture pinning
+		if(pinningPieces.ContainsKey(moveTo)) //captured a pinning piece
 		{
 			var val = pinningPieces[moveTo];
 			PIECES pinned = Bitboards.GetPieceTypeFrom(QRToIndex(val.X,val.Y), HexState.IsWhiteTurn);
@@ -924,7 +980,35 @@ public class HexMoveGenerator
 			else 
 				effectedPieces[pinned] = new(){val};
 		}
-
+	}
+	private void nonPawnUpdate(KeyValuePair<PIECES, List<Vector2I>> pieceList)
+	{
+		if(PIECES.QUEEN == pieceList.Key || PIECES.ROOK == pieceList.Key || PIECES.BISHOP == pieceList.Key) //SLIDING PROTECTION CLEARED
+		{
+			foreach(var piece in pieceList.Value)
+			{
+				if(!influencedPieces.ContainsKey(piece)) continue;
+				var protectedPieces = influencedPieces[piece];
+				foreach(var protectedPiece in protectedPieces)//King can't move onto its own pieces.
+				{
+					if(Bitboards.IsPieceWhite(QRToIndex(protectedPiece)) != HexState.IsWhiteTurn) continue;
+					updateAttackBoard(protectedPiece.X, protectedPiece.Y, -1, HexState.IsWhiteTurn);
+				}
+			}
+		}
+		foreach(var piece in pieceList.Value) // CLEAN UP ALL NON-PAWN
+		{
+			//var activeMoves = HexState.IsCheck ? unfilteredMoves : filteredMoves
+			if(!unfilteredMoves.ContainsKey(piece))
+				continue;
+			foreach(var piecemoves in unfilteredMoves[piece].Values)
+			//foreach(var piecemoves in filteredMoves[piece].Values)
+				foreach(var move in piecemoves)
+					updateAttackBoard(move.X, move.Y, -1, HexState.IsWhiteTurn);
+		}
+	}
+	private void updateATKfromEffectList(Dictionary<PIECES, List<Vector2I>> effectedPieces)
+	{
 		foreach(var pieceList in effectedPieces)
 		{
 			if(PIECES.PAWN == pieceList.Key)
@@ -933,42 +1017,46 @@ public class HexMoveGenerator
 					updateAtkBrbPawns(pawn, -1);
 				continue;
 			}
-			if(PIECES.QUEEN == pieceList.Key || PIECES.ROOK == pieceList.Key || PIECES.BISHOP == pieceList.Key)
-			{
-				foreach(var piece in pieceList.Value)
-				{
-					if(!influencedPieces.ContainsKey(piece))
-						continue;
-					foreach(var influenced in influencedPieces[piece])
-					{
-						//side check might not be neccessary, currently leaves artifact on opponent pieces. King can't move onto its own pieces.
-						if(!Bitboards.IsPieceWhite(QRToIndex(influenced)) == HexState.IsWhiteTurn )
-							continue;
-						updateAttackBoard(influenced.X,influenced.Y, -1, HexState.IsWhiteTurn);
-					}
-				}
-			}
-			// NOT PAWNS
-			foreach(var piece in pieceList.Value)
-			{
-				if(!moves.ContainsKey(piece))
-					continue;
-				foreach(var piecemoves in moves[piece].Values)
-					foreach(var move in piecemoves)
-						updateAttackBoard(move.X, move.Y, -1, HexState.IsWhiteTurn);
-			}
+			nonPawnUpdate(pieceList);
 		}
-	
+	}
+	/// <summary>
+	/// Update the atk board for the effects of 'cords' moving to 'moveto'
+	/// 
+	/// (WIP) remove previous effects on attackboard.
+	/// recalculing moves.
+	/// AP INFLUENCE has zero as key. ERROR 
+	/// </summary>
+	/// <param name="pieceType"></param>
+	/// <param name="cords"></param>
+	/// <param name="moveTo"></param>
+	public void generateMovesForPieceMove(PIECES pieceType, Vector2I cords, Vector2I moveTo, Vector2I myking)
+	{
+		Dictionary<PIECES, List<Vector2I>> effectedPieces = GetAPfromInfluenceOf(cords); // zero hold pos of moving piece
+		fillEffectWithPinAndBlock(cords, moveTo, effectedPieces);
+		if (effectedPieces.ContainsKey(pieceType)) //Add self to effected list
+			effectedPieces[pieceType].Add(cords);
+		else 
+			effectedPieces[pieceType] = new(){cords};
+		
+		updateATKfromEffectList(effectedPieces);
+
+		//remove old self and add new position 
 		effectedPieces[pieceType].RemoveAt(effectedPieces[pieceType].Count-1);
 		effectedPieces[pieceType].Add(moveTo);
 		
+		if(myking != myKingCords)
+		{
+			// is king cord setting required
+			myKingCords = myking;
+			GD.PushWarning("king cords mismacth");
+		}
 		prepBlockingFrom(myKingCords);
 
 		//my king cords not set for filter
 		ATKMOD = 1;
 		findPseudoMovesFor(effectedPieces);
 		filterLegalMoves();
-		
 		return;
 	}
 
