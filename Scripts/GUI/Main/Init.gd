@@ -35,6 +35,7 @@ var isRotatedWhiteDown : bool = true;
 var gameRunning : bool = false;
 var fenBuilding : bool = false;
 var showingATK : bool = false;
+var showingSelfATK : bool = false;
 var minimumUndoSizeReq : int = 1;
 var selfSide : int = 1;
 # Temp
@@ -445,7 +446,7 @@ func _on_test_id_pressed(id: int) -> void:
 			if(not gameRunning):
 				return;
 			showingATK = !showingATK;
-			var activeboard : Dictionary = EngineNode.GetActingAttackBoard();
+			var activeboard : Dictionary = EngineNode.GetActingAttackBoard() if not showingSelfATK else EngineNode.GetMyAttackBoard();
 			for key : int in activeboard.keys():
 				var innerDict : Dictionary = activeboard[key];
 				for innerkey : int in innerDict.keys() :
@@ -455,6 +456,10 @@ func _on_test_id_pressed(id: int) -> void:
 					var lblnum : int = activeboard[key][innerkey]
 					lbl.text = str(lblnum);
 					ATKBRDGUI.add_child(next);
+			return;
+		3:
+			showingSelfATK = !showingSelfATK;
+			LeftPanel.__checkSelfAtk();
 			return;
 		_:
 			return;

@@ -930,23 +930,10 @@ public class HexMoveGenerator
 
 		ATKMOD = 1;
 		lastInfluencedPieces = influencedPieces;
-		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> {};
+		influencedPieces = new Dictionary<Vector2I, List<Vector2I>> () {};
 		findPseudoMovesFor(AP[selfside]);
 		filterLegalMoves();
 		lastInfluencedPieces = null; //not necessary but explicit
-		
-		GD.Print("Protected List:");
-		foreach(var p in protectedPieces)
-		{
-			var s = "";
-			foreach(var v in p.Value)
-			{
-				s += v;
-				s += ",";
-			}
-			GD.Print(p.Key, " : ", s);
-		}
-		
 		return;
 	}
 	
@@ -987,9 +974,9 @@ public class HexMoveGenerator
 		{
 			foreach(var piece in pieceList.Value)
 			{
-				if(!influencedPieces.ContainsKey(piece)) continue;
-				var protectedPieces = influencedPieces[piece];
-				foreach(var protectedPiece in protectedPieces)//King can't move onto its own pieces.
+				if(!protectedPieces.ContainsKey(piece)) continue;
+				var protectedList = protectedPieces[piece];
+				foreach(var protectedPiece in protectedList)//King can't move onto its own pieces.
 				{
 					if(Bitboards.IsPieceWhite(QRToIndex(protectedPiece)) != HexState.IsWhiteTurn) continue;
 					updateAttackBoard(protectedPiece.X, protectedPiece.Y, -1, HexState.IsWhiteTurn);
@@ -1045,12 +1032,7 @@ public class HexMoveGenerator
 		effectedPieces[pieceType].RemoveAt(effectedPieces[pieceType].Count-1);
 		effectedPieces[pieceType].Add(moveTo);
 		
-		if(myking != myKingCords)
-		{
-			// is king cord setting required
-			myKingCords = myking;
-			GD.PushWarning("king cords mismacth");
-		}
+		myKingCords = myking;
 		prepBlockingFrom(myKingCords);
 
 		//my king cords not set for filter

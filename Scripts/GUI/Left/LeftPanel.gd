@@ -7,6 +7,8 @@ extends Control;
 
 @onready var menu:PopupMenu = $BG/MenuBar/FEN;
 
+@onready var tesingMenu:PopupMenu = $BG/MenuBar/Test;
+
 #Public
 
 func __resignCleanUp():
@@ -27,6 +29,12 @@ func __swapLabelState() -> void:
 func __checkFenBuild() -> void:
 	if menu.is_item_checkable(2):
 		menu.set_item_checked(2,not menu.is_item_checked(2));
+		return;
+	return;
+
+func __checkSelfAtk() -> void:
+	if tesingMenu.is_item_checkable(3):
+		tesingMenu.set_item_checked(3,not tesingMenu.is_item_checked(3));
 		return;
 	return;
 

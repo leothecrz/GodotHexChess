@@ -1009,6 +1009,20 @@ public partial class HexEngineSharp : Node
 		
 		return Histtop;
 	}
+	public Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>> GetMyAttackBoard()
+	{
+		
+		var finalBoard = new Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>>();
+		var acting = HexState.IsWhiteTurn ? mGen.WhiteAttackBoard : mGen.BlackAttackBoard;
+		
+		foreach(var key in acting.Keys)
+		{
+			finalBoard[key] = new();
+			foreach(var innerKey in acting[key].Keys)
+				finalBoard[key][innerKey] = acting[key][innerKey];
+		}
+		return finalBoard;
+	} 
 	public Godot.Collections.Dictionary<long, Godot.Collections.Dictionary<long,long>> GetActingAttackBoard()
 	{
 		

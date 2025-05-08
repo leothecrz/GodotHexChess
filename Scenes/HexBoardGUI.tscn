@@ -189,12 +189,15 @@ transparent_bg = true
 size = Vector2i(150, 100)
 transparent = true
 theme = ExtResource("6_4nxpu")
-item_count = 3
+item_count = 4
 item_0/text = "Run Engine Suite"
 item_1/text = "Evaluate Board"
 item_1/id = 1
 item_2/text = "Show ATKBRD"
 item_2/id = 2
+item_3/text = "Show ATK SELFSIDE"
+item_3/checkable = 1
+item_3/id = 3
 
 [node name="Captures" type="Control" parent="StaticGUI/Left/BG"]
 layout_mode = 1
