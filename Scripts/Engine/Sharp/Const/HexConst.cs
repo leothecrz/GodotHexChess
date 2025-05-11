@@ -853,15 +853,15 @@ public class HexConst
 			if(hexEngine.GetAPs()[(int)SIDES.BLACK][PIECES.ROOK].Count == 2)
 				H -= PIECE_VALUES[(int)PIECES.ROOK] / 3;
 			if(hexEngine.GetAPs()[(int)SIDES.WHITE][PIECES.ROOK].Count == 2)
-				H +=  PIECE_VALUES[(int)PIECES.ROOK] / 3;
+				H += PIECE_VALUES[(int)PIECES.ROOK] / 3;
 			if(hexEngine.GetAPs()[(int)SIDES.BLACK][PIECES.KNIGHT].Count == 2)
 				H -= PIECE_VALUES[(int)PIECES.KNIGHT] / 3;
 			if(hexEngine.GetAPs()[(int)SIDES.WHITE][PIECES.KNIGHT].Count == 2)
-				H +=  PIECE_VALUES[(int)PIECES.KNIGHT] / 3;
+				H += PIECE_VALUES[(int)PIECES.KNIGHT] / 3;
 			if(hexEngine.GetAPs()[(int)SIDES.BLACK][PIECES.PAWN].Count == 0)
 				H -= NOPAWNPEN_VAL;
 			if(hexEngine.GetAPs()[(int)SIDES.WHITE][PIECES.PAWN].Count == 0)
-				H +=  NOPAWNPEN_VAL;
+				H += NOPAWNPEN_VAL;
 			return H;
 		}
 

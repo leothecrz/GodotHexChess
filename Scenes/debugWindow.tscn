@@ -1,0 +1,94 @@
+[gd_scene load_steps=2 format=3 uid="uid://bysslfd4aa3de"]
+
+[ext_resource type="Script" path="res://Scripts/GUI/Dialog/debug_window.gd" id="1_s6c8m"]
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_s6c8m")
+
+[node name="BG_BLOCK" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0)
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -384.0
+offset_top = -216.0
+offset_right = 384.0
+offset_bottom = 216.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.745098)
+
+[node name="RichTextLabel" type="RichTextLabel" parent="BG"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 40.0
+offset_right = 220.0
+offset_bottom = 100.0
+grow_horizontal = 2
+bbcode_enabled = true
+
+[node name="BG" type="ColorRect" parent="BG/RichTextLabel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.392157)
+
+[node name="EXIT" type="Button" parent="BG"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -60.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+text = "X"
+
+[node name="FROM" type="TextEdit" parent="BG"]
+layout_mode = 0
+offset_left = 70.0
+offset_top = 124.0
+offset_right = 252.0
+offset_bottom = 161.0
+placeholder_text = "FROM FEN(OPTIONAL)"
+
+[node name="DEPTH" type="TextEdit" parent="BG"]
+offset_left = 74.0
+offset_top = 174.0
+offset_right = 136.0
+offset_bottom = 209.0
+placeholder_text = "DEPTH"
+
+[node name="Button" type="Button" parent="BG"]
+layout_mode = 0
+offset_left = 144.0
+offset_top = 173.0
+offset_right = 254.0
+offset_bottom = 209.0
+text = "CHECK"
+
+[connection signal="pressed" from="BG/EXIT" to="." method="_on_closed_pressed"]

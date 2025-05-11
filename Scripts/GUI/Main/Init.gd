@@ -461,6 +461,8 @@ func _on_test_id_pressed(id: int) -> void:
 			showingSelfATK = !showingSelfATK;
 			LeftPanel.__checkSelfAtk();
 			return;
+		4:
+			return;
 		_:
 			return;
 

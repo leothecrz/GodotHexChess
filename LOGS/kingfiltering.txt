@@ -26,3 +26,6 @@ rook captures queen
 
 
 6/p6/8/R1p5N/q9/bb6Q1B/k8K/n5P1B/8/p4P1/6 b - 24
+
+6/6b/R7/n1p5N/Q9/bb6rBB/k8K/n7N/7R/p4P1/6 b - 22
+6/6b/R7/n1p5N/9Q/bb6rBB/k8K/n7N/7R/p4P1/6 w - 21

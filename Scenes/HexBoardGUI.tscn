@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=4 uid="uid://8egy1g11ynam"]
+[gd_scene load_steps=32 format=4 uid="uid://8egy1g11ynam"]
 
 [ext_resource type="Script" path="res://Scripts/GUI/Main/Init.gd" id="1_pgjcn"]
 [ext_resource type="Script" path="res://Scripts/Engine/Sharp/HexEngineSharp.cs" id="2_gq2xx"]
@@ -23,6 +23,7 @@
 [ext_resource type="AudioStream" uid="uid://c4j1077g457iq" path="res://ArtResources/SFX/piece-placemen_rmx2.mp3" id="16_ey4ea"]
 [ext_resource type="Script" path="res://Scripts/GUI/Right/right_2.gd" id="16_yijft"]
 [ext_resource type="ButtonGroup" uid="uid://cppsxsq1m0k8e" path="res://GDResources/ButtonGroups/FenBuildGroup.tres" id="17_e3lb4"]
+[ext_resource type="PackedScene" uid="uid://bysslfd4aa3de" path="res://Scenes/debugWindow.tscn" id="24_qukya"]
 
 [sub_resource type="Theme" id="Theme_86tg1"]
 
@@ -186,10 +187,10 @@ item_2/id = 2
 
 [node name="Test" type="PopupMenu" parent="StaticGUI/Left/BG/MenuBar"]
 transparent_bg = true
-size = Vector2i(150, 100)
+size = Vector2i(190, 116)
 transparent = true
 theme = ExtResource("6_4nxpu")
-item_count = 4
+item_count = 5
 item_0/text = "Run Engine Suite"
 item_1/text = "Evaluate Board"
 item_1/id = 1
@@ -198,6 +199,8 @@ item_2/id = 2
 item_3/text = "Show ATK SELFSIDE"
 item_3/checkable = 1
 item_3/id = 3
+item_4/text = "Advanced"
+item_4/id = 4
 
 [node name="Captures" type="Control" parent="StaticGUI/Left/BG"]
 layout_mode = 1
@@ -1112,6 +1115,10 @@ z_index = 1
 layout_mode = 1
 
 [node name="Settings" parent="." instance=ExtResource("8_avrf3")]
+visible = false
+layout_mode = 1
+
+[node name="Debug" parent="." instance=ExtResource("24_qukya")]
 visible = false
 layout_mode = 1
 
