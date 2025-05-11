@@ -35,7 +35,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.745098)
 
-[node name="RichTextLabel" type="RichTextLabel" parent="BG"]
+[node name="OutputText" type="RichTextLabel" parent="BG"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -47,7 +47,7 @@ offset_bottom = 100.0
 grow_horizontal = 2
 bbcode_enabled = true
 
-[node name="BG" type="ColorRect" parent="BG/RichTextLabel"]
+[node name="TextBG" type="ColorRect" parent="BG/OutputText"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -68,27 +68,35 @@ offset_bottom = 60.0
 grow_horizontal = 0
 text = "X"
 
-[node name="FROM" type="TextEdit" parent="BG"]
-layout_mode = 0
+[node name="Control" type="Control" parent="BG"]
+anchors_preset = 0
 offset_left = 70.0
-offset_top = 124.0
-offset_right = 252.0
-offset_bottom = 161.0
+offset_top = 140.0
+offset_right = 70.0
+offset_bottom = 140.0
+
+[node name="FROM" type="TextEdit" parent="BG/Control"]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 40.0
 placeholder_text = "FROM FEN(OPTIONAL)"
 
-[node name="DEPTH" type="TextEdit" parent="BG"]
-offset_left = 74.0
-offset_top = 174.0
-offset_right = 136.0
-offset_bottom = 209.0
+[node name="DEPTH" type="TextEdit" parent="BG/Control"]
+layout_mode = 0
+offset_top = 50.0
+offset_right = 70.0
+offset_bottom = 90.0
 placeholder_text = "DEPTH"
 
-[node name="Button" type="Button" parent="BG"]
+[node name="Button" type="Button" parent="BG/Control"]
 layout_mode = 0
-offset_left = 144.0
-offset_top = 173.0
-offset_right = 254.0
-offset_bottom = 209.0
+offset_left = 90.0
+offset_top = 50.0
+offset_right = 200.0
+offset_bottom = 90.0
 text = "CHECK"
 
 [connection signal="pressed" from="BG/EXIT" to="." method="_on_closed_pressed"]
+[connection signal="text_changed" from="BG/Control/FROM" to="." method="_on_FromFen_text_changed"]
+[connection signal="text_changed" from="BG/Control/DEPTH" to="." method="_on_depthCheck_text_changed"]
+[connection signal="pressed" from="BG/Control/Button" to="." method="_on_MoveCountDepthButton_pressed"]
