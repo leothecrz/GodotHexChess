@@ -1156,3 +1156,5 @@ layout_mode = 1
 [connection signal="player_disconnected" from="MultiplayerControl" to="." method="_on_multiplayer_player_disconnected"]
 [connection signal="shutdownServerClient" from="MultiplayerControl" to="." method="_on_mult_gui_shutdown_server_client"]
 [connection signal="settingsUpdated" from="Settings" to="." method="_on_settings_dialog_settings_updated"]
+[connection signal="closedPressed" from="Debug" to="." method="_on_debug_closed_pressed"]
+[connection signal="submitFenMoveCount" from="Debug" to="." method="_on_debug_submit_fen_move_count"]

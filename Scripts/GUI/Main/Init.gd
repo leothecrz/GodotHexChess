@@ -22,8 +22,10 @@ extends Control;
 @onready var SoundSource = $SoundSource
 @onready var SettingsDialog = $Settings;
 @onready var MultiplayerControl = $MultiplayerControl;
+@onready var DEBUG_PANEL = $Debug;
 # Position State
 @onready var VIEWPORT_CENTER_POSITION : Vector2 = Vector2(get_viewport_rect().size.x/2, get_viewport_rect().size.y/2);
+
 
 
 # AI - THREAD
@@ -59,7 +61,6 @@ signal pieceUnselectedUnlockOthers();
 
 # Utility
 ## Convert Axial Cordinates To Viewport Cords
-
 ## Spawn a simple pop up that will display TEXT for TIME seconds
 func spawnNotice(txt : String, time : float = 1.8) -> void:
 	var notice : SimpleNotice = preload("res://Scenes/SimpleNotice.tscn").instantiate();
@@ -79,11 +80,12 @@ func isBoardBusy() -> bool:
 ##
 func cordinateToOrigin(cords : Vector2i) -> Vector2:
 	return VIEWPORT_CENTER_POSITION + (GDHexConst.PIXEL_OFFSET * GDHexConst.axialToPixel(cords * (1 if isRotatedWhiteDown else -1)));
-
+##
 func swapRightPanel() -> void:
 	RightPanel.visible = !RightPanel.visible;
 	FenPanel.__swapModes();
 	return;
+
 
 
 # DISPLAY PIECES
@@ -344,6 +346,7 @@ func setConfirmTempDialog(type:AcceptDialog, input:String, method:Callable=func(
 
 
 # MENU HELPERS
+##
 func FenOK(stir:String, strict:bool, ref:Node) -> void:
 	ref.queue_free();
 	
@@ -462,6 +465,7 @@ func _on_test_id_pressed(id: int) -> void:
 			LeftPanel.__checkSelfAtk();
 			return;
 		4:
+			DEBUG_PANEL.visible = true;
 			return;
 		_:
 			return;
@@ -509,7 +513,20 @@ func _on_enemy_select_item_selected(index:int) -> void:
 
 
 
-## SETTINGS
+#DEBUG WINDOW
+##
+func _on_debug_closed_pressed() -> void:
+	return;
+##
+func _on_debug_submit_fen_move_count(Depth: int, DefaultFEN: bool, FEN: String) -> void:
+	var totalCount = EngineNode.FromFenCount(Depth) \
+		if DefaultFEN else EngineNode.FromFenCount(Depth, FEN);
+	DEBUG_PANEL.__setOutputText("At Depth:%d --- Moves:%d" % [Depth, totalCount])
+	return;
+
+
+
+# SETTINGS
 ##
 func toggleMusic(choice):
 	if choice == 1:

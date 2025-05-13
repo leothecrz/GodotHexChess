@@ -3,6 +3,7 @@ using Godot;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 namespace HexChess
 {
@@ -15,6 +16,7 @@ public class HexConst
 		public enum ENEMY_TYPES { PLAYER_TWO, RANDOM, NN, MIN_MAX };
 		//public enum MATE_STATUS {NONE, CHECK, OVER};
 		//public enum UNDO_FLAGS {NONE, ENPASSANT, CHECK, GAME_OVER };
+		
 		// Const
 		public const int KING_INDEX = 0;
 		public const int HEX_BOARD_RADIUS = 5;
@@ -22,14 +24,17 @@ public class HexConst
 		public const int DECODE_FEN_OFFSET = 70;
 		public const int TYPE_MASK = 0b0111;
 		public const int SIDE_MASK = 0b1000;
+		
 		// Vectors
 		public static readonly Dictionary<string,Vector2I> ROOK_VECTORS 	= new() { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0) } };
 		public static readonly Dictionary<string,Vector2I> BISHOP_VECTORS 	= new() { { "lfoward", new Vector2I(-2,1)}, { "rFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "lbackward", new Vector2I(1,1)}, { "rBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
 		public static readonly Dictionary<string,Vector2I> KING_VECTORS 	= new() { { "foward", new Vector2I(0,-1)}, { "lFoward", new Vector2I(-1,0)}, { "rFoward", new Vector2I(1,-1)}, { "backward", new Vector2I(0,1)}, { "lBackward", new Vector2I(-1,1)}, { "rBackward", new Vector2I(1,0)}, { "dlfoward", new Vector2I(-2,1)}, { "drFoward", new Vector2I(-1,-1)}, { "left", new Vector2I(-1,2)}, { "dlbackward", new Vector2I(1,1)}, { "drBackward", new Vector2I(2,-1)}, { "right", new Vector2I(1,-2) } };
 		public static readonly Dictionary<string,Vector2I> KNIGHT_VECTORS 	= new() { { "left", new Vector2I(-1,-2)}, { "lRight", new Vector2I(1,-3)}, { "rRight", new Vector2I(2,-3)} };
+		
 		// Templates
 		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> DEFAULT_MOVE_TEMPLATE = new() { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I>{}},  };
 		public static readonly Dictionary<MOVE_TYPES, List<Vector2I>> PAWN_MOVE_TEMPLATE 	= new() { {MOVE_TYPES.MOVES, new List<Vector2I> {}}, {MOVE_TYPES.CAPTURE, new List<Vector2I> {}}, {MOVE_TYPES.ENPASSANT, new List<Vector2I> {}}, {MOVE_TYPES.PROMOTE, new List<Vector2I> {}} };
+		
 		// Positions
 		public static readonly int[] PAWN_START 		= {    -4, -3, -2, -1, 0, 1, 2, 3, 4   };
 		public static readonly int[] PAWN_PROMOTE 		= {-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5};
@@ -53,6 +58,18 @@ public class HexConst
 			};
 		}
 
+
+		/// <summary>
+		/// set all values of given board to zero.
+		/// </summary>
+		/// <param name="board"></param>
+		public static void ZeroBoard(Dictionary<int, Dictionary<int,int>> board)
+		{
+			foreach( int key in board.Keys)
+				foreach( int innerKey in board[key].Keys)
+					board[key][innerKey] = 0;
+			return;
+		}
 		/// <summary>
 		/// Create a 2D int key dictionary with a int as the held value. Dictionary is jagged. 
 		/// </summary>
@@ -73,7 +90,6 @@ public class HexConst
 		return rDictionary;
 	}
 		
-
 
 		/// <summary> Given (q,r) find the mapped index for a r=5 hex board. (-5,5) = 0. (-5,0) = 5. (5,0) = 85 (5,-5) = 90. 91 Total positions. </summary>
 		/// <param name="q">The Cross Axis</param>
@@ -128,6 +144,8 @@ public class HexConst
 			var q = normalq - 5;
 			return new Vector2I(q, r);
 		}
+		
+		
 		/// <summary>
 		/// Given a QR pair determine the corresponding S cordinate to complete 3 value axial cordinates.
 		/// </summary>
@@ -137,76 +155,40 @@ public class HexConst
 		{
 			return (-1 * cords.X) - cords.Y;
 		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="from"></param>
+		/// <param name="to"></param>
+		/// <returns></returns>
 		public static int AxialCordDist(Vector2I from, Vector2I to)
 		{
 			var dif = new Vector3I(from.X-to.X, from.Y-to.Y, SAxialCordFrom(from)-SAxialCordFrom(to));
 			return Math.Max( Math.Max( Math.Abs(dif.X), Math.Abs(dif.Y)), Math.Abs(dif.Z));
 		}
-		public static void CleanPrintAP(Dictionary<PIECES, List<Vector2I>>[]AP)
+	
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="AP"></param>
+		/// <returns></returns>
+		public static String CleanPrintAP(Dictionary<PIECES, List<Vector2I>>[]AP)
 		{
+			StringBuilder SB = new();
 			for (int side = 0; side < AP.Length; side += 1)
 			{
-				GD.Print(Enum.GetNames(typeof (SIDES)).GetValue(side));
+				SB.Append(Enum.GetNames(typeof (SIDES)).GetValue(side));
 				foreach(PIECES piece in AP[side].Keys)
-					GD.Print(Enum.GetName(typeof(PIECES), piece), " : ", AP[side][piece]);
-				GD.Print("\n");
+					SB.Append(Enum.GetName(typeof(PIECES), piece) + " : " + AP[side][piece]);
+				SB.Append('\n');
 			}
+			return SB.ToString();
 		}
 		/// <summary>
-		/// set all values of given board to zero.
+		/// 
 		/// </summary>
 		/// <param name="board"></param>
-		public static void ZeroBoard(Dictionary<int, Dictionary<int,int>> board)
-		{
-			foreach( int key in board.Keys)
-				foreach( int innerKey in board[key].Keys)
-					board[key][innerKey] = 0;
-			return;
-		}
-		/// <summary>
-		/// Given a formatted move list count all found moves.
-		/// </summary>
-		/// <param name="movesList">Formatted Move List</param>
-		/// <returns>Move Count</returns>
-		public static int CountMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> movesList)
-		{
-			int count = 0;
-			foreach( Vector2I piece in movesList.Keys )
-				foreach ( MOVE_TYPES moveType in movesList[piece].Keys )
-					foreach ( Vector2I move in movesList[piece][moveType])
-						count += 1;
-			return count;
-		}
-		// Find Intersection Of Two Arrays. O(N^2)
-		public static T[] intersectOfTwoArrays<T>(T[] ARR, T[] ARR1)
-		{
-			List<T> intersection = new List<T>();
-			foreach( T item in ARR)
-				if (Array.Exists(ARR1, e => e.Equals(item)))
-					intersection.Add(item);
-			return intersection.ToArray();
-		}
-		public static List<T> intersectOfTwoList<T>(List<T> ARR, List<T> ARR1)
-		{
-			if(ARR.Count == 0 || ARR1.Count == 0)
-				return new List<T>();
-			return ARR.Intersect(ARR1).ToList<T>();
-		}
-		// Find Items Unique Only To ARR. O(N^2)
-		public static T[] differenceOfTwoArrays<T>(T[] ARR, T[] ARR1)
-		{
-			List<T> diff = new List<T>();
-			foreach( T item in ARR)
-				if (!Array.Exists(ARR1, e => e.Equals(item)))
-					diff.Add(item);
-			return diff.ToArray();
-		}
-		public static List<T> differenceOfTwoList<T>(List<T> ARR, List<T> ARR1)
-		{
-			// T[] diffArray = differenceOfTwoArrays(ARR.ToArray(), ARR1.ToArray() )
-			// return new List<T> (diffArray);
-			return ARR.Except(ARR1).ToList();
-		}
 		public static void CleanPrintBoard(Dictionary<int, Dictionary<int, int>> board)
 		{
 			// Get the keys of the board and reverse them
@@ -248,6 +230,82 @@ public class HexConst
 			}
 		}
 		
+		
+		/// <summary>
+		/// Given a formatted move list count all found moves.
+		/// </summary>
+		/// <param name="movesList">Formatted Move List</param>
+		/// <returns>Move Count</returns>
+		public static int CountMoves(Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> movesList)
+		{
+			int count = 0;
+			foreach( Vector2I piece in movesList.Keys )
+				foreach ( MOVE_TYPES moveType in movesList[piece].Keys )
+					count += movesList[piece][moveType].Count;
+					// foreach ( Vector2I move in movesList[piece][moveType])
+					// 	count += 1;
+			return count;
+		}
+		
+		
+		/// <summary>
+		/// Find Intersection Of Two Arrays. O(N^2)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="ARR"></param>
+		/// <param name="ARR1"></param>
+		/// <returns></returns>
+		public static T[] intersectOfTwoArrays<T>(T[] ARR, T[] ARR1)
+		{
+			List<T> intersection = new List<T>();
+			foreach( T item in ARR)
+				if (Array.Exists(ARR1, e => e.Equals(item)))
+					intersection.Add(item);
+			return intersection.ToArray();
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="ARR"></param>
+		/// <param name="ARR1"></param>
+		/// <returns></returns>
+		public static List<T> intersectOfTwoList<T>(List<T> ARR, List<T> ARR1)
+		{
+			if(ARR.Count == 0 || ARR1.Count == 0)
+				return new List<T>();
+			return ARR.Intersect(ARR1).ToList<T>();
+		}
+		/// <summary>
+		/// Find Items Unique Only To ARR. O(N^2)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="ARR"></param>
+		/// <param name="ARR1"></param>
+		/// <returns></returns>
+		public static T[] differenceOfTwoArrays<T>(T[] ARR, T[] ARR1)
+		{
+			List<T> diff = new List<T>();
+			foreach( T item in ARR)
+				if (!Array.Exists(ARR1, e => e.Equals(item)))
+					diff.Add(item);
+			return diff.ToArray();
+		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="ARR"></param>
+		/// <param name="ARR1"></param>
+		/// <returns></returns>
+		public static List<T> differenceOfTwoList<T>(List<T> ARR, List<T> ARR1)
+		{
+			// T[] diffArray = differenceOfTwoArrays(ARR.ToArray(), ARR1.ToArray() )
+			// return new List<T> (diffArray);
+			return ARR.Except(ARR1).ToList();
+		}
+		
+		
 		/// <summary>
 		/// Strip the color bit and get what piece it is.
 		/// </summary>
@@ -258,11 +316,17 @@ public class HexConst
 			int res = id & TYPE_MASK;
 			return (PIECES) res;
 		}
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="activeChar"></param>
+		/// <returns></returns>
 		public static bool IsCharInt(char activeChar)
 		{
 			return ('0' <= activeChar) && (activeChar <= '9');
 		}
 		
+
 		public static Vector2I GetBishopVector(Vector2I from, Vector2I to)
 		{
 			var deltaQ = from.X - to.X;
@@ -296,7 +360,6 @@ public class HexConst
 				);
 			return direction;
 		}
-
 		public static bool IsOnBishopVector(Vector2I from, Vector2I to)
 		{
 			Vector2I delta = to - from;
@@ -309,7 +372,6 @@ public class HexConst
 				return true;
 			return false;
 		}
-
 		public static bool IsOnRookVector(Vector2I from ,Vector2I to)
 		{
 			if(from.X == to.X)
@@ -320,6 +382,7 @@ public class HexConst
 				return true;
 			return false;
 		}
+
 
 		public static List<Vector2I> GetAxialPath(Vector2I from, Vector2I to)
 		{			
@@ -342,9 +405,7 @@ public class HexConst
 		}
 
 
-
 		// Copy Data
-
 
 
 		public static Dictionary<MOVE_TYPES, List<Vector2I>> DeepCopyMoveTemplate(Dictionary<MOVE_TYPES, List<Vector2I>> original)

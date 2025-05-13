@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using HexChess;
 using static HexChess.HexConst;
 using static HexChess.FENConst;
+using System.Reflection.Metadata.Ecma335;
 
 [GlobalClass]
 public partial class HexEngineSharp : Node
@@ -1070,7 +1071,73 @@ public partial class HexEngineSharp : Node
 			_ => 0,
 		};
 	}	
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="depth"></param>
+	public void recursiveCount(List<int> depthCount, long depth, ref long count)
+	{
+		var legalmoves = DeepCopyLegalMoves(GetMoves());
+		var WAB = _duplicateWAB();
+		var BAB = _duplicateBAB();	
+		var BP = _duplicateBP();
+		var InPi = _duplicateIP();
+		var PP = _duplicatePNP();
+		int index;
+		if(depth <= 1)
+		{
+			foreach( Vector2I piece in legalmoves.Keys )
+				foreach( MOVE_TYPES movetype in legalmoves[piece].Keys )
+				{
+					index = 0;
+					count += legalmoves[piece][movetype].Count;
+				}
+			return;
+		}
+		foreach( Vector2I piece in legalmoves.Keys )
+			foreach( MOVE_TYPES movetype in legalmoves[piece].Keys )
+			{
+				index = 0;
+				foreach( Vector2I move in legalmoves[piece][movetype] )
+				{
+					_makeMove(piece,movetype,index,PIECES.QUEEN);
+					recursiveCount(depthCount, depth - 1, ref count);
+					_undoLastMove(false);
+					_restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
+					index += 1;
+				}
+			}
+		return;
+	}
+	/// <summary>
+	/// Does Not Verify FEN
+	/// </summary>
+	/// <param name="Depth"></param>
+	/// <param name="FenOptional"></param>
+	/// <returns></returns>
+	public long FromFenCount(long Depth, String FenOptional)
+	{
+		_resign();
+		var lastEnemy = Enemy.EnemyType;
+		var lastSide = Enemy.EnemyPlaysWhite;
+		UpdateEnemy(ENEMY_TYPES.PLAYER_TWO, false);
+		initiateEngine(FenOptional);
 
+		long totalCount = 0;
+		var depthCounts = new List<int>(){};
+		recursiveCount(depthCounts, Depth, ref totalCount);	
+		UpdateEnemy(lastEnemy, lastSide);
+		return totalCount;
+	}
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <param name="Depth"></param>
+	/// <returns></returns>
+	public long FromFenCount(long Depth)
+	{
+		return FromFenCount(Depth, FENConst.DEFAULT_FEN_STRING);
+	}
 
 
 
