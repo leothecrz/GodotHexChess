@@ -14,31 +14,49 @@ using System.Reflection.Metadata.Ecma335;
 public partial class HexEngineSharp : Node
 {
 	// State Holders
+
+
+	/// <summary>
+	/// 
+	/// </summary>
 	private readonly BoardState HexState;
+	/// <summary>
+	/// 
+	/// </summary>
 	private readonly BitboardState BitBoards;
+	/// <summary>
+	/// 
+	/// </summary>
 	private readonly EnemyState Enemy;
+	/// <summary>
+	/// 
+	/// </summary>
 	private readonly HexMoveGenerator mGen;
 
+
 	// Internal
+
+
+	/// <summary>
+	/// 
+	/// </summary>
 	private Stack<HistEntry> historyStack; // HISTORY
 	/// <summary>
 	/// MOVE AUTHORITY - locks the MakeMove API when an AI opponent is set and it is its turn.
 	/// </summary>
 	private bool moveLock;
-
-
 	/// <summary>
 	/// Constructor. (or) When node is initiated. Initiates state holders and the move generator.
 	/// HexEngineSharp is the master cordinator of the engine module.
 	/// </summary>
 	public HexEngineSharp()
 	{
+		moveLock = true;
+		historyStack = null;
+		Enemy = new EnemyState();
 		HexState = new BoardState();
 		BitBoards = new BitboardState();
-		Enemy = new EnemyState();
-		mGen = new HexMoveGenerator(ref HexState,ref BitBoards);
-		historyStack = null;
-		moveLock = true;
+		mGen = new HexMoveGenerator(ref HexState, ref BitBoards); //move gen needs board states
 	}
 
 
@@ -203,6 +221,8 @@ public partial class HexEngineSharp : Node
 		return;
 	}
 	
+
+	//ATK
 
 	
 	/// <summary>
@@ -421,7 +441,7 @@ public partial class HexEngineSharp : Node
 
 				int i = BitBoards.GetAPIndexOf(selfSide, cordsPIECES, cords);
 				BitBoards.ActivePieces[selfSide][cordsPIECES].RemoveAt(i);
-				BitBoards.ActivePieces[selfSide][promoteTo].Add(moveTo);
+				BitBoards.ActivePieces[selfSide][promoteTo].Add(cords);
 				cordsPieceVal = ToPieceInt(promoteTo, !HexState.IsWhiteTurn); // ??
 				cordsPIECES = promoteTo;
 				
@@ -863,6 +883,7 @@ public partial class HexEngineSharp : Node
 	public bool CaptureValid() { return HexState.CaptureValid; }
 	public bool _getGameInCheck() { return HexState.IsCheck; }
 	public bool _getEnemyPromoted() { return Enemy.EnemyPromoted; }
+	
 	// ints
 	public int _getEnemyPTo() { return (int) Enemy.EnemyPromotedTo; }
 	public int CaptureType() { return (int) HexState.CaptureType; }
@@ -943,13 +964,14 @@ public partial class HexEngineSharp : Node
 		}
 		return hist.ToString();
 	}
+	
 	// vectors
 	public Vector2I _getEnemyTo() { return Enemy.EnemyTo; }
+	
 	// dictionaries
 	public Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> GetMoves() { return mGen.filteredMoves; }
 	public Dictionary<PIECES, List<Vector2I>>[] GetAPs() { return BitBoards.ActivePieces; }
 	
-
 
 
 	// STRICT GDSCRIPT INTERACTIONS
@@ -1041,6 +1063,7 @@ public partial class HexEngineSharp : Node
 
 
 
+	//Testing API
 	/// <summary>
 	/// Run a test on the engine
 	/// </summary>
