@@ -56,7 +56,7 @@ public partial class HexEngineSharp : Node
 		Enemy = new EnemyState();
 		HexState = new BoardState();
 		BitBoards = new BitboardState();
-		mGen = new HexMoveGenerator(ref HexState, ref BitBoards); //move gen needs board states
+		mGen = new HexMoveGenerator(ref HexState, ref BitBoards, true); //move gen needs board states
 	}
 
 

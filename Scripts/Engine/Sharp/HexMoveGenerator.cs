@@ -84,11 +84,11 @@ public class HexMoveGenerator
 	/// </summary>
 	/// <param name="bref"></param>
 	/// <param name="bbref"></param>
-	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref)
+	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref, bool defaultState)
 	{
 		HexState = bref;
 		Bitboards = bbref;
-		resetState();
+		if(defaultState) resetState();
 	}
 
 	/// <summary>
@@ -531,10 +531,14 @@ public class HexMoveGenerator
 	{
 		HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 		var movedPiece = new Dictionary<PIECES, List<Vector2I>> { {pieceType, new List<Vector2I> {new Vector2I(cords.X, cords.Y)}} };
-		
-		var savedMoves = filteredMoves;
+
+		var unfilt = unfilteredMoves;
+		var filtMoves = filteredMoves;
 		var influence = influencedPieces;
 		var pin = pinningPieces;
+		var pro = protectedPieces;
+		var bloc = blockingPieces;
+		var incheck = GameInCheckMoves;
 
 		influencedPieces = new();
 		pinningPieces = new();
@@ -542,9 +546,13 @@ public class HexMoveGenerator
 		ATKMOD = -1;
 		findPseudoMovesFor(movedPiece);
 	
-		filteredMoves = savedMoves;
+		unfilteredMoves = unfilt;
+		filteredMoves = filtMoves;
 		influencedPieces = influence;
 		pinningPieces = pin;
+		protectedPieces = pro;
+		blockingPieces = bloc;
+		GameInCheckMoves = incheck;
 
 		HexState.IsWhiteTurn = !HexState.IsWhiteTurn;
 		return;
