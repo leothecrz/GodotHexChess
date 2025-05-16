@@ -84,11 +84,27 @@ public class HexMoveGenerator
 	/// </summary>
 	/// <param name="bref"></param>
 	/// <param name="bbref"></param>
-	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref, bool defaultState)
+	public HexMoveGenerator(ref BoardState bref, ref BitboardState bbref)
 	{
 		HexState = bref;
 		Bitboards = bbref;
-		if(defaultState) resetState();
+		resetState();
+	}
+
+	public HexMoveGenerator()
+	{
+		HexState = null;
+		Bitboards = null;
+		blockingPieces = null;
+		influencedPieces 		= null;
+		lastInfluencedPieces 	= null;
+		lastPinningPieces 	= null;
+		pinningPieces 		= null;
+		GameInCheckMoves = null;
+		WhiteAttackBoard = null;
+		BlackAttackBoard = null;
+		count = 0;
+		ATKMOD = 0;
 	}
 
 	/// <summary>

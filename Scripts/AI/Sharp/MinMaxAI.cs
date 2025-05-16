@@ -115,13 +115,10 @@ public partial class MinMaxAI : AIBase
 
 		int index;
 		long value = long.MinValue;
-		var legalmoves = DeepCopyLegalMoves(hexEngine.GetMoves());
 
-		var WAB = hexEngine._duplicateWAB();
-		var BAB = hexEngine._duplicateBAB();
-		var BP = hexEngine._duplicateBP();
-		var InPi = hexEngine._duplicateIP();
-		var PP = hexEngine._duplicatePNP();
+		var snap = hexEngine._snapshotState();
+
+		var legalmoves = snap.filteredMoves;
 
 		//List<long> postQ = new();
 
@@ -137,7 +134,7 @@ public partial class MinMaxAI : AIBase
 				alpha = Math.Max(alpha, value);
 				
 				hexEngine._undoLastMove(false);
-				hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
+				hexEngine._restoreSnapshot(snap);
 				index += 1;
 				
 				if(alpha >= beta) goto ESCAPELOOP;
@@ -185,15 +182,12 @@ public partial class MinMaxAI : AIBase
 			
 		int index = 0;
 		long value = long.MinValue;
-		var legalmoves = DeepCopyLegalMoves(hexEngine.GetMoves());
+
+		var snap = hexEngine._snapshotState();
+
+		var legalmoves = snap.filteredMoves;
 		
 		//Insert Move Ordering Here
-
-		var WAB = hexEngine._duplicateWAB();
-		var BAB = hexEngine._duplicateBAB();	
-		var BP = hexEngine._duplicateBP();
-		var InPi = hexEngine._duplicateIP();
-		var PP = hexEngine._duplicatePNP();
 
 		foreach( Vector2I piece in legalmoves.Keys )
 			foreach( MOVE_TYPES movetype in legalmoves[piece].Keys )
@@ -208,7 +202,7 @@ public partial class MinMaxAI : AIBase
 					alpha = Math.Max(alpha, value);
 					
 					hexEngine._undoLastMove(false);
-					hexEngine._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
+					hexEngine._restoreSnapshot(snap);
 					index += 1;
 					
 					if(alpha >= beta) goto ESCAPELOOP;
@@ -239,20 +233,15 @@ public partial class MinMaxAI : AIBase
 		var start = Time.GetTicksUsec();
 		var isMaxPlayer = side == (int) SIDES.BLACK;
 		long BestValue = long.MinValue;
-		var legalmoves = DeepCopyLegalMoves( hexEngine.GetMoves() );
+		var snap = hexEngine._snapshotState();
+		var legalmoves = snap.filteredMoves;
 
 		hexEngine.DisableAIMoveLock();
 		CORDS = new Vector2I(-6,-6);
 		counter = 0;
 		QCounter = 0;
 		positionsFound = 0;
-		statesEvaluated = 0;
-		
-		var WAB = hexEngine._duplicateWAB();
-		var BAB = hexEngine._duplicateBAB();
-		var BP = hexEngine._duplicateBP();
-		var PNP = hexEngine._duplicatePNP();
-		var InPi = hexEngine._duplicateIP();
+		statesEvaluated = 0;	
 
 		//Insert Iterative Deepening Here
 		for(int depth=1; depth<maxDepth+1; depth +=1)
@@ -273,7 +262,7 @@ public partial class MinMaxAI : AIBase
 						}
 						index += 1;
 						hexEngine._undoLastMove(false);
-						hexEngine._restoreState(WAB,BAB,BP,InPi,PNP,legalmoves);
+						hexEngine._restoreSnapshot(snap);
 					}
 				}
 			

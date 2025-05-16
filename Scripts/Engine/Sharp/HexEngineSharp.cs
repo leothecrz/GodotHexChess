@@ -9,6 +9,8 @@ using HexChess;
 using static HexChess.HexConst;
 using static HexChess.FENConst;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography;
+using Microsoft.VisualBasic;
 
 [GlobalClass]
 public partial class HexEngineSharp : Node
@@ -56,7 +58,7 @@ public partial class HexEngineSharp : Node
 		Enemy = new EnemyState();
 		HexState = new BoardState();
 		BitBoards = new BitboardState();
-		mGen = new HexMoveGenerator(ref HexState, ref BitBoards, true); //move gen needs board states
+		mGen = new HexMoveGenerator(ref HexState, ref BitBoards); //move gen needs board states
 	}
 
 
@@ -696,31 +698,65 @@ public partial class HexEngineSharp : Node
 	public bool InitiateDefault() { return initiateEngine(DEFAULT_FEN_STRING); }
 
 
-
-
-	public void _restoreState
-	(
-		Dictionary<int, Dictionary<int,int>> WABoard,
-		Dictionary<int, Dictionary<int,int>> BABoard,
-		Dictionary<Vector2I, List<Vector2I>> BPieces,
-		Dictionary<Vector2I, List<Vector2I>> IPieces,
-		Dictionary<Vector2I, Vector2I>       PPieces, 
-		Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves
-	)
+	public HexMoveGenerator _snapshotState()
 	{
-		mGen.WhiteAttackBoard = DeepCopyBoard(WABoard);
-		mGen.BlackAttackBoard = DeepCopyBoard(BABoard);
-		mGen.blockingPieces = DeepCopyPieces(BPieces);
-		mGen.pinningPieces = DeepCopyPinning(PPieces);
-		mGen.influencedPieces = DeepCopyPieces(IPieces);
-		mGen.filteredMoves = DeepCopyLegalMoves(moves);
-		return;
+		var returnval = new HexMoveGenerator();
+
+		returnval.WhiteAttackBoard = DeepCopyBoard(mGen.WhiteAttackBoard);
+		returnval.BlackAttackBoard = DeepCopyBoard(mGen.BlackAttackBoard);
+
+		returnval.influencedPieces = DeepCopyPieces(mGen.influencedPieces);
+		returnval.blockingPieces= DeepCopyPieces(mGen.blockingPieces);
+		returnval.protectedPieces= DeepCopyPieces(mGen.protectedPieces);
+
+		returnval.pinningPieces= DeepCopyPinning(mGen.pinningPieces);
+		
+		returnval.unfilteredMoves = DeepCopyLegalMoves(mGen.unfilteredMoves);
+		returnval.filteredMoves = DeepCopyLegalMoves(mGen.filteredMoves);
+		returnval.GameInCheckMoves = new(mGen.GameInCheckMoves);
+
+		return returnval;
 	}
-	public Dictionary<int, Dictionary<int,int>> _duplicateWAB() { return DeepCopyBoard(mGen.WhiteAttackBoard); }
-	public Dictionary<int, Dictionary<int,int>> _duplicateBAB() { return DeepCopyBoard(mGen.BlackAttackBoard); }	
-	public Dictionary<Vector2I, List<Vector2I>> _duplicateBP() { return DeepCopyPieces(mGen.blockingPieces); }
-	public Dictionary<Vector2I, List<Vector2I>>  _duplicateIP() { return DeepCopyPieces(mGen.influencedPieces); }
-	public Dictionary<Vector2I, Vector2I>  _duplicatePNP() { return DeepCopyPinning(mGen.pinningPieces); }
+
+	public void _restoreSnapshot(HexMoveGenerator snapshot)
+	{ 
+		mGen.WhiteAttackBoard = DeepCopyBoard(snapshot.WhiteAttackBoard);
+		mGen.BlackAttackBoard = DeepCopyBoard(snapshot.BlackAttackBoard);
+
+		mGen.influencedPieces = DeepCopyPieces(snapshot.influencedPieces);
+		mGen.blockingPieces= DeepCopyPieces(snapshot.blockingPieces);
+		mGen.protectedPieces= DeepCopyPieces(snapshot.protectedPieces);
+
+		mGen.pinningPieces= DeepCopyPinning(snapshot.pinningPieces);
+		
+		mGen.unfilteredMoves = DeepCopyLegalMoves(snapshot.unfilteredMoves);
+		mGen.filteredMoves = DeepCopyLegalMoves(snapshot.filteredMoves);
+		mGen.GameInCheckMoves = new(snapshot.GameInCheckMoves);
+	}
+
+	// public void _restoreState
+	// (
+	// 	Dictionary<int, Dictionary<int, int>> WABoard,
+	// 	Dictionary<int, Dictionary<int, int>> BABoard,
+	// 	Dictionary<Vector2I, List<Vector2I>> BPieces,
+	// 	Dictionary<Vector2I, List<Vector2I>> IPieces,
+	// 	Dictionary<Vector2I, Vector2I> PPieces,
+	// 	Dictionary<Vector2I, Dictionary<MOVE_TYPES, List<Vector2I>>> moves
+	// )
+	// {
+	// 	mGen.WhiteAttackBoard = DeepCopyBoard(WABoard);
+	// 	mGen.BlackAttackBoard = DeepCopyBoard(BABoard);
+	// 	mGen.blockingPieces = DeepCopyPieces(BPieces);
+	// 	mGen.influencedPieces = DeepCopyPieces(IPieces);
+	// 	mGen.pinningPieces = DeepCopyPinning(PPieces);
+	// 	mGen.filteredMoves = DeepCopyLegalMoves(moves);
+	// 	return;
+	// }
+	// public Dictionary<int, Dictionary<int,int>> _duplicateWAB() { return DeepCopyBoard(mGen.WhiteAttackBoard); }
+	// public Dictionary<int, Dictionary<int,int>> _duplicateBAB() { return DeepCopyBoard(mGen.BlackAttackBoard); }	
+	// public Dictionary<Vector2I, List<Vector2I>> _duplicateBP() { return DeepCopyPieces(mGen.blockingPieces); }
+	// public Dictionary<Vector2I, List<Vector2I>>  _duplicateIP() { return DeepCopyPieces(mGen.influencedPieces); }
+	// public Dictionary<Vector2I, Vector2I>  _duplicatePNP() { return DeepCopyPinning(mGen.pinningPieces); }
 
 
 
@@ -1100,12 +1136,10 @@ public partial class HexEngineSharp : Node
 	/// <param name="depth"></param>
 	public void recursiveCount(List<int> depthCount, long depth, ref long count)
 	{
-		var legalmoves = DeepCopyLegalMoves(GetMoves());
-		var WAB = _duplicateWAB();
-		var BAB = _duplicateBAB();	
-		var BP = _duplicateBP();
-		var InPi = _duplicateIP();
-		var PP = _duplicatePNP();
+
+		var snap = _snapshotState();
+		var legalmoves = snap.filteredMoves;
+
 		int index;
 		if(depth <= 1)
 		{
@@ -1126,7 +1160,7 @@ public partial class HexEngineSharp : Node
 					_makeMove(piece,movetype,index,PIECES.QUEEN);
 					recursiveCount(depthCount, depth - 1, ref count);
 					_undoLastMove(false);
-					_restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
+					_restoreSnapshot(snap);
 					index += 1;
 				}
 			}

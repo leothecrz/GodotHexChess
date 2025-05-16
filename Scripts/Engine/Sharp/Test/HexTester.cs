@@ -36,7 +36,8 @@ public class HexTester
 		{
 			return;
 		}
-		var legalmoves = DeepCopyLegalMoves(referenceSharp.GetMoves());
+		var snap = referenceSharp._snapshotState();
+		var legalmoves = snap.filteredMoves;
 		foreach( Vector2I piece in legalmoves.Keys)
 		{
 			foreach(MOVE_TYPES movetype in legalmoves[piece].Keys)
@@ -44,17 +45,7 @@ public class HexTester
 				int index = 0;
 				foreach(Vector2I move in legalmoves[piece][movetype])
 				{
-					
-					// using (StreamWriter writer = new StreamWriter(path, append: true))
-					// {
-					//  	writer.WriteLine($"{piece}, {movetype}, {move}");
-					// }
 					counter += 1;
-					var WAB = referenceSharp._duplicateWAB();
-					var BAB = referenceSharp._duplicateBAB();
-					var BP = referenceSharp._duplicateBP();
-					var PP = referenceSharp._duplicatePNP();
-					var InPi = referenceSharp._duplicateIP();
 
 					var stamp = Time.GetTicksUsec();
 					referenceSharp._makeMove(piece, movetype, index, PIECES.QUEEN);
@@ -62,12 +53,12 @@ public class HexTester
 
 					trymove(depth-1);
 					referenceSharp._undoLastMove(false);
-					referenceSharp._restoreState(WAB,BAB,BP,InPi,PP,legalmoves);
+					referenceSharp._restoreSnapshot(snap);
 					
 				}
 			}
 		}
-		return ;
+		return;
 	}	
 
 	private int counter;
