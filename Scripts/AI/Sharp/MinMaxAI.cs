@@ -252,7 +252,7 @@ public partial class MinMaxAI : AIBase
 					foreach(Vector2I move in legalmoves[piece][movetype])
 					{
 						hexEngine._makeMove(piece,movetype,index,PIECES.QUEEN);
-						long val = NegativeMaximum(hexEngine, depth, isMaxPlayer ? 1 : -1, long.MinValue, long.MaxValue);
+						long val = -NegativeMaximum(hexEngine, depth, isMaxPlayer ? 1 : -1, long.MinValue, long.MaxValue);
 						
 						if (BestValue < val)
 						{
@@ -266,17 +266,13 @@ public partial class MinMaxAI : AIBase
 					}
 				}
 			
-		
-
 		GD.Print($"Move Gen For Depth {maxDepth}+1 took {Time.GetTicksUsec() - start} microseconds");
 		GD.Print("MinMax Calls: ", counter);
 		GD.Print("Quiescence  Calls: ", QCounter);
 		GD.Print("Evals Made: ", statesEvaluated);
 		GD.Print("Positions Found: ", positionsFound);
-		GD.Print("Best Value: ", BestValue);
-		
+		GD.Print("Best Value: ", BestValue);		
 		hexEngine.EnableAIMoveLock();
-
 		return;
 	}
 

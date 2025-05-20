@@ -613,17 +613,20 @@ public partial class HexEngineSharp : Node
 		int selfSide = (int)(HexState.IsWhiteTurn ? SIDES.WHITE : SIDES.BLACK);
 		HexState.UndoType = MaskPieceTypeFrom(activeMove.Piece);
 		//AP
-		int i = BitBoards.GetAPIndexOf(selfSide, HexState.UndoType, activeMove.To);
-		BitBoards.ActivePieces[selfSide][HexState.UndoType][i] = activeMove.From;
-		HexState.UndoIndex = i;
+		if (activeMove.Promote) // Then Unpromote
+			undoPromote(selfSide, activeMove);
+		else
+		{
+			int i = BitBoards.GetAPIndexOf(selfSide, HexState.UndoType, activeMove.To);
+			BitBoards.ActivePieces[selfSide][HexState.UndoType][i] = activeMove.From;
+			HexState.UndoIndex = i;
+		}
 
 		// Default Undo // remove and place in last position
 		BitBoards.ClearIndexOf(QRToIndex(activeMove.To.X, activeMove.To.Y), HexState.IsWhiteTurn, HexState.UndoType); 
 		BitBoards.AddFromIntTo(HexState.UndoType, activeMove.From.X, activeMove.From.Y, HexState.IsWhiteTurn);
 		
 		undoCleanFlags(activeMove); //State Specific Undo. CHECK. OVER. ENPASSENT.
-		if(activeMove.Promote) // Then Unpromote
-			undoPromote(selfSide, activeMove);
 		if(activeMove.Capture) // Then Uncapture
 			undoCapture(activeMove);
 
